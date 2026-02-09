@@ -1,0 +1,306 @@
+/* ============================= */
+/*      RESET & GLOBAL STYLES    */
+/* ============================= */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ============================= */
+/*         COLOR VARIABLES       */
+/* ============================= */
+:root {
+  /* Light Mode Colors */
+  --bg: #f4f6f8;
+  --card-bg: #ffffff;
+  --primary: #3b82f6;
+  --secondary: #6b7280;
+  --text: #111827;
+  --border: #e5e7eb;
+
+  /* Animations */
+  --seed-drop-duration: 0.5s;
+}
+
+body.dark-mode {
+  --bg: #1f2937;
+  --card-bg: #111827;
+  --primary: #3b82f6;
+  --secondary: #9ca3af;
+  --text: #f9fafb;
+  --border: #374151;
+}
+
+/* ============================= */
+/*           LAYOUTS             */
+/* ============================= */
+/* Normal screen container */
+.main-container {
+  width: 100%;          /* Full width by default */
+  max-width: 1200px;    /* Maximum width for large screens */
+  margin: 0 auto;       /* Center horizontally */
+  background-color: #2563eb;
+  padding: 0 1rem;      /* Small horizontal padding */
+  box-sizing: border-box; /* Include padding in width */
+}
+
+
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.grid {
+  display: grid;
+}
+
+.mt-1 { margin-top: 0.25rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mt-3 { margin-top: 1rem; }
+.mb-1 { margin-bottom: 0.25rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-3 { margin-bottom: 1rem; }
+
+/* ============================= */
+/*          CARDS / BOXES        */
+/* ============================= */
+.card {
+  background-color: var(--card-bg);
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  padding: 1rem;
+  border: 1px solid var(--border);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* ============================= */
+/*           BUTTONS             */
+/* ============================= */
+.button {
+  padding: 0.5rem 1rem;
+  background-color: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.button:hover {
+  background-color: #2563eb; /* slightly darker */
+}
+
+/* ============================= */
+/*           LINKS               */
+/* ============================= */
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+/* ============================= */
+/*         SEED ANIMATION        */
+/* ============================= */
+@keyframes seedDrop {
+  0% { transform: translateY(-20px); opacity: 0; }
+  50% { transform: translateY(10px); opacity: 0.5; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.seed-drop {
+  animation: seedDrop var(--seed-drop-duration) ease forwards;
+}
+
+/* ============================= */
+/*          SCROLLBAR             */
+/* ============================= */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--secondary);
+  border-radius: 4px;
+}
+
+
+/* INTRO STUFSS */
+/* Handwriting draw animation */
+.draw-path {
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+  animation: draw 1s linear forwards;
+}
+
+.draw-path:nth-child(1) { animation-delay: 0s; }
+.draw-path:nth-child(2) { animation-delay: 1s; }
+.draw-path:nth-child(3) { animation-delay: 2s; }
+
+@keyframes draw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* Full text expand */
+@keyframes expandText {
+  0% { opacity: 0; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Fade in */
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+
+/* Handwriting draw animation */
+.draw-path {
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+  animation: draw 1s linear forwards;
+}
+
+.draw-path:nth-child(1) { animation-delay: 0s; }
+.draw-path:nth-child(2) { animation-delay: 1s; }
+.draw-path:nth-child(3) { animation-delay: 2s; }
+
+@keyframes draw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* Full text expand */
+@keyframes expandText {
+  0% { opacity: 0; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Fade in for Phash-C */
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 0.5; }
+}
+
+/* Flex helper */
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+
+/* NOTIFICATION */
+@keyframes slideDown {
+  0% { transform: translateY(-100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+/* Theme colors (example, adjust to your variables) */
+:root {
+  --success-bg: #38b000; /* green */
+  --error-bg: #d00000;   /* red */
+}
+
+
+
+
+/* RESTORE BACKUP STUFFS */
+/* Step Indicator */
+.step-indicator {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.step-indicator span {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+.step-indicator .active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+/* Restore Options */
+.restore-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 10px;
+}
+.restore-option:hover {
+  background: var(--input-bg);
+}
+.restore-option.selected {
+  border-color: var(--primary);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+/* Backup Card */
+.backup-card {
+  border: 1px solid var(--border);
+  padding: 16px;
+  border-radius: 10px;
+  background: var(--card-bg);
+}
+
+/* Help Link */
+.help-link {
+  text-align: center;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.help-link:hover {
+  text-decoration: underline;
+}
+

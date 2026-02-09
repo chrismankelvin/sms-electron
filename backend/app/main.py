@@ -1,0 +1,1719 @@
+
+
+# main.py - Updated to remove JSON dependencies
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Optional
+from datetime import datetime
+import sqlite3
+from pathlib import Path
+import hashlib
+import uuid
+
+
+import json
+import base64
+from cryptography.fernet import Fernet
+
+from app.activation import state
+
+
+from typing import Optional
+from typing import List  # Or use list directly in type hints
+from app.auth.routes import router as auth_router
+from database.cloud_db import SQLiteCloudClient
+
+from app.activation.activation_service import (
+    is_activated, 
+    activate_system, 
+    validate_activation_code,
+    check_activation_status,
+    calculate_expected_code
+)
+
+from app.minisettings.mini_settings_api import router as mini_settings_router
+from app.minisettings.settings_service import mini_settings_service
+
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(auth_router)
+app.include_router(mini_settings_router)
+# Initialize SQLiteCloud client
+
+cloud_client = SQLiteCloudClient()
+
+
+# Add to imports in main.py
+from app.sync.device_sync import DeviceSyncManager
+
+# Initialize sync manager after cloud_client
+sync_manager = DeviceSyncManager("database/school.db", cloud_client)
+
+# Unified local SQLite database path
+# LOCAL_DB_PATH = Path("database/school.db")
+
+def get_db_connection():
+    """Get database connection"""
+    return state.get_db_connection()
+
+
+# ============================================
+# HELPER FUNCTIONS (Database operations)
+# ============================================
+
+def hash_password(password: str) -> str:
+    """Hash password for storage"""
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def check_school_setup_complete() -> bool:
+    """Check if school details have been saved"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM school_info LIMIT 1")
+        result = cursor.fetchone() is not None
+        conn.close()
+        return result
+    except:
+        return False
+
+def check_admin_setup_complete() -> bool:
+    """Check if admin user has been created"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM users WHERE role = 'admin' LIMIT 1")
+        result = cursor.fetchone() is not None
+        conn.close()
+        return result
+    except:
+        return False
+
+def save_school_to_local_db(data: dict) -> bool:
+    """Save school info to local database"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Check if school info already exists
+        cursor.execute("SELECT id FROM school_info LIMIT 1")
+        existing = cursor.fetchone()
+        
+        if existing:
+            # Update existing school info
+            cursor.execute("""
+                UPDATE school_info 
+                SET school_name = ?, email = ?, phone = ?, address = ?, 
+                    city = ?, state = ?, country = ?, updated_at = ?
+                WHERE id = ?
+            """, (
+                data["school_name"],
+                data["school_email"],
+                data["school_contact"],
+                f"{data['town']}, {data['city']}",
+                data["city"],
+                data["region"],
+                data["county"],
+                datetime.now().isoformat(),
+                existing[0]
+            ))
+        else:
+            # Insert new school info
+            cursor.execute("""
+                INSERT INTO school_info 
+                (school_name, email, phone, address, city, state, country, 
+                 created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                data["school_name"],
+                data["school_email"],
+                data["school_contact"],
+                f"{data['town']}, {data['city']}",
+                data["city"],
+                data["region"],
+                data["county"],
+                datetime.now().isoformat(),
+                datetime.now().isoformat()
+            ))
+        
+        conn.commit()
+        conn.close()
+        return True
+        
+    except Exception as e:
+        print(f"Error saving school to local DB: {e}")
+        return False
+
+def save_admin_to_local_db(data: dict) -> bool:
+    """Save admin user to local database"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Generate a unique ID
+        unique_id = str(uuid.uuid4())
+        
+        # Check if user already exists
+        cursor.execute("SELECT id FROM users WHERE email = ?", (data["email"],))
+        existing = cursor.fetchone()
+        
+        if existing:
+            # Update existing user
+            cursor.execute("""
+                UPDATE users 
+                SET password_hash = ?, role = ?, updated_at = ?
+                WHERE email = ?
+            """, (
+                hash_password(data["password"]),
+                "admin",
+                datetime.now().isoformat(),
+                data["email"]
+            ))
+        else:
+            # Insert new user
+            cursor.execute("""
+                INSERT INTO users 
+                (unique_id, username, email, password_hash, role, status, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (
+                unique_id,
+                data["email"],
+                data["email"],
+                hash_password(data["password"]),
+                "admin",
+                "active",
+                datetime.now().isoformat()
+            ))
+        
+        conn.commit()
+        conn.close()
+        return True
+        
+    except Exception as e:
+        print(f"Error saving admin to local DB: {e}")
+        return False
+
+
+
+
+# ============================================
+# RECOVERY (Option C – Encrypted Backup Blob)
+# ============================================
+
+RECOVERY_SECRET = "CHANGE_ME_IN_PRODUCTION"
+
+def derive_recovery_key(school_email: str) -> bytes:
+    raw = f"{school_email}:{RECOVERY_SECRET}".encode()
+    digest = hashlib.sha256(raw).digest()
+    return base64.urlsafe_b64encode(digest)
+
+def decrypt_recovery_blob(encrypted_blob: str, school_email: str) -> dict:
+    key = derive_recovery_key(school_email)
+    fernet = Fernet(key)
+    decrypted = fernet.decrypt(encrypted_blob.encode())
+    return json.loads(decrypted)
+
+def validate_recovery_payload(payload: dict):
+    required = ["schema_version", "school", "admins", "issued_at"]
+    for key in required:
+        if key not in payload:
+            raise Exception(f"Invalid recovery payload: missing {key}")
+
+    if payload["schema_version"] != 1:
+        raise Exception("Unsupported recovery schema version")
+
+    if not payload["admins"]:
+        raise Exception("Recovery payload contains no admins")
+
+
+def wipe_local_database(conn):
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM users")
+    cursor.execute("DELETE FROM school_info")
+    cursor.execute("DELETE FROM devices")
+    cursor.execute("DELETE FROM activation_state")
+
+    conn.commit()
+def import_school_from_recovery(conn, school: dict):
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO school_info
+        (school_name, email, phone, city, state, country, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        school.get("school_name"),
+        school.get("school_email"),
+        school.get("school_contact"),
+        school.get("city"),
+        school.get("region"),
+        school.get("county"),
+        school.get("created_at"),
+        datetime.now().isoformat()
+    ))
+
+def import_admins_from_recovery(conn, admins: list):
+    cursor = conn.cursor()
+
+    for admin in admins:
+        cursor.execute("""
+            INSERT INTO users
+            (unique_id, username, email, password_hash, role, status, created_at)
+            VALUES (?, ?, ?, ?, 'admin', 'active', ?)
+        """, (
+            str(uuid.uuid4()),
+            admin.get("email"),
+            admin.get("email"),
+            admin.get("password_hash"),
+            datetime.now().isoformat()
+        ))
+
+
+def reset_activation_state(conn):
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO activation_state
+        (id, activated, activation_code, machine_fingerprint, created_at)
+        VALUES (1, FALSE, NULL, NULL, ?)
+    """, (datetime.now().isoformat(),))
+    conn.commit()
+
+
+# ============================================
+# REQUEST MODELS
+# ============================================
+
+class SchoolDetailsRequest(BaseModel):
+    school_name: str
+    school_email: str
+    school_contact: str
+    county: str
+    region: str
+    city: str
+    town: str
+    gps_address: str
+
+class AdminDetailsRequest(BaseModel):
+    first_name: str
+    middle_name: Optional[str] = ""
+    last_name: str
+    email: str
+    contact: str
+    password: str
+    confirm_password: str
+
+class ActivationRequest(BaseModel):
+    code: str
+    school_name: str
+
+class ValidateRequest(BaseModel):
+    school_name: str
+    code: str
+
+class ExpectedCodeRequest(BaseModel):
+    school_name: str
+
+
+
+# Python 3.9+ style:
+class SyncRequest(BaseModel):
+    device_ids: Optional[list[int]] = None  # Use lowercase list
+    batch_size: Optional[int] = 10
+    force_sync_all: Optional[bool] = False
+
+class DeviceRegistrationRequest(BaseModel):
+    device_id: str
+    device_name: str
+    device_type: Optional[str] = "computer"
+    os_name: str
+    os_version: str
+    activation_key: Optional[str] = None
+    user_id: Optional[int] = None
+
+
+
+class RecoveryImportRequest(BaseModel):
+    school_email: str
+    encrypted_backup: str
+
+
+
+class SchoolAndAdminRequest(BaseModel):
+    # School Details
+    school_name: str
+    school_email: str
+    school_contact: str
+    school_type: str = "secondary"  # default or from frontend
+    county: str
+    region: str
+    city: str
+    town: str
+    gps_address: str
+    country: str = "Ghana"  # default or from frontend
+    
+    # Admin Details
+    first_name: str
+    middle_name: Optional[str] = ""
+    last_name: str
+    admin_email: str
+    contact: str
+    password: str
+    confirm_password: str
+
+class CompleteSyncRequest(BaseModel):
+    sync_school: bool = True
+    sync_activation: bool = True
+    sync_devices: bool = True
+    device_batch_size: int = 20
+
+# ============================================
+# SETUP ENDPOINTS
+# ============================================
+
+@app.post("/setup/school-and-admin")
+async def setup_school_and_admin(req: SchoolAndAdminRequest):
+    """Create school and admin in a single transaction"""
+    try:
+        # Check if already activated
+        if is_activated():
+            raise HTTPException(status_code=400, detail="System already activated")
+        
+        # Validate passwords
+        if req.password != req.confirm_password:
+            raise HTTPException(status_code=400, detail="Passwords do not match")
+        
+        if len(req.password) < 6:
+            raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+        
+        # Check SQLiteCloud connection
+        if not cloud_client.check_connection():
+            raise HTTPException(
+                status_code=503, 
+                detail="Cannot connect to cloud database. Please check your internet connection."
+            )
+        
+        print(f"🔍 DEBUG: Starting school and admin setup for: {req.school_name}")
+        
+        # ===== 1. CREATE SCHOOL IN CLOUD =====
+        school_data = {
+            "school_name": req.school_name,
+            "school_email": req.school_email,
+            "school_contact": req.school_contact,
+            "school_type": req.school_type,
+            "county": req.county,
+            "region": req.region,
+            "city": req.city,
+            "town": req.town,
+            "gps_address": req.gps_address,
+            "country": req.country,
+            "created_at": datetime.now().isoformat()
+        }
+        
+        print(f"🔍 DEBUG: Inserting school into cloud: {req.school_name}")
+        school_id = cloud_client.insert_school(school_data)
+        
+        if not school_id:
+            print(f"❌ DEBUG: School insertion failed - no school_id returned")
+            raise HTTPException(status_code=500, detail="Failed to create school in cloud database")
+        
+        print(f"✅ DEBUG: School inserted with ID: {school_id}")
+        
+        # VERIFY SCHOOL WAS ACTUALLY CREATED
+        print(f"🔍 DEBUG: Verifying school creation...")
+        school_check = cloud_client.execute_query(
+            "SELECT id, school_name FROM school_installations WHERE id = ?",
+            (school_id,)
+        )
+        
+        if not school_check.get("success"):
+            print(f"❌ DEBUG: School verification query failed: {school_check.get('error')}")
+            raise HTTPException(status_code=500, detail="Failed to verify school creation")
+        
+        if not school_check.get("rows"):
+            print(f"❌ DEBUG: School not found in cloud after insertion")
+            raise HTTPException(status_code=500, detail="School not found after creation")
+        
+        print(f"✅ DEBUG: School verified: {school_check['rows'][0]['school_name']}")
+        
+        # ===== 2. CHECK FOR DUPLICATE ADMIN =====
+        print(f"🔍 DEBUG: Checking for duplicate admin...")
+        
+        # Check by email
+        email_check = cloud_client.execute_query(
+            "SELECT id FROM admin_table WHERE email = ?",
+            (req.admin_email,)
+        )
+        
+        if email_check.get("rows"):
+            print(f"❌ DEBUG: Admin email {req.admin_email} already exists!")
+            # Clean up school
+            cloud_client.execute_query("DELETE FROM school_installations WHERE id = ?", (school_id,))
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Admin email {req.admin_email} is already registered. Please use a different email."
+            )
+        
+        # Check by contact
+        contact_check = cloud_client.execute_query(
+            "SELECT id FROM admin_table WHERE contact = ?",
+            (req.contact,)
+        )
+        
+        if contact_check.get("rows"):
+            print(f"❌ DEBUG: Admin contact {req.contact} already exists!")
+            # Clean up school
+            cloud_client.execute_query("DELETE FROM school_installations WHERE id = ?", (school_id,))
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Contact number {req.contact} is already registered. Please use a different contact."
+            )
+        
+        print(f"✅ DEBUG: No duplicate admin found")
+        
+        # ===== 3. CREATE ADMIN IN CLOUD =====
+        admin_data = {
+            "first_name": req.first_name,
+            "middle_name": req.middle_name,
+            "last_name": req.last_name,
+            "contact": req.contact,
+            "password_hash": hash_password(req.password),
+            "email": req.admin_email,
+            "school_id": school_id,  # Link to the school
+            "role": "super_admin",
+            "created_at": datetime.now().isoformat()
+        }
+        
+        print(f"🔍 DEBUG: Creating new admin in cloud: {req.admin_email}")
+        
+        # Call insert_admin directly (it should handle duplicates but we already checked)
+        admin_id = cloud_client.insert_admin(school_id, admin_data)
+        
+        if not admin_id:
+            print(f"❌ DEBUG: Admin insertion failed - no admin_id returned")
+            # Clean up school
+            cloud_client.execute_query("DELETE FROM school_installations WHERE id = ?", (school_id,))
+            raise HTTPException(status_code=500, detail="Failed to create admin in cloud database")
+        
+        print(f"✅ DEBUG: Admin created with ID: {admin_id}")
+        
+        # ===== 4. VERIFY ADMIN CREATION =====
+        print(f"🔍 DEBUG: Verifying admin creation...")
+        
+        # First, check if we got a NEW admin ID (not an existing one)
+        admin_check = cloud_client.execute_query(
+            "SELECT id, email, school_id, created_at FROM admin_table WHERE id = ?",
+            (admin_id,)
+        )
+        
+        if not admin_check.get("success"):
+            print(f"❌ DEBUG: Admin verification query failed")
+            # Clean up
+            cloud_client.execute_query("DELETE FROM admin_table WHERE id = ?", (admin_id,))
+            cloud_client.execute_query("DELETE FROM school_installations WHERE id = ?", (school_id,))
+            raise HTTPException(status_code=500, detail="Failed to verify admin creation")
+        
+        if not admin_check.get("rows"):
+            print(f"❌ DEBUG: Admin not found after creation")
+            # Clean up school
+            cloud_client.execute_query("DELETE FROM school_installations WHERE id = ?", (school_id,))
+            raise HTTPException(status_code=500, detail="Admin not found after creation")
+        
+        admin_info = admin_check['rows'][0]
+        print(f"✅ DEBUG: Admin found: {admin_info['email']}")
+        
+        # Verify it's linked to OUR school
+        if admin_info['school_id'] != school_id:
+            print(f"❌ DEBUG: Admin created with wrong school_id!")
+            print(f"  Expected: {school_id}, Got: {admin_info['school_id']}")
+            # Clean up both
+            cloud_client.execute_query("DELETE FROM admin_table WHERE id = ?", (admin_id,))
+            cloud_client.execute_query("DELETE FROM school_installations WHERE id = ?", (school_id,))
+            raise HTTPException(status_code=500, detail="Admin created with incorrect school association")
+        
+        # Verify email matches
+        if admin_info['email'] != req.admin_email:
+            print(f"❌ DEBUG: Admin email mismatch!")
+            print(f"  Expected: {req.admin_email}, Got: {admin_info['email']}")
+            # Clean up both
+            cloud_client.execute_query("DELETE FROM admin_table WHERE id = ?", (admin_id,))
+            cloud_client.execute_query("DELETE FROM school_installations WHERE id = ?", (school_id,))
+            raise HTTPException(status_code=500, detail="Admin email mismatch")
+        
+        print(f"✅ DEBUG: Admin properly created and verified")
+        
+        # ===== 5. SAVE TO LOCAL DATABASE =====
+        local_errors = []
+        
+        # Save school to local DB
+        print(f"🔍 DEBUG: Saving school to local database...")
+        local_school_success = save_school_to_local_db(school_data)
+        
+        if not local_school_success:
+            local_errors.append("Failed to save school to local database")
+            print(f"⚠️ WARNING: Failed to save school to local database")
+        else:
+            print(f"✅ DEBUG: School saved to local database")
+        
+        # Save admin to local DB
+        print(f"🔍 DEBUG: Saving admin to local database...")
+        local_admin_success = save_admin_to_local_db({
+            "email": req.admin_email,
+            "password": req.password,
+            "first_name": req.first_name,
+            "last_name": req.last_name,
+            "contact": req.contact,
+            "school_id": school_id
+        })
+        
+        if not local_admin_success:
+            local_errors.append("Failed to save admin to local database")
+            print(f"⚠️ WARNING: Failed to save admin to local database")
+        else:
+            print(f"✅ DEBUG: Admin saved to local database")
+        
+        # ===== 6. FINAL CONFIRMATION =====
+        print(f"🔍 DEBUG: Final confirmation...")
+        
+        # Simple count check
+        school_count = cloud_client.execute_query(
+            "SELECT COUNT(*) as count FROM school_installations WHERE id = ?",
+            (school_id,)
+        )
+        
+        admin_count = cloud_client.execute_query(
+            "SELECT COUNT(*) as count FROM admin_table WHERE id = ? AND school_id = ?",
+            (admin_id, school_id)
+        )
+        
+        if (not school_count.get("success") or 
+            not admin_count.get("success") or
+            school_count['rows'][0]['count'] != 1 or
+            admin_count['rows'][0]['count'] != 1):
+            print(f"❌ DEBUG: Final count verification failed!")
+            raise HTTPException(status_code=500, detail="Final verification failed")
+        
+        print(f"✅ DEBUG: Setup completed successfully!")
+        print(f"  School ID: {school_id}")
+        print(f"  Admin ID: {admin_id}")
+        
+        return {
+            "success": True,
+            "message": "School and admin created successfully",
+            "school_id": school_id,
+            "admin_id": admin_id,
+            "cloud_verified": True,
+            "local_saved": {
+                "school": local_school_success,
+                "admin": local_admin_success
+            },
+            "warnings": local_errors if local_errors else None,
+            "next_step": "activation"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ ERROR in setup_school_and_admin: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Setup failed: {str(e)}")
+
+
+
+# ============================================
+# ACTIVATION ENDPOINTS
+# ============================================
+
+@app.get("/activation/status")
+def activation_status():
+    return {"activated": is_activated()}
+
+@app.get("/activation/status/detailed")
+def detailed_activation_status():
+    """Get detailed activation status"""
+    return check_activation_status()
+
+@app.post("/activation/validate")
+def validate_code(req: ValidateRequest):
+    """Validate an activation code without activating"""
+    is_valid = validate_activation_code(req.school_name, req.code)
+    return {
+        "valid": is_valid,
+        "message": "Code is valid" if is_valid else "Invalid activation code"
+    }
+
+@app.post("/activation/expected-code")
+def get_expected_code(req: ExpectedCodeRequest):
+    """Get what the activation code should be for this machine + school"""
+    expected = calculate_expected_code(req.school_name)
+    return {
+        "expected_code": expected,
+        "school_name": req.school_name,
+        "note": "This is for debugging. In production, codes are generated by the vendor."
+    }
+
+
+# With mini_settings_reset
+@app.post("/activation/activate")
+async def activate(req: ActivationRequest):
+    """Activate the system and reset mini-settings"""
+    try:
+        # Check if already activated
+        if is_activated():
+            return {
+                "success": True, 
+                "message": "Already activated",
+                "already_activated": True
+            }
+        
+        # Validate activation code
+        if not req.code or len(req.code) < 6:
+            return {"success": False, "message": "Invalid activation code"}
+        
+        # Validate school name
+        if not req.school_name or len(req.school_name) < 2:
+            return {"success": False, "message": "School name is required"}
+        
+        # Check if school setup is complete
+        if not check_school_setup_complete():
+            return {"success": False, "message": "Please complete school setup first"}
+        
+        # Check if admin setup is complete
+        if not check_admin_setup_complete():
+            return {"success": False, "message": "Please complete admin setup first"}
+        
+        # Activate the system
+        result = activate_system(req.code, req.school_name)
+        
+        if not result["success"]:
+            return result
+        
+        # =============================================
+        # CRITICAL: RESET MINI-SETTINGS HERE
+        # =============================================
+        try:
+            # First, load current settings to preserve theme/screensaver/schoolType
+            current_settings = mini_settings_service.load_settings()
+            
+            # Create updated settings - reset hasSeenMiniSettings to False
+            updated_settings = {
+                **current_settings,  # Keep existing settings
+                "hasSeenMiniSettings": False,  # Reset this to False
+                "lastUpdated": mini_settings_service.get_current_timestamp(),
+                "resetReason": "system_activation",  # Track why it was reset
+                "resetAtActivation": True  # Flag that this was reset at activation
+            }
+            
+            # Save the updated settings
+            mini_settings_service.save_all_settings(updated_settings)
+            
+            print("✅ Mini-settings reset: hasSeenMiniSettings = False")
+            print(f"   Settings preserved: theme={current_settings.get('theme')}, "
+                  f"screensaver={current_settings.get('screensaver')}, "
+                  f"schoolType={current_settings.get('schoolType')}")
+            
+        except Exception as settings_error:
+            print(f"⚠️ Could not reset mini-settings: {settings_error}")
+            # Don't fail activation if settings reset fails
+            # Just log it and continue
+            
+        # =============================================
+        # END OF MINI-SETTINGS RESET
+        # =============================================
+        
+        # Try to send activation data to cloud
+        cloud_success = False
+        cloud_error = None
+        
+        if cloud_client.check_connection():
+            try:
+                cloud_data = result["cloud_data"]
+                
+                # Update activation in SQLiteCloud
+                query = "UPDATE school_installations SET activation_code = ? WHERE school_name = ?"
+                cloud_client.execute_query(query, (req.code, req.school_name))
+                
+                cloud_success = True
+                print("✅ Activation saved to cloud database")
+                
+            except Exception as e:
+                cloud_error = str(e)
+                print(f"⚠️ Cloud save failed: {e}")
+        else:
+            cloud_error = "Cannot connect to cloud database"
+            print("⚠️ Skipping cloud save (offline)")
+        
+        # Build success message
+        message = result["message"]
+        if cloud_success:
+            message += " (cloud synced)"
+        elif cloud_error:
+            message += f" (cloud error: {cloud_error})"
+        
+        # Return success response
+        return {
+            "success": True,
+            "message": message,
+            "local_saved": result["local_saved"],
+            "cloud_saved": cloud_success,
+            "redirect_to": "/",
+            "mini_settings_reset": True  # Let frontend know
+        }
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Activation failed: {str(e)}")
+
+
+
+@app.get("/activation/machine-id")
+def get_machine_id():
+    """Get the machine fingerprint (for vendor to generate codes)"""
+    from app.activation.fingerprint import get_or_create_machine_fingerprint
+    fingerprint = get_or_create_machine_fingerprint()
+    
+    return {
+        "machine_fingerprint": fingerprint,
+        "note": "Share this with vendor to generate activation code"
+    }
+
+# ============================================
+# UTILITY ENDPOINTS
+# ============================================
+
+@app.get("/setup/status")
+async def get_setup_status():
+    """Check what step we're on"""
+    activated = is_activated()
+    school_completed = check_school_setup_complete()
+    admin_completed = check_admin_setup_complete()
+    
+    # Determine current step
+    if activated:
+        current_step = "completed"
+    elif not school_completed:
+        current_step = "school"
+    elif not admin_completed:
+        current_step = "admin"
+    else:
+        current_step = "activation"
+    
+    return {
+        "activated": activated,
+        "school_completed": school_completed,
+        "admin_completed": admin_completed,
+        "current_step": current_step,
+        "requires_internet": True
+    }
+
+@app.get("/health/connectivity")
+async def check_connectivity():
+    """Check if we can connect to SQLiteCloud"""
+    try:
+        if cloud_client.check_connection():
+            return {
+                "online": True, 
+                "message": "Connected to SQLiteCloud database",
+                "database": "SQLiteCloud"
+            }
+        else:
+            return {
+                "online": False, 
+                "message": "Cannot connect to SQLiteCloud",
+                "database": "SQLiteCloud"
+            }
+    except Exception as e:
+        return {
+            "online": False, 
+            "message": f"Connection error: {str(e)}",
+            "database": "SQLiteCloud"
+        }
+
+@app.get("/database/status")
+async def database_status():
+    """Check local database status"""
+    try:
+    
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Get table count
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        tables = cursor.fetchall()
+        
+        # Check activation state
+        cursor.execute("SELECT activated FROM activation_state WHERE id = 1")
+        activation_state = cursor.fetchone()
+        
+        # Check counts
+        cursor.execute("SELECT COUNT(*) FROM school_info")
+        school_count = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'admin'")
+        admin_count = cursor.fetchone()[0]
+        
+        conn.close()
+        
+        return {
+            "exists": True,
+            "table_count": len(tables),
+            "activated": bool(activation_state[0]) if activation_state else False,
+            "school_count": school_count,
+            "admin_count": admin_count
+        }
+        
+    except Exception as e:
+        return {"error": str(e), "exists": False}
+    
+    
+    
+# ============================================
+# DEVICE SYNC ENDPOINTS
+# ============================================
+
+@app.post("/sync/complete")
+async def complete_sync(req: CompleteSyncRequest):
+    """Complete sync: school, activation, and devices in one call"""
+    try:
+        # Get the data from request
+        data = req.dict()
+        sync_school = data.get('syncSchool', data.get('sync_school', True))
+        sync_activation = data.get('syncActivation', data.get('sync_activation', True))
+        sync_devices = data.get('syncDevices', data.get('sync_devices', True))
+        device_batch_size = data.get('deviceBatchSize', data.get('device_batch_size', 20))
+        
+        print(f"🔍 DEBUG: /sync/complete endpoint called")
+        print(f"🔍 DEBUG: sync_school={sync_school}, sync_activation={sync_activation}, sync_devices={sync_devices}")
+        
+        # Check connectivity
+        if not cloud_client.check_connection():
+            print("❌ DEBUG: Cloud client connection check failed")
+            raise HTTPException(
+                status_code=503, 
+                detail="Cannot connect to cloud database. Please check your internet connection."
+            )
+        
+        print("✅ DEBUG: Cloud connection successful")
+        
+        results = {
+            "success": False,
+            "steps": {},
+            "timestamp": datetime.now().isoformat(),
+            "details": {}
+        }
+        
+        # Helper function to get school info from local DB
+        def get_local_school_info():
+            """Get school info from local database"""
+            try:
+                conn = get_db_connection()
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute("SELECT * FROM school_info LIMIT 1")
+                row = cursor.fetchone()
+                conn.close()
+                return dict(row) if row else None
+            except Exception as e:
+                print(f"❌ DEBUG: Error getting school info: {e}")
+                return None
+        
+        # Helper function to get activation data from local DB
+        def get_local_activation_data():
+            """Get activation data from local database"""
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute("SELECT * FROM activation_state WHERE id = 1")
+                activation_state = cursor.fetchone()
+                conn.close()
+                return activation_state
+            except Exception as e:
+                print(f"❌ DEBUG: Error getting activation data: {e}")
+                return None
+        
+        # Variables to share between steps
+        school_info = None
+        school_id = None
+        school_success = False
+        school_message = ""
+        
+        # STEP 1: Sync school to school_installations table
+        if sync_school:
+            try:
+                print("🔍 DEBUG: Starting school sync...")
+                
+                # Get school info from local
+                school_info = get_local_school_info()
+                
+                if not school_info:
+                    school_message = "No school info found locally"
+                    print(f"❌ DEBUG: {school_message}")
+                else:
+                    school_name = school_info.get("school_name")
+                    school_email = school_info.get("email")
+                    school_contact = school_info.get("phone")
+                    county = school_info.get("county")
+                    region = school_info.get("region")
+                    city = school_info.get("city")
+                    town = school_info.get("town")
+                    gps_address = school_info.get("gps_address")
+                    
+                    # Check if school exists in cloud
+                    existing_school = cloud_client.execute_query(
+                        "SELECT * FROM school_installations WHERE school_name = ? OR school_email = ?",
+                        (school_name, school_email)
+                    )
+                    
+                    if existing_school.get("rows"):
+                        # School exists
+                        school_id = existing_school["rows"][0]["id"]
+                        school_message = f"School already exists in cloud (ID: {school_id})"
+                        school_success = True
+                        print(f"✅ DEBUG: {school_message}")
+                    else:
+                        # Create new school in school_installations table
+                        insert_result = cloud_client.execute_query("""
+                            INSERT INTO school_installations 
+                            (school_name, school_email, school_contact, county, region, 
+                             city, town, gps_address, created_at) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """, (
+                            school_name, school_email, school_contact, 
+                            county, region, city, town, gps_address,
+                            datetime.now().isoformat()
+                        ))
+                        
+                        if insert_result.get("success"):
+                            # Get the new school ID
+                            school_result = cloud_client.execute_query(
+                                "SELECT id FROM school_installations WHERE school_email = ?",
+                                (school_email,)
+                            )
+                            
+                            if school_result.get("rows"):
+                                school_id = school_result["rows"][0]["id"]
+                                school_message = f"School created in cloud (ID: {school_id})"
+                                school_success = True
+                                print(f"✅ DEBUG: {school_message}")
+                            else:
+                                school_message = "School created but failed to get ID"
+                                print(f"❌ DEBUG: {school_message}")
+                        else:
+                            school_message = "Failed to create school in cloud"
+                            print(f"❌ DEBUG: {school_message}")
+                
+                results["steps"]["school"] = {
+                    "success": school_success,
+                    "message": school_message,
+                    "school_id": school_id
+                }
+                
+            except Exception as e:
+                error_msg = f"School sync error: {str(e)}"
+                print(f"❌ DEBUG: {error_msg}")
+                results["steps"]["school"] = {
+                    "success": False,
+                    "message": error_msg
+                }
+        
+        # STEP 2: Sync activation data
+        activation_success = False
+        activation_code = None
+        activation_message = ""
+        
+        if sync_activation:
+            try:
+                print("🔍 DEBUG: Starting activation sync...")
+                
+                # Get activation data from local
+                activation_state = get_local_activation_data()
+                
+                if not activation_state or len(activation_state) < 3:
+                    activation_message = "No activation data found locally"
+                    print(f"❌ DEBUG: {activation_message}")
+                else:
+                    activation_code = activation_state[2] if len(activation_state) > 2 else ""
+                    
+                    if not activation_code:
+                        activation_message = "No activation code found"
+                        print(f"❌ DEBUG: {activation_message}")
+                    else:
+                        # Get school info if not already fetched
+                        if not school_info:
+                            school_info = get_local_school_info()
+                        
+                        if not school_info:
+                            activation_message = "No school info found for activation"
+                            print(f"❌ DEBUG: {activation_message}")
+                        else:
+                            school_email = school_info.get("email")
+                            
+                            # Get device name from local devices table
+                            device_name = "Default Device"
+                            try:
+                                conn = get_db_connection()
+                                cursor = conn.cursor()
+                                cursor.execute("SELECT device_name FROM devices LIMIT 1")
+                                device_result = cursor.fetchone()
+                                conn.close()
+                                
+                                if device_result and device_result[0]:
+                                    device_name = device_result[0]
+                            except Exception as e:
+                                print(f"⚠️ DEBUG: Could not get device name: {e}")
+                            
+                            # Update school_installations with activation code and device_name
+                            update_result = cloud_client.execute_query("""
+                                UPDATE school_installations 
+                                SET activation_code = ?, 
+                                    device_name = ?
+                                WHERE school_email = ?
+                            """, (
+                                activation_code,
+                                device_name,
+                                school_email
+                            ))
+                            
+                            if update_result.get("success"):
+                                activation_success = True
+                                activation_message = f"Activation data synced (Code: {activation_code})"
+                                print(f"✅ DEBUG: {activation_message}")
+                            else:
+                                activation_message = "Failed to update activation in cloud"
+                                print(f"❌ DEBUG: {activation_message}")
+                
+                results["steps"]["activation"] = {
+                    "success": activation_success,
+                    "message": activation_message,
+                    "activation_code": activation_code
+                }
+                
+            except Exception as e:
+                error_msg = f"Activation sync error: {str(e)}"
+                print(f"❌ DEBUG: {error_msg}")
+                results["steps"]["activation"] = {
+                    "success": False,
+                    "message": error_msg
+                }
+        
+        # STEP 3: Sync devices - REPLACE device per school with history tracking
+        devices_success = False
+        devices_synced = 0
+        devices_failed = 0
+        devices_message = ""
+        device_history_entries = 0
+        
+        if sync_devices:
+            try:
+                print("🔍 DEBUG: Starting devices sync (REPLACE mode with history)...")
+                
+                # Get school info if not already fetched
+                if not school_info:
+                    school_info = get_local_school_info()
+                
+                if not school_info:
+                    devices_message = "No school info available - cannot sync devices"
+                    devices_success = False
+                    print(f"❌ DEBUG: {devices_message}")
+                else:
+                    school_name = school_info.get("school_name")
+                    school_email = school_info.get("email")
+                    
+                    print(f"🔍 DEBUG: Syncing devices for school: {school_name} ({school_email})")
+                    
+                    # Get devices from local DB
+                    conn = get_db_connection()
+                    conn.row_factory = sqlite3.Row
+                    cursor = conn.cursor()
+                    
+                    # Check table structure
+                    cursor.execute("PRAGMA table_info(devices)")
+                    columns_info = cursor.fetchall()
+                    column_names = [col[1] for col in columns_info]
+                    has_sync_column = "cloud_sync_status" in column_names
+                    
+                    # Get devices that need syncing
+                    if has_sync_column:
+                        print("🔍 DEBUG: cloud_sync_status column exists")
+                        cursor.execute("""
+                            SELECT * FROM devices 
+                            WHERE cloud_sync_status IN ('pending', 'failed') 
+                               OR cloud_sync_status IS NULL
+                            LIMIT ?
+                        """, (device_batch_size,))
+                    else:
+                        print("🔍 DEBUG: cloud_sync_status column does NOT exist, syncing all devices")
+                        cursor.execute("SELECT * FROM devices LIMIT ?", (device_batch_size,))
+                    
+                    devices = [dict(row) for row in cursor.fetchall()]
+                    conn.close()
+                    
+                    print(f"🔍 DEBUG: Found {len(devices)} devices to sync")
+                    
+                    if not devices:
+                        devices_message = "No devices need syncing (all already synced or no pending devices)"
+                        devices_success = True
+                        print(f"✅ DEBUG: {devices_message}")
+                    else:
+                        successful = 0
+                        failed = 0
+                        history_created = 0
+                        
+                        for device in devices:
+                            device_id = device.get("device_id")
+                            print(f"🔍 DEBUG: Processing device: {device_id} for school {school_name}")
+                            
+                            try:
+                                # Prepare device data for cloud
+                                device_data = {
+                                    "device_id": device_id,
+                                    "device_name": device.get("device_name", "Unknown Device"),
+                                    "device_type": device.get("device_type", "unknown"),
+                                    "os_name": device.get("os_name", "Unknown OS"),
+                                    "os_version": device.get("os_version", "1.0"),
+                                    "activation_key": device.get("activation_key"),
+                                    "activation_status": device.get("activation_status", "pending"),
+                                    "activation_token_hash": device.get("activation_token_hash"),
+                                    "license_type": device.get("license_type", "STANDARD"),
+                                    "activated_at": device.get("activated_at"),
+                                    "license_valid_until": device.get("license_valid_until"),
+                                    "last_license_check": device.get("last_license_check"),
+                                    "last_activated_at": device.get("last_activated_at"),
+                                    "registered_at": device.get("registered_at") or datetime.now().isoformat(),
+                                    "created_at": device.get("created_at") or datetime.now().isoformat(),
+                                    "updated_at": datetime.now().isoformat(),
+                                    "cloud_sync_status": "synced",
+                                    "last_sync_at": datetime.now().isoformat(),
+                                    "sync_attempts": 1,
+                                    "school_name": school_name,
+                                    "school_email": school_email
+                                }
+                                
+                                # Add user info if available
+                                user_id = device.get("user_id")
+                                if user_id:
+                                    try:
+                                        user_conn = get_db_connection()
+                                        user_conn.row_factory = sqlite3.Row
+                                        user_cursor = user_conn.cursor()
+                                        user_cursor.execute("SELECT email, unique_id FROM users WHERE id = ?", (user_id,))
+                                        user = user_cursor.fetchone()
+                                        user_conn.close()
+                                        
+                                        if user:
+                                            device_data["local_user_id"] = user_id
+                                            device_data["local_user_email"] = user["email"]
+                                            device_data["local_user_unique_id"] = user["unique_id"]
+                                    except Exception as e:
+                                        print(f"⚠️ DEBUG: Could not get user info for device {device_id}: {e}")
+                                
+                                # Check if a device already exists for this school
+                                existing_device = cloud_client.execute_query(
+                                    "SELECT device_id, device_name, device_type, os_name, os_version, activation_status, sync_attempts FROM devices WHERE school_email = ?",
+                                    (school_email,)
+                                )
+                                
+                                if existing_device.get("rows"):
+                                    # Device exists for this school - UPDATE all fields (except school info)
+                                    old_device = existing_device["rows"][0]
+                                    old_device_id = old_device["device_id"]
+                                    existing_sync_attempts = old_device.get("sync_attempts", 0)
+                                    
+                                    print(f"🔍 DEBUG: Found existing device {old_device_id} for school {school_name}")
+                                    print(f"🔍 DEBUG: Updating all device fields for school {school_name}")
+                                    print(f"🔍 DEBUG: Old device_id: {old_device_id}, New device_id: {device_id}")
+                                    
+                                    # Create device history entry before updating
+                                    try:
+                                        history_result = cloud_client.execute_query("""
+                                            INSERT INTO device_history 
+                                            (school_email, old_device_id, new_device_id, old_device_name, 
+                                             new_device_name, old_device_type, new_device_type, old_os_name,
+                                             new_os_name, old_os_version, new_os_version, old_activation_status,
+                                             new_activation_status, device_replaced_at, reason)
+                                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                        """, (
+                                            school_email,
+                                            old_device_id,
+                                            device_id,
+                                            old_device.get("device_name", "Unknown"),
+                                            device_data["device_name"],
+                                            old_device.get("device_type", "unknown"),
+                                            device_data["device_type"],
+                                            old_device.get("os_name", "Unknown"),
+                                            device_data["os_name"],
+                                            old_device.get("os_version", "1.0"),
+                                            device_data["os_version"],
+                                            old_device.get("activation_status", "pending"),
+                                            device_data["activation_status"],
+                                            datetime.now().isoformat(),
+                                            "device_replacement_sync"
+                                        ))
+                                        
+                                        if history_result.get("success"):
+                                            history_created += 1
+                                            print(f"✅ DEBUG: Created device history entry for replacement: {old_device_id} -> {device_id}")
+                                        else:
+                                            print(f"⚠️ DEBUG: Failed to create device history entry: {history_result.get('error')}")
+                                    except Exception as e:
+                                        print(f"⚠️ DEBUG: Error creating device history: {e}")
+                                    
+                                    # DELETE the old device and INSERT the new one
+                                    # This handles the UNIQUE constraint on device_id
+                                    print(f"🔍 DEBUG: Deleting old device {old_device_id} and inserting new device {device_id}")
+                                    
+                                    # First, delete the old device
+                                    delete_result = cloud_client.execute_query(
+                                        "DELETE FROM devices WHERE school_email = ?",
+                                        (school_email,)
+                                    )
+                                    
+                                    if not delete_result.get("success"):
+                                        print(f"❌ DEBUG: Failed to delete old device {old_device_id}: {delete_result.get('error')}")
+                                        failed += 1
+                                        continue
+                                    
+                                    print(f"✅ DEBUG: Deleted old device {old_device_id} for school {school_name}")
+                                    
+                                    # Now INSERT the new device
+                                    result = cloud_client.execute_query("""
+                                        INSERT INTO devices 
+                                        (device_id, school_name, school_email, device_name, device_type,
+                                         os_name, os_version, activation_key, activation_status, activation_token_hash,
+                                         license_type, activated_at, license_valid_until, last_license_check,
+                                         last_activated_at, registered_at, created_at, updated_at,
+                                         local_user_id, local_user_email, local_user_unique_id,
+                                         cloud_sync_status, last_sync_at, sync_attempts)
+                                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                    """, (
+                                        device_data["device_id"],
+                                        device_data["school_name"],
+                                        device_data["school_email"],
+                                        device_data["device_name"],
+                                        device_data["device_type"],
+                                        device_data["os_name"],
+                                        device_data["os_version"],
+                                        device_data["activation_key"],
+                                        device_data["activation_status"],
+                                        device_data["activation_token_hash"],
+                                        device_data["license_type"],
+                                        device_data["activated_at"],
+                                        device_data["license_valid_until"],
+                                        device_data["last_license_check"],
+                                        device_data["last_activated_at"],
+                                        device_data["registered_at"],
+                                        device_data["created_at"],
+                                        device_data["updated_at"],
+                                        device_data.get("local_user_id"),
+                                        device_data.get("local_user_email"),
+                                        device_data.get("local_user_unique_id"),
+                                        device_data["cloud_sync_status"],
+                                        device_data["last_sync_at"],
+                                        existing_sync_attempts + 1  # Increment sync attempts from old device
+                                    ))
+                                    
+                                else:
+                                    # No device exists for this school - INSERT new
+                                    print(f"🔍 DEBUG: No existing device for school {school_name}, inserting new device {device_id}")
+                                    
+                                    result = cloud_client.execute_query("""
+                                        INSERT INTO devices 
+                                        (device_id, school_name, school_email, device_name, device_type,
+                                         os_name, os_version, activation_key, activation_status, activation_token_hash,
+                                         license_type, activated_at, license_valid_until, last_license_check,
+                                         last_activated_at, registered_at, created_at, updated_at,
+                                         local_user_id, local_user_email, local_user_unique_id,
+                                         cloud_sync_status, last_sync_at, sync_attempts)
+                                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                    """, (
+                                        device_data["device_id"],
+                                        device_data["school_name"],
+                                        device_data["school_email"],
+                                        device_data["device_name"],
+                                        device_data["device_type"],
+                                        device_data["os_name"],
+                                        device_data["os_version"],
+                                        device_data["activation_key"],
+                                        device_data["activation_status"],
+                                        device_data["activation_token_hash"],
+                                        device_data["license_type"],
+                                        device_data["activated_at"],
+                                        device_data["license_valid_until"],
+                                        device_data["last_license_check"],
+                                        device_data["last_activated_at"],
+                                        device_data["registered_at"],
+                                        device_data["created_at"],
+                                        device_data["updated_at"],
+                                        device_data.get("local_user_id"),
+                                        device_data.get("local_user_email"),
+                                        device_data.get("local_user_unique_id"),
+                                        device_data["cloud_sync_status"],
+                                        device_data["last_sync_at"],
+                                        device_data["sync_attempts"]
+                                    ))
+                                
+                                if result.get("success"):
+                                    successful += 1
+                                    print(f"✅ DEBUG: Device {device_id} synced for school {school_name}")
+                                    
+                                    # Update local sync status
+                                    try:
+                                        update_conn = get_db_connection()
+                                        update_cursor = update_conn.cursor()
+                                        update_cursor.execute("""
+                                            UPDATE devices 
+                                            SET cloud_sync_status = 'synced',
+                                                last_sync_attempt = ?,
+                                                sync_attempts = COALESCE(sync_attempts, 0) + 1
+                                            WHERE id = ?
+                                        """, (datetime.now().isoformat(), device.get("id")))
+                                        update_conn.commit()
+                                        update_conn.close()
+                                        print(f"✅ DEBUG: Updated local sync status for device {device_id}")
+                                    except Exception as e:
+                                        print(f"⚠️ DEBUG: Could not update local sync status for {device_id}: {e}")
+                                else:
+                                    failed += 1
+                                    error_detail = result.get('error', 'Unknown error')
+                                    print(f"❌ DEBUG: Failed to sync device {device_id}: {error_detail}")
+                                    
+                            except Exception as e:
+                                print(f"❌ DEBUG: Error processing device {device_id}: {e}")
+                                import traceback
+                                traceback.print_exc()
+                                failed += 1
+                        
+                        devices_synced = successful
+                        devices_failed = failed
+                        device_history_entries = history_created
+                        devices_success = successful > 0 or (successful == 0 and failed == 0)
+                        devices_message = f"Synced {successful} devices, failed {failed} for school {school_name}, created {history_created} history entries"
+                        
+                        # DEBUG: Check if devices are now in cloud
+                        if successful > 0:
+                            try:
+                                check_result = cloud_client.execute_query("SELECT COUNT(*) as count FROM devices WHERE school_email = ?", (school_email,))
+                                if check_result.get("success") and check_result.get("rows"):
+                                    count = check_result['rows'][0]['count']
+                                    print(f"✅ DEBUG: School {school_name} now has {count} device(s) in cloud")
+                            except Exception as e:
+                                print(f"⚠️ DEBUG: Could not check cloud devices count: {e}")
+                
+                print(f"✅ DEBUG: Devices sync result: {devices_message}")
+                
+                results["steps"]["devices"] = {
+                    "success": devices_success,
+                    "message": devices_message,
+                    "synced": devices_synced,
+                    "failed": devices_failed,
+                    "history_entries": device_history_entries,
+                    "school_name": school_name if school_info else None,
+                    "school_email": school_email if school_info else None
+                }
+                
+            except Exception as e:
+                error_msg = f"Devices sync error: {str(e)}"
+                print(f"❌ DEBUG: {error_msg}")
+                import traceback
+                traceback.print_exc()
+                results["steps"]["devices"] = {
+                    "success": False,
+                    "message": error_msg,
+                    "synced": 0,
+                    "failed": 0,
+                    "history_entries": 0
+                }
+        
+        # Determine overall success
+        all_steps = results.get("steps", {})
+        successful_steps = sum(1 for step in all_steps.values() if step.get("success"))
+        
+        results["success"] = successful_steps > 0
+        
+        # Calculate sync summary
+        results["summary"] = {
+            "total_steps": len(all_steps),
+            "successful_steps": successful_steps,
+            "failed_steps": len(all_steps) - successful_steps,
+            "total_devices_synced": devices_synced,
+            "device_history_entries": device_history_entries
+        }
+        
+        print(f"✅ DEBUG: Complete sync finished with success: {results['success']}")
+        print(f"✅ DEBUG: Summary: {successful_steps}/{len(all_steps)} steps successful")
+        
+        return results
+        
+    except HTTPException as he:
+        print(f"❌ HTTP Exception in /sync/complete: {he.detail}")
+        raise
+    except Exception as e:
+        print(f"❌ Exception in /sync/complete: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Complete sync failed: {str(e)}")
+
+
+# ============================================
+# DEVICE SYNC ENDPOINTS - UPDATED WITH BETTER ERROR HANDLING
+# ============================================
+
+@app.get("/sync/status")
+async def get_sync_status():
+    """Get current sync status"""
+    try:
+        summary = sync_manager.get_sync_summary()
+        online = cloud_client.check_connection()
+        
+        return {
+            "online": online,
+            "sync_summary": summary,
+            "cloud_connected": online,
+            "last_checked": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get sync status: {str(e)}")
+
+
+@app.post("/devices/register")
+async def register_device(req: DeviceRegistrationRequest):
+    """Register a new device locally and sync to cloud"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Check if device already exists
+        cursor.execute("SELECT id FROM devices WHERE device_id = ?", (req.device_id,))
+        existing = cursor.fetchone()
+        
+        if existing:
+            conn.close()
+            raise HTTPException(status_code=400, detail="Device already registered")
+        
+        # Insert into local database
+        cursor.execute("""
+            INSERT INTO devices 
+            (device_id, device_name, device_type, os_name, os_version, 
+             activation_key, user_id, registered_at, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            req.device_id,
+            req.device_name,
+            req.device_type,
+            req.os_name,
+            req.os_version,
+            req.activation_key,
+            req.user_id,
+            datetime.now().isoformat(),
+            datetime.now().isoformat(),
+            datetime.now().isoformat()
+        ))
+        
+        device_id = cursor.lastrowid
+        conn.commit()
+        
+        # Get the newly inserted device
+        cursor.execute("SELECT * FROM devices WHERE id = ?", (device_id,))
+        device_row = cursor.fetchone()
+        
+        # Convert to dict
+        column_names = [description[0] for description in cursor.description]
+        device_dict = dict(zip(column_names, device_row))
+        
+        conn.close()
+        
+        # Try to sync to cloud if online
+        cloud_synced = False
+        cloud_message = "Offline - will sync later"
+        
+        if cloud_client.check_connection():
+            sync_result = sync_manager.sync_single_device(device_dict)
+            cloud_synced = sync_result.get("success", False)
+            cloud_message = sync_result.get("message", "Unknown error")
+        
+        return {
+            "success": True,
+            "message": "Device registered successfully",
+            "local_device_id": device_id,
+            "device_identifier": req.device_id,
+            "cloud_synced": cloud_synced,
+            "cloud_message": cloud_message,
+            "next_step": "activation" if not req.activation_key else "complete"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to register device: {str(e)}")
+
+@app.get("/devices/local")
+async def get_local_devices(limit: int = 100, offset: int = 0):
+    """Get all devices from local database"""
+    try:
+        conn = get_db_connection()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT d.*, u.email as user_email
+            FROM devices d
+            LEFT JOIN users u ON d.user_id = u.id
+            ORDER BY d.created_at DESC
+            LIMIT ? OFFSET ?
+        """, (limit, offset))
+        
+        devices = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+        
+        return {
+            "success": True,
+            "count": len(devices),
+            "devices": devices
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get local devices: {str(e)}")
+
+@app.get("/devices/cloud")
+async def get_cloud_devices():
+    """Get devices from cloud database for this school"""
+    try:
+        if not cloud_client.check_connection():
+            raise HTTPException(status_code=503, detail="Cannot connect to cloud database")
+        
+        # Get school info to filter devices
+        school_info = sync_manager.get_school_info()
+        
+        if not school_info:
+            return {"success": False, "message": "No school info found", "devices": []}
+        
+        school_name = school_info.get("school_name")
+        
+        if not school_name:
+            return {"success": False, "message": "School name not found", "devices": []}
+        
+        # Query cloud devices for this school
+        result = cloud_client.execute_query(
+            "SELECT * FROM devices WHERE school_name = ? ORDER BY created_at DESC",
+            (school_name,)
+        )
+        
+        if result.get("success"):
+            return {
+                "success": True,
+                "count": len(result.get("rows", [])),
+                "devices": result.get("rows", [])
+            }
+        else:
+            return {
+                "success": False,
+                "message": "Failed to fetch devices from cloud",
+                "devices": []
+            }
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get cloud devices: {str(e)}")
+@app.get("/health/test")
+async def health_test():
+    """Simple health check endpoint"""
+    return {
+        "status": "ok",
+        "service": "school-management-system",
+        "timestamp": datetime.now().isoformat(),
+        "endpoints": {
+            "sync_devices": "POST /sync/devices",
+            "register_device": "POST /devices/register",
+            "sync_status": "GET /sync/status",
+            "health_connectivity": "GET /health/connectivity"
+        }
+    }
+    
+    
+    
+@app.post("/recovery/import")
+async def import_recovery(req: RecoveryImportRequest):
+    """
+    Import encrypted recovery blob from cloud.
+    This WILL wipe local data and force reactivation.
+    """
+    try:
+        payload = decrypt_recovery_blob(
+            req.encrypted_backup,
+            req.school_email
+        )
+
+        validate_recovery_payload(payload)
+
+        conn = get_db_connection()
+
+        wipe_local_database(conn)
+        import_school_from_recovery(conn, payload["school"])
+        import_admins_from_recovery(conn, payload["admins"])
+        reset_activation_state(conn)
+
+        conn.commit()
+        conn.close()
+
+        return {
+            "success": True,
+            "message": "Recovery completed successfully",
+            "admins_imported": len(payload["admins"]),
+            "system_activated": False,
+            "next_step": "activation_required"
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Recovery failed: {str(e)}"
+        )
+
+
+@app.get("/devices/{device_id}/sync")
+async def sync_single_device(device_id: str):
+    """Sync a specific device by device_id"""
+    try:
+        if not cloud_client.check_connection():
+            raise HTTPException(status_code=503, detail="Cannot connect to cloud database")
+        
+        # Get device from local DB
+        conn = get_db_connection()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM devices WHERE device_id = ?", (device_id,))
+        device = cursor.fetchone()
+        conn.close()
+        
+        if not device:
+            raise HTTPException(status_code=404, detail="Device not found locally")
+        
+        # Sync to cloud
+        result = sync_manager.sync_single_device(dict(device))
+        
+        return {
+            "success": result.get("success", False),
+            "message": result.get("message", "Sync completed"),
+            "device_id": device_id,
+            "action": result.get("action", "unknown")
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to sync device: {str(e)}")
+
+@app.on_event("shutdown")
+def shutdown_event():
+    """Clean up connections on shutdown"""
+    cloud_client.close()
