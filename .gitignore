@@ -27,6 +27,7 @@ backend/database/__pycache__/
 backend/app/activation/__pycache__/*
 .backend/app/auth/__pycache__/*
 backend/database/school.db
+backend/database/_school_debug.db
 !.vscode/extensions.json
 .idea
 .DS_Store

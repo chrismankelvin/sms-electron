@@ -1,5 +1,5 @@
 
-
+# backend/app/main.py
 # main.py - Updated to remove JSON dependencies
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -81,11 +81,21 @@ def check_school_setup_complete() -> bool:
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT id FROM school_info LIMIT 1")
-        result = cursor.fetchone() is not None
+        cursor.execute("SELECT id, school_name FROM school_info LIMIT 1")
+        row = cursor.fetchone()
+        
+        if row:
+            school_id, school_name = row
+            print(f"School found - ID: {school_id}, Name: {school_name}")
+            result = True
+        else:
+            print("No school found in database")
+            result = False
+            
         conn.close()
         return result
-    except:
+    except Exception as e:
+        print(f"School check failed: {e}")
         return False
 
 def check_admin_setup_complete() -> bool:
@@ -93,13 +103,33 @@ def check_admin_setup_complete() -> bool:
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT id FROM users WHERE role = 'admin' LIMIT 1")
-        result = cursor.fetchone() is not None
+        cursor.execute("SELECT id, username, role FROM users WHERE role = 'admin' LIMIT 1")
+        row = cursor.fetchone()
+        
+        if row:
+            admin_id, username, role = row
+            print(f"Admin found - ID: {admin_id}, Username: {username}, Role: {role}")
+            result = True
+        else:
+            print("No admin user found in database")
+            
+            # Optional: Show all users for debugging
+            cursor.execute("SELECT id, username, role FROM users")
+            all_users = cursor.fetchall()
+            if all_users:
+                print("Other users in database:")
+                for user in all_users:
+                    print(f"   - ID: {user[0]}, Username: {user[1]}, Role: {user[2]}")
+            else:
+                print("No users at all in database")
+                
+            result = False
+            
         conn.close()
         return result
-    except:
+    except Exception as e:
+        print(f"Admin check failed: {e}")
         return False
-
 def save_school_to_local_db(data: dict) -> bool:
     """Save school info to local database"""
     try:
@@ -403,7 +433,7 @@ async def setup_school_and_admin(req: SchoolAndAdminRequest):
                 detail="Cannot connect to cloud database. Please check your internet connection."
             )
         
-        print(f"🔍 DEBUG: Starting school and admin setup for: {req.school_name}")
+        print(f"[debug] DEBUG: Starting school and admin setup for: {req.school_name}")
         
         # ===== 1. CREATE SCHOOL IN CLOUD =====
         school_data = {
@@ -420,34 +450,34 @@ async def setup_school_and_admin(req: SchoolAndAdminRequest):
             "created_at": datetime.now().isoformat()
         }
         
-        print(f"🔍 DEBUG: Inserting school into cloud: {req.school_name}")
+        print(f"[debug] DEBUG: Inserting school into cloud: {req.school_name}")
         school_id = cloud_client.insert_school(school_data)
         
         if not school_id:
-            print(f"❌ DEBUG: School insertion failed - no school_id returned")
+            print(f"[ERROR] DEBUG: School insertion failed - no school_id returned")
             raise HTTPException(status_code=500, detail="Failed to create school in cloud database")
         
-        print(f"✅ DEBUG: School inserted with ID: {school_id}")
+        print(f"[ok] DEBUG: School inserted with ID: {school_id}")
         
         # VERIFY SCHOOL WAS ACTUALLY CREATED
-        print(f"🔍 DEBUG: Verifying school creation...")
+        print(f"[debug] DEBUG: Verifying school creation...")
         school_check = cloud_client.execute_query(
             "SELECT id, school_name FROM school_installations WHERE id = ?",
             (school_id,)
         )
         
         if not school_check.get("success"):
-            print(f"❌ DEBUG: School verification query failed: {school_check.get('error')}")
+            print(f"[ERROR] DEBUG: School verification query failed: {school_check.get('error')}")
             raise HTTPException(status_code=500, detail="Failed to verify school creation")
         
         if not school_check.get("rows"):
-            print(f"❌ DEBUG: School not found in cloud after insertion")
+            print(f"[ERROR] DEBUG: School not found in cloud after insertion")
             raise HTTPException(status_code=500, detail="School not found after creation")
         
-        print(f"✅ DEBUG: School verified: {school_check['rows'][0]['school_name']}")
+        print(f"[ok] DEBUG: School verified: {school_check['rows'][0]['school_name']}")
         
         # ===== 2. CHECK FOR DUPLICATE ADMIN =====
-        print(f"🔍 DEBUG: Checking for duplicate admin...")
+        print(f"[debug] DEBUG: Checking for duplicate admin...")
         
         # Check by email
         email_check = cloud_client.execute_query(
@@ -456,7 +486,7 @@ async def setup_school_and_admin(req: SchoolAndAdminRequest):
         )
         
         if email_check.get("rows"):
-            print(f"❌ DEBUG: Admin email {req.admin_email} already exists!")
+            print(f"[ERROR] DEBUG: Admin email {req.admin_email} already exists!")
             # Clean up school
             cloud_client.execute_query("DELETE FROM school_installations WHERE id = ?", (school_id,))
             raise HTTPException(
@@ -471,7 +501,7 @@ async def setup_school_and_admin(req: SchoolAndAdminRequest):
         )
         
         if contact_check.get("rows"):
-            print(f"❌ DEBUG: Admin contact {req.contact} already exists!")
+            print(f"[ERROR] DEBUG: Admin contact {req.contact} already exists!")
             # Clean up school
             cloud_client.execute_query("DELETE FROM school_installations WHERE id = ?", (school_id,))
             raise HTTPException(
@@ -479,7 +509,7 @@ async def setup_school_and_admin(req: SchoolAndAdminRequest):
                 detail=f"Contact number {req.contact} is already registered. Please use a different contact."
             )
         
-        print(f"✅ DEBUG: No duplicate admin found")
+        print(f"[ok] DEBUG: No duplicate admin found")
         
         # ===== 3. CREATE ADMIN IN CLOUD =====
         admin_data = {
@@ -494,21 +524,21 @@ async def setup_school_and_admin(req: SchoolAndAdminRequest):
             "created_at": datetime.now().isoformat()
         }
         
-        print(f"🔍 DEBUG: Creating new admin in cloud: {req.admin_email}")
+        print(f"[debug] DEBUG: Creating new admin in cloud: {req.admin_email}")
         
         # Call insert_admin directly (it should handle duplicates but we already checked)
         admin_id = cloud_client.insert_admin(school_id, admin_data)
         
         if not admin_id:
-            print(f"❌ DEBUG: Admin insertion failed - no admin_id returned")
+            print(f"[ERROR] DEBUG: Admin insertion failed - no admin_id returned")
             # Clean up school
             cloud_client.execute_query("DELETE FROM school_installations WHERE id = ?", (school_id,))
             raise HTTPException(status_code=500, detail="Failed to create admin in cloud database")
         
-        print(f"✅ DEBUG: Admin created with ID: {admin_id}")
+        print(f"[ok] DEBUG: Admin created with ID: {admin_id}")
         
         # ===== 4. VERIFY ADMIN CREATION =====
-        print(f"🔍 DEBUG: Verifying admin creation...")
+        print(f"[debug] DEBUG: Verifying admin creation...")
         
         # First, check if we got a NEW admin ID (not an existing one)
         admin_check = cloud_client.execute_query(
@@ -517,24 +547,24 @@ async def setup_school_and_admin(req: SchoolAndAdminRequest):
         )
         
         if not admin_check.get("success"):
-            print(f"❌ DEBUG: Admin verification query failed")
+            print(f"[ERROR] DEBUG: Admin verification query failed")
             # Clean up
             cloud_client.execute_query("DELETE FROM admin_table WHERE id = ?", (admin_id,))
             cloud_client.execute_query("DELETE FROM school_installations WHERE id = ?", (school_id,))
             raise HTTPException(status_code=500, detail="Failed to verify admin creation")
         
         if not admin_check.get("rows"):
-            print(f"❌ DEBUG: Admin not found after creation")
+            print(f"[ERROR] DEBUG: Admin not found after creation")
             # Clean up school
             cloud_client.execute_query("DELETE FROM school_installations WHERE id = ?", (school_id,))
             raise HTTPException(status_code=500, detail="Admin not found after creation")
         
         admin_info = admin_check['rows'][0]
-        print(f"✅ DEBUG: Admin found: {admin_info['email']}")
+        print(f"[ok] DEBUG: Admin found: {admin_info['email']}")
         
         # Verify it's linked to OUR school
         if admin_info['school_id'] != school_id:
-            print(f"❌ DEBUG: Admin created with wrong school_id!")
+            print(f"[ERROR] DEBUG: Admin created with wrong school_id!")
             print(f"  Expected: {school_id}, Got: {admin_info['school_id']}")
             # Clean up both
             cloud_client.execute_query("DELETE FROM admin_table WHERE id = ?", (admin_id,))
@@ -543,30 +573,30 @@ async def setup_school_and_admin(req: SchoolAndAdminRequest):
         
         # Verify email matches
         if admin_info['email'] != req.admin_email:
-            print(f"❌ DEBUG: Admin email mismatch!")
+            print(f"[ERROR] DEBUG: Admin email mismatch!")
             print(f"  Expected: {req.admin_email}, Got: {admin_info['email']}")
             # Clean up both
             cloud_client.execute_query("DELETE FROM admin_table WHERE id = ?", (admin_id,))
             cloud_client.execute_query("DELETE FROM school_installations WHERE id = ?", (school_id,))
             raise HTTPException(status_code=500, detail="Admin email mismatch")
         
-        print(f"✅ DEBUG: Admin properly created and verified")
+        print(f"[ok] DEBUG: Admin properly created and verified")
         
         # ===== 5. SAVE TO LOCAL DATABASE =====
         local_errors = []
         
         # Save school to local DB
-        print(f"🔍 DEBUG: Saving school to local database...")
+        print(f"[debug] DEBUG: Saving school to local database...")
         local_school_success = save_school_to_local_db(school_data)
         
         if not local_school_success:
             local_errors.append("Failed to save school to local database")
-            print(f"⚠️ WARNING: Failed to save school to local database")
+            print(f"[warn] WARNING: Failed to save school to local database")
         else:
-            print(f"✅ DEBUG: School saved to local database")
+            print(f"[ok] DEBUG: School saved to local database")
         
         # Save admin to local DB
-        print(f"🔍 DEBUG: Saving admin to local database...")
+        print(f"[debug] DEBUG: Saving admin to local database...")
         local_admin_success = save_admin_to_local_db({
             "email": req.admin_email,
             "password": req.password,
@@ -578,12 +608,12 @@ async def setup_school_and_admin(req: SchoolAndAdminRequest):
         
         if not local_admin_success:
             local_errors.append("Failed to save admin to local database")
-            print(f"⚠️ WARNING: Failed to save admin to local database")
+            print(f"[warn] WARNING: Failed to save admin to local database")
         else:
-            print(f"✅ DEBUG: Admin saved to local database")
+            print(f"[ok] DEBUG: Admin saved to local database")
         
         # ===== 6. FINAL CONFIRMATION =====
-        print(f"🔍 DEBUG: Final confirmation...")
+        print(f"[debug] DEBUG: Final confirmation...")
         
         # Simple count check
         school_count = cloud_client.execute_query(
@@ -600,10 +630,10 @@ async def setup_school_and_admin(req: SchoolAndAdminRequest):
             not admin_count.get("success") or
             school_count['rows'][0]['count'] != 1 or
             admin_count['rows'][0]['count'] != 1):
-            print(f"❌ DEBUG: Final count verification failed!")
+            print(f"[ERROR] DEBUG: Final count verification failed!")
             raise HTTPException(status_code=500, detail="Final verification failed")
         
-        print(f"✅ DEBUG: Setup completed successfully!")
+        print(f"[ok] DEBUG: Setup completed successfully!")
         print(f"  School ID: {school_id}")
         print(f"  Admin ID: {admin_id}")
         
@@ -624,7 +654,7 @@ async def setup_school_and_admin(req: SchoolAndAdminRequest):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ ERROR in setup_school_and_admin: {str(e)}")
+        print(f"[ERROR] ERROR in setup_school_and_admin: {str(e)}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Setup failed: {str(e)}")
@@ -718,13 +748,13 @@ async def activate(req: ActivationRequest):
             # Save the updated settings
             mini_settings_service.save_all_settings(updated_settings)
             
-            print("✅ Mini-settings reset: hasSeenMiniSettings = False")
+            print("[ok] Mini-settings reset: hasSeenMiniSettings = False")
             print(f"   Settings preserved: theme={current_settings.get('theme')}, "
                   f"screensaver={current_settings.get('screensaver')}, "
                   f"schoolType={current_settings.get('schoolType')}")
             
         except Exception as settings_error:
-            print(f"⚠️ Could not reset mini-settings: {settings_error}")
+            print(f"[warn] Could not reset mini-settings: {settings_error}")
             # Don't fail activation if settings reset fails
             # Just log it and continue
             
@@ -745,14 +775,14 @@ async def activate(req: ActivationRequest):
                 cloud_client.execute_query(query, (req.code, req.school_name))
                 
                 cloud_success = True
-                print("✅ Activation saved to cloud database")
+                print("[ok] Activation saved to cloud database")
                 
             except Exception as e:
                 cloud_error = str(e)
-                print(f"⚠️ Cloud save failed: {e}")
+                print(f"[warn] Cloud save failed: {e}")
         else:
             cloud_error = "Cannot connect to cloud database"
-            print("⚠️ Skipping cloud save (offline)")
+            print("[warn] Skipping cloud save (offline)")
         
         # Build success message
         message = result["message"]
@@ -892,18 +922,18 @@ async def complete_sync(req: CompleteSyncRequest):
         sync_devices = data.get('syncDevices', data.get('sync_devices', True))
         device_batch_size = data.get('deviceBatchSize', data.get('device_batch_size', 20))
         
-        print(f"🔍 DEBUG: /sync/complete endpoint called")
-        print(f"🔍 DEBUG: sync_school={sync_school}, sync_activation={sync_activation}, sync_devices={sync_devices}")
+        print(f"[debug] DEBUG: /sync/complete endpoint called")
+        print(f"[debug] DEBUG: sync_school={sync_school}, sync_activation={sync_activation}, sync_devices={sync_devices}")
         
         # Check connectivity
         if not cloud_client.check_connection():
-            print("❌ DEBUG: Cloud client connection check failed")
+            print("[ERROR] DEBUG: Cloud client connection check failed")
             raise HTTPException(
                 status_code=503, 
                 detail="Cannot connect to cloud database. Please check your internet connection."
             )
         
-        print("✅ DEBUG: Cloud connection successful")
+        print("[ok] DEBUG: Cloud connection successful")
         
         results = {
             "success": False,
@@ -924,7 +954,7 @@ async def complete_sync(req: CompleteSyncRequest):
                 conn.close()
                 return dict(row) if row else None
             except Exception as e:
-                print(f"❌ DEBUG: Error getting school info: {e}")
+                print(f"[ERROR] DEBUG: Error getting school info: {e}")
                 return None
         
         # Helper function to get activation data from local DB
@@ -938,7 +968,7 @@ async def complete_sync(req: CompleteSyncRequest):
                 conn.close()
                 return activation_state
             except Exception as e:
-                print(f"❌ DEBUG: Error getting activation data: {e}")
+                print(f"[ERROR] DEBUG: Error getting activation data: {e}")
                 return None
         
         # Variables to share between steps
@@ -950,14 +980,14 @@ async def complete_sync(req: CompleteSyncRequest):
         # STEP 1: Sync school to school_installations table
         if sync_school:
             try:
-                print("🔍 DEBUG: Starting school sync...")
+                print("[debug] DEBUG: Starting school sync...")
                 
                 # Get school info from local
                 school_info = get_local_school_info()
                 
                 if not school_info:
                     school_message = "No school info found locally"
-                    print(f"❌ DEBUG: {school_message}")
+                    print(f"[ERROR] DEBUG: {school_message}")
                 else:
                     school_name = school_info.get("school_name")
                     school_email = school_info.get("email")
@@ -979,7 +1009,7 @@ async def complete_sync(req: CompleteSyncRequest):
                         school_id = existing_school["rows"][0]["id"]
                         school_message = f"School already exists in cloud (ID: {school_id})"
                         school_success = True
-                        print(f"✅ DEBUG: {school_message}")
+                        print(f"[ok] DEBUG: {school_message}")
                     else:
                         # Create new school in school_installations table
                         insert_result = cloud_client.execute_query("""
@@ -1004,13 +1034,13 @@ async def complete_sync(req: CompleteSyncRequest):
                                 school_id = school_result["rows"][0]["id"]
                                 school_message = f"School created in cloud (ID: {school_id})"
                                 school_success = True
-                                print(f"✅ DEBUG: {school_message}")
+                                print(f"[ok] DEBUG: {school_message}")
                             else:
                                 school_message = "School created but failed to get ID"
-                                print(f"❌ DEBUG: {school_message}")
+                                print(f"[ERROR] DEBUG: {school_message}")
                         else:
                             school_message = "Failed to create school in cloud"
-                            print(f"❌ DEBUG: {school_message}")
+                            print(f"[ERROR] DEBUG: {school_message}")
                 
                 results["steps"]["school"] = {
                     "success": school_success,
@@ -1020,7 +1050,7 @@ async def complete_sync(req: CompleteSyncRequest):
                 
             except Exception as e:
                 error_msg = f"School sync error: {str(e)}"
-                print(f"❌ DEBUG: {error_msg}")
+                print(f"[ERROR] DEBUG: {error_msg}")
                 results["steps"]["school"] = {
                     "success": False,
                     "message": error_msg
@@ -1033,20 +1063,20 @@ async def complete_sync(req: CompleteSyncRequest):
         
         if sync_activation:
             try:
-                print("🔍 DEBUG: Starting activation sync...")
+                print("[debug] DEBUG: Starting activation sync...")
                 
                 # Get activation data from local
                 activation_state = get_local_activation_data()
                 
                 if not activation_state or len(activation_state) < 3:
                     activation_message = "No activation data found locally"
-                    print(f"❌ DEBUG: {activation_message}")
+                    print(f"[ERROR] DEBUG: {activation_message}")
                 else:
                     activation_code = activation_state[2] if len(activation_state) > 2 else ""
                     
                     if not activation_code:
                         activation_message = "No activation code found"
-                        print(f"❌ DEBUG: {activation_message}")
+                        print(f"[ERROR] DEBUG: {activation_message}")
                     else:
                         # Get school info if not already fetched
                         if not school_info:
@@ -1054,7 +1084,7 @@ async def complete_sync(req: CompleteSyncRequest):
                         
                         if not school_info:
                             activation_message = "No school info found for activation"
-                            print(f"❌ DEBUG: {activation_message}")
+                            print(f"[ERROR] DEBUG: {activation_message}")
                         else:
                             school_email = school_info.get("email")
                             
@@ -1070,7 +1100,7 @@ async def complete_sync(req: CompleteSyncRequest):
                                 if device_result and device_result[0]:
                                     device_name = device_result[0]
                             except Exception as e:
-                                print(f"⚠️ DEBUG: Could not get device name: {e}")
+                                print(f"[warn] DEBUG: Could not get device name: {e}")
                             
                             # Update school_installations with activation code and device_name
                             update_result = cloud_client.execute_query("""
@@ -1087,10 +1117,10 @@ async def complete_sync(req: CompleteSyncRequest):
                             if update_result.get("success"):
                                 activation_success = True
                                 activation_message = f"Activation data synced (Code: {activation_code})"
-                                print(f"✅ DEBUG: {activation_message}")
+                                print(f"[ok] DEBUG: {activation_message}")
                             else:
                                 activation_message = "Failed to update activation in cloud"
-                                print(f"❌ DEBUG: {activation_message}")
+                                print(f"[ERROR] DEBUG: {activation_message}")
                 
                 results["steps"]["activation"] = {
                     "success": activation_success,
@@ -1100,7 +1130,7 @@ async def complete_sync(req: CompleteSyncRequest):
                 
             except Exception as e:
                 error_msg = f"Activation sync error: {str(e)}"
-                print(f"❌ DEBUG: {error_msg}")
+                print(f"[ERROR] DEBUG: {error_msg}")
                 results["steps"]["activation"] = {
                     "success": False,
                     "message": error_msg
@@ -1115,7 +1145,7 @@ async def complete_sync(req: CompleteSyncRequest):
         
         if sync_devices:
             try:
-                print("🔍 DEBUG: Starting devices sync (REPLACE mode with history)...")
+                print("[debug] DEBUG: Starting devices sync (REPLACE mode with history)...")
                 
                 # Get school info if not already fetched
                 if not school_info:
@@ -1124,12 +1154,12 @@ async def complete_sync(req: CompleteSyncRequest):
                 if not school_info:
                     devices_message = "No school info available - cannot sync devices"
                     devices_success = False
-                    print(f"❌ DEBUG: {devices_message}")
+                    print(f"[ERROR] DEBUG: {devices_message}")
                 else:
                     school_name = school_info.get("school_name")
                     school_email = school_info.get("email")
                     
-                    print(f"🔍 DEBUG: Syncing devices for school: {school_name} ({school_email})")
+                    print(f"[debug] DEBUG: Syncing devices for school: {school_name} ({school_email})")
                     
                     # Get devices from local DB
                     conn = get_db_connection()
@@ -1144,7 +1174,7 @@ async def complete_sync(req: CompleteSyncRequest):
                     
                     # Get devices that need syncing
                     if has_sync_column:
-                        print("🔍 DEBUG: cloud_sync_status column exists")
+                        print("[debug] DEBUG: cloud_sync_status column exists")
                         cursor.execute("""
                             SELECT * FROM devices 
                             WHERE cloud_sync_status IN ('pending', 'failed') 
@@ -1152,18 +1182,18 @@ async def complete_sync(req: CompleteSyncRequest):
                             LIMIT ?
                         """, (device_batch_size,))
                     else:
-                        print("🔍 DEBUG: cloud_sync_status column does NOT exist, syncing all devices")
+                        print("[debug] DEBUG: cloud_sync_status column does NOT exist, syncing all devices")
                         cursor.execute("SELECT * FROM devices LIMIT ?", (device_batch_size,))
                     
                     devices = [dict(row) for row in cursor.fetchall()]
                     conn.close()
                     
-                    print(f"🔍 DEBUG: Found {len(devices)} devices to sync")
+                    print(f"[debug] DEBUG: Found {len(devices)} devices to sync")
                     
                     if not devices:
                         devices_message = "No devices need syncing (all already synced or no pending devices)"
                         devices_success = True
-                        print(f"✅ DEBUG: {devices_message}")
+                        print(f"[ok] DEBUG: {devices_message}")
                     else:
                         successful = 0
                         failed = 0
@@ -1171,7 +1201,7 @@ async def complete_sync(req: CompleteSyncRequest):
                         
                         for device in devices:
                             device_id = device.get("device_id")
-                            print(f"🔍 DEBUG: Processing device: {device_id} for school {school_name}")
+                            print(f"[debug] DEBUG: Processing device: {device_id} for school {school_name}")
                             
                             try:
                                 # Prepare device data for cloud
@@ -1215,7 +1245,7 @@ async def complete_sync(req: CompleteSyncRequest):
                                             device_data["local_user_email"] = user["email"]
                                             device_data["local_user_unique_id"] = user["unique_id"]
                                     except Exception as e:
-                                        print(f"⚠️ DEBUG: Could not get user info for device {device_id}: {e}")
+                                        print(f"[warn] DEBUG: Could not get user info for device {device_id}: {e}")
                                 
                                 # Check if a device already exists for this school
                                 existing_device = cloud_client.execute_query(
@@ -1229,9 +1259,9 @@ async def complete_sync(req: CompleteSyncRequest):
                                     old_device_id = old_device["device_id"]
                                     existing_sync_attempts = old_device.get("sync_attempts", 0)
                                     
-                                    print(f"🔍 DEBUG: Found existing device {old_device_id} for school {school_name}")
-                                    print(f"🔍 DEBUG: Updating all device fields for school {school_name}")
-                                    print(f"🔍 DEBUG: Old device_id: {old_device_id}, New device_id: {device_id}")
+                                    print(f"[debug] DEBUG: Found existing device {old_device_id} for school {school_name}")
+                                    print(f"[debug] DEBUG: Updating all device fields for school {school_name}")
+                                    print(f"[debug] DEBUG: Old device_id: {old_device_id}, New device_id: {device_id}")
                                     
                                     # Create device history entry before updating
                                     try:
@@ -1262,15 +1292,15 @@ async def complete_sync(req: CompleteSyncRequest):
                                         
                                         if history_result.get("success"):
                                             history_created += 1
-                                            print(f"✅ DEBUG: Created device history entry for replacement: {old_device_id} -> {device_id}")
+                                            print(f"[ok] DEBUG: Created device history entry for replacement: {old_device_id} -> {device_id}")
                                         else:
-                                            print(f"⚠️ DEBUG: Failed to create device history entry: {history_result.get('error')}")
+                                            print(f"[warn] DEBUG: Failed to create device history entry: {history_result.get('error')}")
                                     except Exception as e:
-                                        print(f"⚠️ DEBUG: Error creating device history: {e}")
+                                        print(f"[warn] DEBUG: Error creating device history: {e}")
                                     
                                     # DELETE the old device and INSERT the new one
                                     # This handles the UNIQUE constraint on device_id
-                                    print(f"🔍 DEBUG: Deleting old device {old_device_id} and inserting new device {device_id}")
+                                    print(f"[debug] DEBUG: Deleting old device {old_device_id} and inserting new device {device_id}")
                                     
                                     # First, delete the old device
                                     delete_result = cloud_client.execute_query(
@@ -1279,11 +1309,11 @@ async def complete_sync(req: CompleteSyncRequest):
                                     )
                                     
                                     if not delete_result.get("success"):
-                                        print(f"❌ DEBUG: Failed to delete old device {old_device_id}: {delete_result.get('error')}")
+                                        print(f"[ERROR] DEBUG: Failed to delete old device {old_device_id}: {delete_result.get('error')}")
                                         failed += 1
                                         continue
                                     
-                                    print(f"✅ DEBUG: Deleted old device {old_device_id} for school {school_name}")
+                                    print(f"[ok] DEBUG: Deleted old device {old_device_id} for school {school_name}")
                                     
                                     # Now INSERT the new device
                                     result = cloud_client.execute_query("""
@@ -1324,7 +1354,7 @@ async def complete_sync(req: CompleteSyncRequest):
                                     
                                 else:
                                     # No device exists for this school - INSERT new
-                                    print(f"🔍 DEBUG: No existing device for school {school_name}, inserting new device {device_id}")
+                                    print(f"[debug] DEBUG: No existing device for school {school_name}, inserting new device {device_id}")
                                     
                                     result = cloud_client.execute_query("""
                                         INSERT INTO devices 
@@ -1364,7 +1394,7 @@ async def complete_sync(req: CompleteSyncRequest):
                                 
                                 if result.get("success"):
                                     successful += 1
-                                    print(f"✅ DEBUG: Device {device_id} synced for school {school_name}")
+                                    print(f"[ok] DEBUG: Device {device_id} synced for school {school_name}")
                                     
                                     # Update local sync status
                                     try:
@@ -1379,16 +1409,16 @@ async def complete_sync(req: CompleteSyncRequest):
                                         """, (datetime.now().isoformat(), device.get("id")))
                                         update_conn.commit()
                                         update_conn.close()
-                                        print(f"✅ DEBUG: Updated local sync status for device {device_id}")
+                                        print(f"[ok] DEBUG: Updated local sync status for device {device_id}")
                                     except Exception as e:
-                                        print(f"⚠️ DEBUG: Could not update local sync status for {device_id}: {e}")
+                                        print(f"[warn] DEBUG: Could not update local sync status for {device_id}: {e}")
                                 else:
                                     failed += 1
                                     error_detail = result.get('error', 'Unknown error')
-                                    print(f"❌ DEBUG: Failed to sync device {device_id}: {error_detail}")
+                                    print(f"[ERROR] DEBUG: Failed to sync device {device_id}: {error_detail}")
                                     
                             except Exception as e:
-                                print(f"❌ DEBUG: Error processing device {device_id}: {e}")
+                                print(f"[ERROR] DEBUG: Error processing device {device_id}: {e}")
                                 import traceback
                                 traceback.print_exc()
                                 failed += 1
@@ -1405,11 +1435,11 @@ async def complete_sync(req: CompleteSyncRequest):
                                 check_result = cloud_client.execute_query("SELECT COUNT(*) as count FROM devices WHERE school_email = ?", (school_email,))
                                 if check_result.get("success") and check_result.get("rows"):
                                     count = check_result['rows'][0]['count']
-                                    print(f"✅ DEBUG: School {school_name} now has {count} device(s) in cloud")
+                                    print(f"[ok] DEBUG: School {school_name} now has {count} device(s) in cloud")
                             except Exception as e:
-                                print(f"⚠️ DEBUG: Could not check cloud devices count: {e}")
+                                print(f"[warn] DEBUG: Could not check cloud devices count: {e}")
                 
-                print(f"✅ DEBUG: Devices sync result: {devices_message}")
+                print(f"[ok] DEBUG: Devices sync result: {devices_message}")
                 
                 results["steps"]["devices"] = {
                     "success": devices_success,
@@ -1423,7 +1453,7 @@ async def complete_sync(req: CompleteSyncRequest):
                 
             except Exception as e:
                 error_msg = f"Devices sync error: {str(e)}"
-                print(f"❌ DEBUG: {error_msg}")
+                print(f"[ERROR] DEBUG: {error_msg}")
                 import traceback
                 traceback.print_exc()
                 results["steps"]["devices"] = {
@@ -1449,16 +1479,16 @@ async def complete_sync(req: CompleteSyncRequest):
             "device_history_entries": device_history_entries
         }
         
-        print(f"✅ DEBUG: Complete sync finished with success: {results['success']}")
-        print(f"✅ DEBUG: Summary: {successful_steps}/{len(all_steps)} steps successful")
+        print(f"[ok] DEBUG: Complete sync finished with success: {results['success']}")
+        print(f"[ok] DEBUG: Summary: {successful_steps}/{len(all_steps)} steps successful")
         
         return results
         
     except HTTPException as he:
-        print(f"❌ HTTP Exception in /sync/complete: {he.detail}")
+        print(f"[ERROR] HTTP Exception in /sync/complete: {he.detail}")
         raise
     except Exception as e:
-        print(f"❌ Exception in /sync/complete: {str(e)}")
+        print(f"[ERROR] Exception in /sync/complete: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Complete sync failed: {str(e)}")
 
 

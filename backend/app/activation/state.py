@@ -323,7 +323,7 @@ def ensure_all_tables():
 
     conn.commit()
     conn.close()
-    print("✅ All required tables are ensured in the encrypted database.")
+    print(" All required tables are ensured in the encrypted database.")
 
 
 

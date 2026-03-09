@@ -1,628 +1,7 @@
-// // import { useState } from "react";
-// // import { ArrowRight, Mail, Phone, MapPin, Home } from "lucide-react";
-// // import Notification from "../components/Notification";
-// // import "../styles/school-details.css";
-// // import "../styles/global.css";
-
-
-// // export default function SchoolDetailsPage() {
-// //   const [step, setStep] = useState(1);
-// //   const [notification, setNotification] = useState({ message: "", type: "" });
-// //   const [loading, setLoading] = useState(false);
-// //   const [formData, setFormData] = useState({
-// //     schoolName: "",
-// //     schoolEmail: "",
-// //     schoolContact: "",
-// //     county: "",
-// //     region: "",
-// //     city: "",
-// //     town: "",
-// //     gpsAddress: "",
-// //   });
-
-// //   const handleChange = (e) => {
-// //     setFormData({ ...formData, [e.target.name]: e.target.value });
-// //   };
-
-// //   const handleNext = (e) => {
-// //     e.preventDefault();
-// //     // Validate first 3 fields
-// //     if (!formData.schoolName || !formData.schoolEmail || !formData.schoolContact) {
-// //       setNotification({ message: "Please fill in all required fields.", type: "error" });
-// //       return;
-// //     }
-// //     setStep(2);
-// //   };
-
-// //   const handleSubmit = (e) => {
-// //     e.preventDefault();
-// //     setLoading(true);
-
-// //     // Simple validation
-// //     const requiredFields = ["county", "region", "city", "town", "gpsAddress"];
-// //     for (let field of requiredFields) {
-// //       if (!formData[field]) {
-// //         setNotification({ message: "Please fill in all required fields.", type: "error" });
-// //         setLoading(false);
-// //         return;
-// //       }
-// //     }
-
-// //     // Simulate submit
-// //     setTimeout(() => {
-// //       setLoading(false);
-// //       setNotification({ message: "School details submitted successfully!", type: "success" });
-// //       console.log("Submitted data:", formData);
-// //     }, 1000);
-// //   };
-
-// //   return (
-  
-// //     <div className="app app-login p-0">
-// //       <Notification
-// //         message={notification.message}
-// //         type={notification.type}
-// //         onClose={() => setNotification({ message: "", type: "" })}
-// //       />
-
-// //       <div className="row g-0 app-auth-wrapper">
-// //         {/* Form Section */}
-// //         <div className="col-12 col-md-7 col-lg-6 auth-main-col text-center p-5">
-// //           <div className="app-auth-body mx-auto">
-// //             <h2 className="auth-heading text-center mb-4">School Details</h2>
-
-// //             <form className="auth-form" onSubmit={step === 1 ? handleNext : handleSubmit}>
-// //               {step === 1 && (
-// //                 <>
-// //                   {/* School Name */}
-// //                   <div className="mb-3 position-relative">
-// //                     <Home size={18} className="position-absolute top-50 start-0 translate-middle-y ms-2 text-muted" />
-// //                     <input
-// //                       type="text"
-// //                       className="form-control ps-5"
-// //                       placeholder="School Name"
-// //                       name="schoolName"
-// //                       value={formData.schoolName}
-// //                       onChange={handleChange}
-// //                       required
-// //                     />
-// //                   </div>
-
-// //                   {/* School Email */}
-// //                   <div className="mb-3 position-relative">
-// //                     <Mail size={18} className="position-absolute top-50 start-0 translate-middle-y ms-2 text-muted" />
-// //                     <input
-// //                       type="email"
-// //                       className="form-control ps-5"
-// //                       placeholder="School Email"
-// //                       name="schoolEmail"
-// //                       value={formData.schoolEmail}
-// //                       onChange={handleChange}
-// //                       required
-// //                     />
-// //                   </div>
-
-// //                   {/* School Contact */}
-// //                   <div className="mb-4 position-relative">
-// //                     <Phone size={18} className="position-absolute top-50 start-0 translate-middle-y ms-2 text-muted" />
-// //                     <input
-// //                       type="text"
-// //                       className="form-control ps-5"
-// //                       placeholder="School Contact"
-// //                       name="schoolContact"
-// //                       value={formData.schoolContact}
-// //                       onChange={handleChange}
-// //                       required
-// //                     />
-// //                   </div>
-
-// //                   <button type="submit" className="btn app-btn-primary w-100 d-flex align-items-center justify-content-center">
-// //                     Next <ArrowRight size={18} className="ms-2" />
-// //                   </button>
-// //                 </>
-// //               )}
-
-// //               {step === 2 && (
-// //                 <>
-// //                   {/* County */}
-// //                   <div className="mb-3 position-relative">
-// //                     <MapPin size={18} className="position-absolute top-50 start-0 translate-middle-y ms-2 text-muted" />
-// //                     <input
-// //                       type="text"
-// //                       className="form-control ps-5"
-// //                       placeholder="County"
-// //                       name="county"
-// //                       value={formData.county}
-// //                       onChange={handleChange}
-// //                       required
-// //                     />
-// //                   </div>
-
-// //                   {/* Region */}
-// //                   <div className="mb-3 position-relative">
-// //                     <input
-// //                       type="text"
-// //                       className="form-control ps-5"
-// //                       placeholder="Region"
-// //                       name="region"
-// //                       value={formData.region}
-// //                       onChange={handleChange}
-// //                       required
-// //                     />
-// //                   </div>
-
-// //                   {/* City */}
-// //                   <div className="mb-3 position-relative">
-// //                     <input
-// //                       type="text"
-// //                       className="form-control ps-5"
-// //                       placeholder="City"
-// //                       name="city"
-// //                       value={formData.city}
-// //                       onChange={handleChange}
-// //                       required
-// //                     />
-// //                   </div>
-
-// //                   {/* Town */}
-// //                   <div className="mb-3 position-relative">
-// //                     <input
-// //                       type="text"
-// //                       className="form-control ps-5"
-// //                       placeholder="Town"
-// //                       name="town"
-// //                       value={formData.town}
-// //                       onChange={handleChange}
-// //                       required
-// //                     />
-// //                   </div>
-
-// //                   {/* GPS Address */}
-// //                   <div className="mb-4 position-relative">
-// //                     <input
-// //                       type="text"
-// //                       className="form-control ps-5"
-// //                       placeholder="GPS Address"
-// //                       name="gpsAddress"
-// //                       value={formData.gpsAddress}
-// //                       onChange={handleChange}
-// //                       required
-// //                     />
-// //                   </div>
-
-// //                   <button type="submit" className="btn app-btn-primary w-100 d-flex align-items-center justify-content-center" disabled={loading}>
-// //                     {loading ? "Submitting..." : "Submit"}
-// //                   </button>
-// //                 </>
-// //               )}
-// //             </form>
-// //           </div>
-// //         </div>
-
-// //         {/* Optional Background Side */}
-// //         <div className="col-12 col-md-5 col-lg-6 auth-background-col text-white d-flex flex-column justify-content-center align-items-center">
-// //           <div className="auth-background-holder"></div>
-// //           <div className="auth-background-mask"></div>
-// //           <div className="auth-background-overlay bg-dark bg-opacity-50 p-3 p-lg-5 text-center">
-// //             <h2 className="fw-bold mb-3 text-light">Enter School Info</h2>
-// //             <p className="lead text-light">
-// //               Complete your school's details step by step.  
-// //             </p>
-// //           </div>
-// //         </div>
-// //       </div>
-// //     </div>
-// //   );
-// // }
 
 
 
-
-
-
-// // # THE ONLINE CLOUD LOGIC# THE ONLINE CLOUD LOGIC# THE ONLINE CLOUD LOGIC# THE ONLINE CLOUD LOGIC
-// // # THE ONLINE CLOUD LOGIC# THE ONLINE CLOUD LOGIC# THE ONLINE CLOUD LOGIC# THE ONLINE CLOUD LOGIC
-// // # THE ONLINE CLOUD LOGIC# THE ONLINE CLOUD LOGIC# THE ONLINE CLOUD LOGIC# THE ONLINE CLOUD LOGIC
-// // # THE ONLINE CLOUD LOGIC# THE ONLINE CLOUD LOGIC# THE ONLINE CLOUD LOGIC
-
-
-
-
-
-// import { useState, useEffect } from "react";
-// import { ArrowRight, Mail, Phone, MapPin, Home, Wifi, AlertCircle } from "lucide-react";
-// import Notification from "../components/Notification";
-// import "../styles/school-details.css";
-// import "../styles/global.css";
-
-// export default function SchoolDetailsPage({ onSuccess, isOnline }) {
-//   const [step, setStep] = useState(1);
-//   const [notification, setNotification] = useState({ message: "", type: "" });
-//   const [loading, setLoading] = useState(false);
-//   const [formData, setFormData] = useState({
-//     school_name: "",
-//     school_email: "",
-//     school_contact: "",
-//     county: "",
-//     region: "",
-//     city: "",
-//     town: "",
-//     gps_address: "",
-//   });
-
-//   // Check internet connectivity
-//   if (!isOnline) {
-//     return (
-//       <div className="app app-login p-0">
-//         <div className="row g-0 app-auth-wrapper">
-//           <div className="col-12 col-md-7 col-lg-6 auth-main-col text-center p-5">
-//             <div className="app-auth-body mx-auto">
-//               <div className="text-center mb-4">
-//                 <AlertCircle size={64} className="text-danger mb-3" />
-//                 <h3 className="auth-heading text-center mb-3">Internet Required</h3>
-//                 <p className="text-muted">
-//                   You need an active internet connection to save school details.
-//                   All data is saved directly to our cloud database.
-//                 </p>
-//                 <p className="text-danger">
-//                   <strong>Please connect to the internet and try again.</strong>
-//                 </p>
-//               </div>
-//             </div>
-//           </div>
-          
-//           <div className="col-12 col-md-5 col-lg-6 auth-background-col text-white d-flex flex-column justify-content-center align-items-center">
-//             <div className="auth-background-holder"></div>
-//             <div className="auth-background-mask"></div>
-//             <div className="auth-background-overlay bg-dark bg-opacity-50 p-3 p-lg-5 text-center">
-//               <h2 className="fw-bold mb-3 text-light">Cloud Setup</h2>
-//               <p className="lead text-light">
-//                 Your school data is securely stored in our cloud database.
-//               </p>
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   const handleChange = (e) => {
-//     setFormData({ ...formData, [e.target.name]: e.target.value });
-//   };
-
-//   const handleNext = (e) => {
-//     e.preventDefault();
-//     if (!formData.school_name || !formData.school_email || !formData.school_contact) {
-//       setNotification({ message: "Please fill in all required fields.", type: "error" });
-//       return;
-//     }
-    
-//     // Basic email validation
-//     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-//     if (!emailRegex.test(formData.school_email)) {
-//       setNotification({ message: "Please enter a valid email address.", type: "error" });
-//       return;
-//     }
-    
-//     setStep(2);
-//   };
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     setLoading(true);
-//     setNotification({ message: "", type: "" });
-
-//     // Validate all fields
-//     const requiredFields = ["county", "region", "city", "town", "gps_address"];
-//     for (let field of requiredFields) {
-//       if (!formData[field]) {
-//         setNotification({ message: "Please fill in all required fields.", type: "error" });
-//         setLoading(false);
-//         return;
-//       }
-//     }
-
-//     try {
-//       // Save to backend (which saves to SQLiteCloud)
-//       const response = await fetch("http://localhost:8000/school/details", {
-//         method: "POST",
-//         headers: {
-//           "Content-Type": "application/json",
-//         },
-//         body: JSON.stringify(formData),
-//       });
-
-//       const result = await response.json();
-      
-//       if (!response.ok) {
-//         throw new Error(result.detail || "Failed to save school details");
-//       }
-
-//       setNotification({
-//         message: result.message,
-//         type: "success"
-//       });
-
-//       // Move to next step after short delay
-//       setTimeout(() => {
-//         onSuccess();
-//       }, 1500);
-
-//     } catch (error) {
-//       setNotification({
-//         message: error.message || "Failed to save school details. Please try again.",
-//         type: "error"
-//       });
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   return (
-//     <div className="app app-login p-0">
-//       <Notification
-//         message={notification.message}
-//         type={notification.type}
-//         onClose={() => setNotification({ message: "", type: "" })}
-//       />
-
-//       {/* Online Status Banner */}
-//       <div className="connection-banner online">
-//         <div className="container d-flex align-items-center justify-content-center py-2">
-//           <Wifi size={16} className="me-2" />
-//           <span>Connected to Internet - Data will be saved to cloud database</span>
-//         </div>
-//       </div>
-
-//       <div className="row g-0 app-auth-wrapper">
-//         {/* Form Section */}
-//         <div className="col-12 col-md-7 col-lg-6 auth-main-col text-center p-5">
-//           <div className="app-auth-body mx-auto">
-//             <div className="d-flex justify-content-between align-items-center mb-4">
-//               {step === 2 && (
-//                 <button 
-//                   className="btn btn-sm btn-outline-secondary"
-//                   onClick={() => setStep(1)}
-//                   disabled={loading}
-//                 >
-//                   ← Back
-//                 </button>
-//               )}
-//               <h2 className="auth-heading text-center mb-0 flex-grow-1">School Details</h2>
-//               {step === 2 && <div style={{width: '80px'}}></div>}
-//             </div>
-
-//             <p className="text-muted mb-4">
-//               {step === 1 ? "Step 1: Basic Information" : "Step 2: Location Details"}
-//               <br />
-//               <small className="text-success">
-//                 <Wifi size={12} className="me-1" />
-//                 Connected - Data saves directly to cloud
-//               </small>
-            
-            
-            
-            
-//             </p>
-
-//             <form className="auth-form" onSubmit={step === 1 ? handleNext : handleSubmit}>
-//           {step === 1 && (
-//   <>
-//     {/* School Name */}
-//     <div className="mb-3 position-relative">
-//       <Home size={18} className="position-absolute top-50 start-0 translate-middle-y ms-2 text-muted" />
-//       <input
-//         type="text"
-//         className="form-control ps-5"
-//         placeholder="School Name *"
-//         name="school_name"
-//         value={formData.school_name}
-//         onChange={handleChange}
-//         required
-//       />
-//     </div>
-
-//     {/* School Email */}
-//     <div className="mb-3 position-relative">
-//       <Mail size={18} className="position-absolute top-50 start-0 translate-middle-y ms-2 text-muted" />
-//       <input
-//         type="email"
-//         className="form-control ps-5"
-//         placeholder="School Email *"
-//         name="school_email"
-//         value={formData.school_email}
-//         onChange={handleChange}
-//         required
-//       />
-//     </div>
-
-//     {/* School Contact */}
-//     <div className="mb-4 position-relative">
-//       <Phone size={18} className="position-absolute top-50 start-0 translate-middle-y ms-2 text-muted" />
-//       <input
-//         type="tel"
-//         className="form-control ps-5"
-//         placeholder="School Contact *"
-//         name="school_contact"
-//         value={formData.school_contact}
-//         onChange={handleChange}
-//         required
-//       />
-//     </div>
-
-//     <button 
-//       type="submit" 
-//       className="btn app-btn-primary w-100 d-flex align-items-center justify-content-center"
-//       disabled={loading}
-//     >
-//       Next Step <ArrowRight size={18} className="ms-2" />
-//     </button>
-
-//     {/* ADD RECOVER ACCOUNT LINK HERE */}
-//     <div className="text-center mt-3">
-//       <small className="text-muted">
-//         Already registered?{" "}
-//         <a 
-//           href="#" 
-//           onClick={(e) => {
-//             e.preventDefault();
-//             // Navigate to recover account page
-//             window.location.href = "/recover-account";
-//           }}
-//           className="text-primary text-decoration-none fw-medium"
-//         >
-//           Recover School Account
-//         </a>
-//       </small>
-//     </div>
-//   </>
-// )}
-
-//               {step === 2 && (
-//                 <>
-//                   {/* County */}
-//                   <div className="mb-3 position-relative">
-//                     <MapPin size={18} className="position-absolute top-50 start-0 translate-middle-y ms-2 text-muted" />
-//                     <input
-//                       type="text"
-//                       className="form-control ps-5"
-//                       placeholder="County *"
-//                       name="county"
-//                       value={formData.county}
-//                       onChange={handleChange}
-//                       required
-//                     />
-//                   </div>
-
-//                   {/* Region */}
-//                   <div className="mb-3 position-relative">
-//                     <input
-//                       type="text"
-//                       className="form-control ps-5"
-//                       placeholder="Region *"
-//                       name="region"
-//                       value={formData.region}
-//                       onChange={handleChange}
-//                       required
-//                     />
-//                   </div>
-
-//                   {/* City */}
-//                   <div className="mb-3 position-relative">
-//                     <input
-//                       type="text"
-//                       className="form-control ps-5"
-//                       placeholder="City *"
-//                       name="city"
-//                       value={formData.city}
-//                       onChange={handleChange}
-//                       required
-//                     />
-//                   </div>
-
-//                   {/* Town */}
-//                   <div className="mb-3 position-relative">
-//                     <input
-//                       type="text"
-//                       className="form-control ps-5"
-//                       placeholder="Town *"
-//                       name="town"
-//                       value={formData.town}
-//                       onChange={handleChange}
-//                       required
-//                     />
-//                   </div>
-
-//                   {/* GPS Address */}
-//                   <div className="mb-4 position-relative">
-//                     <input
-//                       type="text"
-//                       className="form-control ps-5"
-//                       placeholder="GPS Address *"
-//                       name="gps_address"
-//                       value={formData.gps_address}
-//                       onChange={handleChange}
-//                       required
-//                     />
-//                   </div>
-
-//                   <div className="d-flex gap-2">
-//                     <button 
-//                       type="button"
-//                       className="btn btn-outline-secondary flex-grow-1"
-//                       onClick={() => setStep(1)}
-//                       disabled={loading}
-//                     >
-//                       Back
-//                     </button>
-//                     <button 
-//                       type="submit" 
-//                       className="btn app-btn-primary flex-grow-1 d-flex align-items-center justify-content-center" 
-//                       disabled={loading}
-//                     >
-//                       {loading ? (
-//                         <>
-//                           <span className="spinner-border spinner-border-sm me-2"></span>
-//                           Saving to Cloud...
-//                         </>
-//                       ) : "Save & Continue"}
-//                     </button>
-//                   </div>
-//                 </>
-//               )}
-//             </form>
-
-//             <div className="mt-4">
-//               <div className="alert alert-info">
-//                 <small>
-//                   <strong>Note:</strong> All data is saved directly to our secure cloud database. 
-//                   You need to stay online throughout the setup process.
-//                 </small>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* Background Side */}
-//         <div className="col-12 col-md-5 col-lg-6 auth-background-col text-white d-flex flex-column justify-content-center align-items-center">
-//           <div className="auth-background-holder"></div>
-//           <div className="auth-background-mask"></div>
-//           <div className="auth-background-overlay bg-dark bg-opacity-50 p-3 p-lg-5 text-center">
-//             <h2 className="fw-bold mb-3 text-light">Cloud Setup</h2>
-//             <p className="lead text-light mb-4">
-//               Your school data is securely stored in our cloud database.
-//             </p>
-//             <div className="setup-progress mt-4">
-//               <div className="d-flex justify-content-center align-items-center mb-3">
-//                 <div className={`progress-step ${step >= 1 ? 'active' : ''}`}>
-//                   <div className="step-circle">1</div>
-//                   <div className="step-label">Basic Info</div>
-//                 </div>
-//                 <div className="progress-line"></div>
-//                 <div className={`progress-step ${step >= 2 ? 'active' : ''}`}>
-//                   <div className="step-circle">2</div>
-//                   <div className="step-label">Location</div>
-//                 </div>
-//               </div>
-//               <div className="cloud-info">
-//                 <div className="d-flex align-items-center justify-content-center mb-2">
-//                   <Wifi size={20} className="me-2" />
-//                   <span>Real-time Cloud Save</span>
-//                 </div>
-//                 <small className="text-light opacity-75">
-//                   Data saved to SQLiteCloud database
-//                 </small>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-
-
+// src/SchoolDetails/SchoolDetailsPage.jsx
 import { useState, useEffect } from "react";
 import {
   Home, Mail, Phone, MapPin, User, Lock, ShieldCheck,
@@ -631,6 +10,9 @@ import {
 import Notification from "../components/Notification";
 import "../styles/school-details.css";
 import "../styles/global.css";
+
+// Import API services
+import { setupSchoolAndAdmin, isElectron } from "../services/api.service";
 
 export default function SchoolAndAdminSetupPage({ onSuccess, isOnline }) {
   const [step, setStep] = useState(1);
@@ -775,32 +157,29 @@ export default function SchoolAndAdminSetupPage({ onSuccess, isOnline }) {
     }
 
     try {
-      // Send all data to single endpoint
-      const response = await fetch("http://localhost:8000/setup/school-and-admin", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const result = await response.json();
+      console.log('Submitting setup data via IPC...');
       
-      if (!response.ok) {
-        throw new Error(result.detail || "Failed to complete setup");
+      // Use IPC instead of HTTP fetch
+      const result = await setupSchoolAndAdmin(formData);
+      
+      console.log('Setup result:', result);
+      
+      if (result.success) {
+        setNotification({
+          message: result.message || "School and admin created successfully!",
+          type: "success"
+        });
+
+        // Move to activation after short delay
+        setTimeout(() => {
+          onSuccess();
+        }, 1500);
+      } else {
+        throw new Error(result.message || "Failed to complete setup");
       }
 
-      setNotification({
-        message: result.message,
-        type: "success"
-      });
-
-      // Move to activation after short delay
-      setTimeout(() => {
-        onSuccess();
-      }, 1500);
-
     } catch (error) {
+      console.error('Setup error:', error);
       setNotification({
         message: error.message || "Failed to complete setup. Please try again.",
         type: "error"
@@ -1055,7 +434,10 @@ export default function SchoolAndAdminSetupPage({ onSuccess, isOnline }) {
       <div className="connection-banner online">
         <div className="container d-flex align-items-center justify-content-center py-2">
           <Wifi size={16} className="me-2" />
-          <span>Connected to Internet - All data saved to cloud database</span>
+          <span>
+            {isElectron() ? 'Connected to Backend' : 'Connected to Internet'} 
+            {!isElectron() && ' - All data saved to cloud database'}
+          </span>
         </div>
       </div>
 
@@ -1084,7 +466,7 @@ export default function SchoolAndAdminSetupPage({ onSuccess, isOnline }) {
               <br />
               <small className="text-success">
                 <Wifi size={12} className="me-1" />
-                Connected - Real-time cloud save
+                {isElectron() ? 'Connected - IPC Communication' : 'Connected - Real-time cloud save'}
               </small>
             </p>
 
@@ -1137,7 +519,10 @@ export default function SchoolAndAdminSetupPage({ onSuccess, isOnline }) {
             <div className="mt-4">
               <div className="alert alert-info">
                 <small>
-                  <strong>Note:</strong> All data is saved directly to our secure cloud database.
+                  <strong>Note:</strong> 
+                  {isElectron() 
+                    ? ' All data is saved locally and synced to cloud when online.'
+                    : ' All data is saved directly to our secure cloud database.'}
                   You need to stay online throughout the setup process.
                 </small>
               </div>
@@ -1180,8 +565,12 @@ export default function SchoolAndAdminSetupPage({ onSuccess, isOnline }) {
               </div>
               <div className="feature-item mb-3">
                 <Wifi size={24} className="mb-2" />
-                <h5>Cloud Storage</h5>
-                <p className="small mb-0">Saved to SQLiteCloud database</p>
+                <h5>{isElectron() ? 'IPC Communication' : 'Cloud Storage'}</h5>
+                <p className="small mb-0">
+                  {isElectron() 
+                    ? 'Fast local communication with Python'
+                    : 'Saved to SQLiteCloud database'}
+                </p>
               </div>
               <div className="feature-item">
                 <CheckCircle size={24} className="mb-2" />
