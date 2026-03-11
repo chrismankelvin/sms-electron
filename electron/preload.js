@@ -68,26 +68,55 @@ setup: {
   // =========================
   // AUTHENTICATION
   // =========================
-  auth: {
-    login: (username, password, role = null) => ipcRenderer.invoke('python-request', { 
-      type: 'auth', 
-      action: 'login', 
-      data: { username, password, role } 
-    }),
-    logout: () => ipcRenderer.invoke('python-request', { 
-      type: 'auth', 
-      action: 'logout' 
-    }),
-    session: () => ipcRenderer.invoke('python-request', { 
-      type: 'auth', 
-      action: 'session' 
-    }),
-    bootstrap: (username, password) => ipcRenderer.invoke('python-request', { 
-      type: 'auth', 
-      action: 'bootstrap', 
-      data: { username, password } 
-    })
+  // auth: {
+  //   login: (username, password, role = null) => ipcRenderer.invoke('python-request', { 
+  //     type: 'auth', 
+  //     action: 'login', 
+  //     data: { username, password, role } 
+  //   }),
+  //   logout: () => ipcRenderer.invoke('python-request', { 
+  //     type: 'auth', 
+  //     action: 'logout' 
+  //   }),
+  //   session: () => ipcRenderer.invoke('python-request', { 
+  //     type: 'auth', 
+  //     action: 'session' 
+  //   }),
+  //   bootstrap: (username, password) => ipcRenderer.invoke('python-request', { 
+  //     type: 'auth', 
+  //     action: 'bootstrap', 
+  //     data: { username, password } 
+  //   })
+  // },
+
+    auth: {
+    login: (username, password, role) => 
+      ipcRenderer.invoke('python-request', { 
+        type: 'auth', 
+        action: 'login', 
+        data: { username, password, role } 
+      }),
+    logout: (session_id) => 
+      ipcRenderer.invoke('python-request', { 
+        type: 'auth', 
+        action: 'logout', 
+        data: { session_id } 
+      }),
+    session: (session_id) => 
+      ipcRenderer.invoke('python-request', { 
+        type: 'auth', 
+        action: 'session', 
+        data: { session_id } 
+      }),
+    bootstrap: (username, password) => 
+      ipcRenderer.invoke('python-request', { 
+        type: 'auth', 
+        action: 'bootstrap', 
+        data: { username, password } 
+      })
   },
+
+
 
   // =========================
   // STUDENTS
@@ -232,6 +261,10 @@ setup: {
     status: () => ipcRenderer.invoke('python-request', { 
       type: 'db', 
       action: 'status' 
+    }),
+      SetupStatus: () => ipcRenderer.invoke('python-request', { 
+      type: 'db', 
+      action: 'get-status' 
     })
   },
 

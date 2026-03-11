@@ -1,4 +1,17 @@
 // src/services/api.service.js
+const API_BASE_URL = 'http://localhost:8000';
+
+export const api = {
+  get: async (endpoint) => {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`);
+    return response.json();
+  },
+  // ... other methods
+};
+
+
+
+
 
 // ============ HELPER FUNCTIONS ============
 export const isElectron = () => {
@@ -20,6 +33,36 @@ export const isElectron = () => {
 //   }
 // }
 // ============ ACTIVATION ============
+// export async function checkActivationStatus() {
+//   try {
+//     if (!isElectron()) {
+//       console.log('Browser mode: mock activation status = false');
+//       return { activated: false };
+//     }
+    
+//     // Use the status endpoint
+//     const response = await window.electron.activation.getStatus();
+//     console.log('Activation status response:', response);
+    
+//     // Handle different response formats
+//     if (response && typeof response === 'object') {
+//       // Direct response from getStatus
+//       if (response.activated !== undefined) {
+//         return response;
+//       }
+//       // If wrapped in result
+//       if (response.result && response.result.activated !== undefined) {
+//         return response.result;
+//       }
+//     }
+    
+//     return { activated: false };
+//   } catch (err) {
+//     console.error("checkActivationStatus failed:", err);
+//     return { activated: false };
+//   }
+// }
+
 export async function checkActivationStatus() {
   try {
     if (!isElectron()) {
@@ -27,19 +70,30 @@ export async function checkActivationStatus() {
       return { activated: false };
     }
     
-    // Use the status endpoint
-    const response = await window.electron.activation.getStatus();
-    console.log('Activation status response:', response);
+    // Use the setup/status endpoint which has all the info
+    // const response = await window.electron.backend.fetchData('setup/status', 'GET');
+    const response = await window.electron.activation.status();
+    console.log('Setup status response:', response);
     
     // Handle different response formats
     if (response && typeof response === 'object') {
-      // Direct response from getStatus
+      // If response is already the data (most likely)
       if (response.activated !== undefined) {
-        return response;
+        return {
+          activated: response.activated,
+          school_completed: response.school_completed,
+          admin_completed: response.admin_completed,
+          current_step: response.current_step
+        };
       }
-      // If wrapped in result
+      // If response has result wrapper (IPC format)
       if (response.result && response.result.activated !== undefined) {
-        return response.result;
+        return {
+          activated: response.result.activated,
+          school_completed: response.result.school_completed,
+          admin_completed: response.result.admin_completed,
+          current_step: response.result.current_step
+        };
       }
     }
     
@@ -49,6 +103,8 @@ export async function checkActivationStatus() {
     return { activated: false };
   }
 }
+
+
 
 export async function getDetailedActivationStatus() {
   try {
@@ -262,6 +318,22 @@ export async function getFingerprint() {
 }
 
 // ============ AUTH ============
+// export async function login(username, password, role = null) {
+//   try {
+//     if (!isElectron()) {
+//       return { 
+//         success: true, 
+//         user: { id: 1, username, role: role || 'admin' } 
+//       };
+//     }
+//     return await window.electron.auth.login(username, password, role);
+//   } catch (err) {
+//     console.error("login failed:", err);
+//     return { success: false, message: err.message };
+//   }
+// }
+
+// ============ AUTH ============
 export async function login(username, password, role = null) {
   try {
     if (!isElectron()) {
@@ -270,7 +342,22 @@ export async function login(username, password, role = null) {
         user: { id: 1, username, role: role || 'admin' } 
       };
     }
-    return await window.electron.auth.login(username, password, role);
+    
+    console.log(`Login attempt for ${username} with role ${role}`);
+    const result = await window.electron.auth.login(username, password, role);
+    console.log('Login result:', result);
+    
+    // If login successful, store session info
+    if (result && result.success) {
+      // Store session ID if your backend returns one
+      if (result.session_id) {
+        localStorage.setItem('session_id', result.session_id);
+      }
+      // Store user info
+      localStorage.setItem('user', JSON.stringify(result.user));
+    }
+    
+    return result;
   } catch (err) {
     console.error("login failed:", err);
     return { success: false, message: err.message };
@@ -280,14 +367,84 @@ export async function login(username, password, role = null) {
 export async function logout() {
   try {
     if (!isElectron()) {
+      localStorage.removeItem('session_id');
+      localStorage.removeItem('user');
       return { success: true };
     }
-    return await window.electron.auth.logout();
+    
+    const session_id = localStorage.getItem('session_id');
+    const result = await window.electron.auth.logout(session_id);
+    
+    // Clear local storage regardless of result
+    localStorage.removeItem('session_id');
+    localStorage.removeItem('user');
+    
+    return result;
   } catch (err) {
     console.error("logout failed:", err);
+    localStorage.removeItem('session_id');
+    localStorage.removeItem('user');
     return { success: false, message: err.message };
   }
 }
+
+// export async function checkSession() {
+//   try {
+//     if (!isElectron()) {
+//       const storedUser = localStorage.getItem('user');
+//       return storedUser ? JSON.parse(storedUser) : null;
+//     }
+    
+//     const session_id = localStorage.getItem('session_id');
+//     if (!session_id) {
+//       return null;
+//     }
+    
+//     const response = await window.electron.auth.session(session_id);
+//     const user = response?.user || null;
+    
+//     // Update stored user if we got one
+//     if (user) {
+//       localStorage.setItem('user', JSON.stringify(user));
+//     } else {
+//       localStorage.removeItem('session_id');
+//       localStorage.removeItem('user');
+//     }
+    
+//     return user;
+//   } catch (err) {
+//     console.error("checkSession failed:", err);
+//     return null;
+//   }
+// }
+
+export async function bootstrapSuperAdmin(username, password) {
+  try {
+    if (!isElectron()) {
+      return { success: true };
+    }
+    
+    const result = await window.electron.auth.bootstrap(username, password);
+    return result;
+  } catch (err) {
+    console.error("bootstrapSuperAdmin failed:", err);
+    return { success: false, message: err.message };
+  }
+}
+
+
+
+// export async function logout() {
+//   try {
+//     if (!isElectron()) {
+//       return { success: true };
+//     }
+//     return await window.electron.auth.logout();
+//   } catch (err) {
+//     console.error("logout failed:", err);
+//     return { success: false, message: err.message };
+//   }
+// }
 
 export async function checkSession() {
   try {
@@ -302,17 +459,17 @@ export async function checkSession() {
   }
 }
 
-export async function bootstrapSuperAdmin(username, password) {
-  try {
-    if (!isElectron()) {
-      return { success: true };
-    }
-    return await window.electron.auth.bootstrap(username, password);
-  } catch (err) {
-    console.error("bootstrapSuperAdmin failed:", err);
-    return { success: false, message: err.message };
-  }
-}
+// export async function bootstrapSuperAdmin(username, password) {
+//   try {
+//     if (!isElectron()) {
+//       return { success: true };
+//     }
+//     return await window.electron.auth.bootstrap(username, password);
+//   } catch (err) {
+//     console.error("bootstrapSuperAdmin failed:", err);
+//     return { success: false, message: err.message };
+//   }
+// }
 
 // ============ DATABASE ============
 // ============ DATABASE ============
@@ -329,6 +486,222 @@ export async function initDatabase() {
   }
 }
 
+// export async function getDatabaseStatus() {
+//   try {
+//     if (!isElectron()) {
+//       console.log('Browser mode: mock database status');
+//       return { 
+//         school_count: 0, 
+//         admin_count: 0,
+//         school_completed: false,
+//         admin_completed: false 
+//       };
+//     }
+    
+//     console.log('Getting database status...');
+    
+//     // Try multiple methods to get database status
+    
+//     // Method 1: Use the setup status endpoint which we know works
+//     try {
+//       const setupStatus = await window.electron.backend.fetchData('setup/status', 'GET');
+//       console.log('Setup status for database:', setupStatus);
+      
+//       if (setupStatus) {
+//         return {
+//           school_count: setupStatus.school_completed ? 1 : 0,
+//           admin_count: setupStatus.admin_completed ? 1 : 0,
+//           school_completed: setupStatus.school_completed || false,
+//           admin_completed: setupStatus.admin_completed || false,
+//           initialized: true
+//         };
+//       }
+//     } catch (e) {
+//       console.log('Method 1 failed, trying method 2...', e);
+//     }
+    
+//     // Method 2: Use db.status() as fallback
+//     // const response = await window.electron.db.status();
+//     // console.log('DB status response:', response);
+    
+//     // Handle different response formats
+//     if (response && typeof response === 'object') {
+//       // If response has school_count and admin_count directly
+//       if (response.school_count !== undefined || response.admin_count !== undefined) {
+//         return {
+//           school_count: response.school_count || 0,
+//           admin_count: response.admin_count || 0,
+//           school_completed: response.school_count > 0 || false,
+//           admin_completed: response.admin_count > 0 || false,
+//           initialized: response.initialized || false
+//         };
+//       }
+      
+//       // If response has data nested
+//       if (response.data) {
+//         return {
+//           school_count: response.data.school_count || 0,
+//           admin_count: response.data.admin_count || 0,
+//           school_completed: response.data.school_count > 0 || false,
+//           admin_completed: response.data.admin_count > 0 || false,
+//           initialized: response.data.initialized || false
+//         };
+//       }
+//     }
+    
+//     // Default fallback
+//     return { 
+//       school_count: 0, 
+//       admin_count: 0,
+//       school_completed: false,
+//       admin_completed: false,
+//       initialized: false 
+//     };
+    
+//   } catch (err) {
+//     console.error("getDatabaseStatus failed:", err);
+//     return { 
+//       school_count: 0, 
+//       admin_count: 0,
+//       school_completed: false,
+//       admin_completed: false,
+//       initialized: false 
+//     };
+//   }
+// }
+
+
+
+
+// ============ STUDENTS ============
+
+function normalizeDatabaseStatus(response) {
+  // Default return structure
+  const defaultStatus = {
+    school_count: 0,
+    admin_count: 0,
+    school_completed: false,
+    admin_completed: false,
+    initialized: false
+  };
+  
+  if (!response || typeof response !== 'object') {
+    return defaultStatus;
+  }
+  
+  // Log the response to see what we're getting
+  console.log('normalizeDatabaseStatus received:', response);
+  
+  // Check if this is the setup status response format
+  if (response.school_completed !== undefined || response.admin_completed !== undefined) {
+    return {
+      school_count: response.school_completed ? 1 : 0,
+      admin_count: response.admin_completed ? 1 : 0,
+      school_completed: response.school_completed || false,
+      admin_completed: response.admin_completed || false,
+      initialized: response.activated || response.school_completed || response.admin_completed || false,
+      current_step: response.current_step,
+      activated: response.activated
+    };
+  }
+  
+  // Helper to extract values from different response structures
+  let schoolCompleted = false;
+  let adminCompleted = false;
+  let schoolCount = 0;
+  let adminCount = 0;
+  let initialized = false;
+  
+  // Check for direct properties
+  if (response.school_completed !== undefined) {
+    schoolCompleted = response.school_completed;
+  }
+  
+  if (response.admin_completed !== undefined) {
+    adminCompleted = response.admin_completed;
+  }
+  
+  if (response.school_count !== undefined) {
+    schoolCount = response.school_count;
+  }
+  
+  if (response.admin_count !== undefined) {
+    adminCount = response.admin_count;
+  }
+  
+  if (response.initialized !== undefined) {
+    initialized = response.initialized;
+  }
+  
+  // Check nested data object
+  if (response.data && typeof response.data === 'object') {
+    const data = response.data;
+    
+    if (data.school_completed !== undefined) {
+      schoolCompleted = data.school_completed;
+    }
+    
+    if (data.admin_completed !== undefined) {
+      adminCompleted = data.admin_completed;
+    }
+    
+    if (data.school_count !== undefined) {
+      schoolCount = data.school_count;
+    }
+    
+    if (data.admin_count !== undefined) {
+      adminCount = data.admin_count;
+    }
+    
+    if (data.initialized !== undefined) {
+      initialized = data.initialized;
+    }
+  }
+  
+  // Check result object (common in IPC responses)
+  if (response.result && typeof response.result === 'object') {
+    const result = response.result;
+    
+    if (result.school_completed !== undefined) {
+      schoolCompleted = result.school_completed;
+    }
+    
+    if (result.admin_completed !== undefined) {
+      adminCompleted = result.admin_completed;
+    }
+    
+    if (result.school_count !== undefined) {
+      schoolCount = result.school_count;
+    }
+    
+    if (result.admin_count !== undefined) {
+      adminCount = result.admin_count;
+    }
+    
+    if (result.initialized !== undefined) {
+      initialized = result.initialized;
+    }
+  }
+  
+  // If we still don't have school_completed/admin_completed, derive from counts
+  if (!schoolCompleted && schoolCount > 0) {
+    schoolCompleted = true;
+  }
+  
+  if (!adminCompleted && adminCount > 0) {
+    adminCompleted = true;
+  }
+  
+  return {
+    school_count: schoolCount,
+    admin_count: adminCount,
+    school_completed: schoolCompleted,
+    admin_completed: adminCompleted,
+    initialized: initialized || (schoolCompleted || adminCompleted)
+  };
+}
+
+
 export async function getDatabaseStatus() {
   try {
     if (!isElectron()) {
@@ -337,69 +710,26 @@ export async function getDatabaseStatus() {
         school_count: 0, 
         admin_count: 0,
         school_completed: false,
-        admin_completed: false 
+        admin_completed: false,
+        initialized: false 
       };
     }
     
-    console.log('Getting database status...');
+    console.log('Getting database status via db.status()...');
     
-    // Try multiple methods to get database status
+    let response = null;
     
-    // Method 1: Use the setup status endpoint which we know works
     try {
-      const setupStatus = await window.electron.backend.fetchData('setup/status', 'GET');
-      console.log('Setup status for database:', setupStatus);
-      
-      if (setupStatus) {
-        return {
-          school_count: setupStatus.school_completed ? 1 : 0,
-          admin_count: setupStatus.admin_completed ? 1 : 0,
-          school_completed: setupStatus.school_completed || false,
-          admin_completed: setupStatus.admin_completed || false,
-          initialized: true
-        };
-      }
+      // Use db.status() as the only method
+      response = await api.get('/setup/status'); //http method
+      console.log('DB status response:', response);
     } catch (e) {
-      console.log('Method 1 failed, trying method 2...', e);
-    }
+      console.error('db.status() failed:', e);
+      response = null;
+    } 
     
-    // Method 2: Use db.status() as fallback
-    const response = await window.electron.db.status();
-    console.log('DB status response:', response);
-    
-    // Handle different response formats
-    if (response && typeof response === 'object') {
-      // If response has school_count and admin_count directly
-      if (response.school_count !== undefined || response.admin_count !== undefined) {
-        return {
-          school_count: response.school_count || 0,
-          admin_count: response.admin_count || 0,
-          school_completed: response.school_count > 0 || false,
-          admin_completed: response.admin_count > 0 || false,
-          initialized: response.initialized || false
-        };
-      }
-      
-      // If response has data nested
-      if (response.data) {
-        return {
-          school_count: response.data.school_count || 0,
-          admin_count: response.data.admin_count || 0,
-          school_completed: response.data.school_count > 0 || false,
-          admin_completed: response.data.admin_count > 0 || false,
-          initialized: response.data.initialized || false
-        };
-      }
-    }
-    
-    // Default fallback
-    return { 
-      school_count: 0, 
-      admin_count: 0,
-      school_completed: false,
-      admin_completed: false,
-      initialized: false 
-    };
+    // Normalize the response
+     return response;
     
   } catch (err) {
     console.error("getDatabaseStatus failed:", err);
@@ -412,7 +742,12 @@ export async function getDatabaseStatus() {
     };
   }
 }
-// ============ STUDENTS ============
+
+// Helper function to normalize database status from various response formats
+
+
+
+
 export async function getStudents() {
   try {
     if (!isElectron()) {

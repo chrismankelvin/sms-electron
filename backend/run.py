@@ -629,46 +629,101 @@ def route_request(req_type, action, data):
                 traceback.print_exc()
                 return {'success': False, 'message': str(e)}
         
-        # AUTH ENDPOINTS
-        elif endpoint == 'auth/login':
-            try:
-                from app.auth.auth_service import login_user
-                return login_user(
-                    request_data.get('username'),
-                    request_data.get('password'),
-                    request_data.get('role')
-                )
-            except Exception as e:
-                logger.error(f"Error in auth/login: {e}")
-                return {'success': False, 'message': str(e)}
+    #     # AUTH ENDPOINTS
+    #     elif endpoint == 'auth/login':
+    #         try:
+    #             from app.auth.auth_service import login_user
+    #             return login_user(
+    #                 request_data.get('username'),
+    #                 request_data.get('password'),
+    #                 request_data.get('role')
+    #             )
+    #         except Exception as e:
+    #             logger.error(f"Error in auth/login: {e}")
+    #             return {'success': False, 'message': str(e)}
         
-        elif endpoint == 'auth/logout':
-            try:
-                from app.auth.auth_service import logout_user
-                return logout_user()
-            except Exception as e:
-                logger.error(f"Error in auth/logout: {e}")
-                return {'success': False, 'message': str(e)}
+    #     elif endpoint == 'auth/logout':
+    #         try:
+    #             from app.auth.auth_service import logout_user
+    #             return logout_user()
+    #         except Exception as e:
+    #             logger.error(f"Error in auth/logout: {e}")
+    #             return {'success': False, 'message': str(e)}
         
-        elif endpoint == 'auth/session':
-            try:
-                from app.auth.auth_service import check_user_session
-                return {'user': check_user_session()}
-            except Exception as e:
-                logger.error(f"Error in auth/session: {e}")
-                return {'user': None}
+    #     elif endpoint == 'auth/session':
+    #         try:
+    #             from app.auth.auth_service import check_user_session
+    #             return {'user': check_user_session()}
+    #         except Exception as e:
+    #             logger.error(f"Error in auth/session: {e}")
+    #             return {'user': None}
         
-        elif endpoint == 'auth/bootstrap':
-            try:
-                from app.auth.auth_service import bootstrap_admin
-                return bootstrap_admin(
-                    request_data.get('username'),
-                    request_data.get('password')
-                )
-            except Exception as e:
-                logger.error(f"Error in auth/bootstrap: {e}")
-                return {'success': False, 'message': str(e)}
+    #     elif endpoint == 'auth/bootstrap':
+    #         try:
+    #             from app.auth.auth_service import bootstrap_admin
+    #             return bootstrap_admin(
+    #                 request_data.get('username'),
+    #                 request_data.get('password')
+    #             )
+    #         except Exception as e:
+    #             logger.error(f"Error in auth/bootstrap: {e}")
+    #             return {'success': False, 'message': str(e)}
         
+
+    # # ===== AUTH ROUTES =====
+    # elif req_type == 'auth':
+    #     from app.auth.auth_service import login_user, logout_user, check_user_session, bootstrap_admin
+        
+    #     if action == 'login':
+    #         return login_user(data.get('username'), data.get('password'), data.get('role'))
+    #     elif action == 'logout':
+    #         return logout_user()
+    #     elif action == 'session':
+    #         return {'user': check_user_session()}
+    #     elif action == 'bootstrap':
+    #         return bootstrap_admin(data.get('username'), data.get('password'))
+
+      
+      
+            # ===== AUTH ROUTES in run.py =====
+    elif req_type == 'auth':
+        from app.auth.auth_service import login_user, logout_user, check_user_session, bootstrap_admin
+        
+        if action == 'login':
+            # Extract login credentials
+            username = data.get('username')
+            password = data.get('password')
+            role = data.get('role')
+            
+            print(f"Auth login request - username: {username}, role: {role}")
+            
+            result = login_user(username, password, role)
+            print(f"Login result: {result}")
+            return result
+        
+        elif action == 'logout':
+            # Extract session ID if provided
+            session_id = data.get('session_id')
+            return logout_user(session_id)
+        
+        elif action == 'session':
+            # Extract session ID if provided
+            session_id = data.get('session_id')
+            user = check_user_session(session_id)
+            return {'user': user}
+        
+        elif action == 'bootstrap':
+            # Bootstrap admin user
+            username = data.get('username')
+            password = data.get('password')
+            return bootstrap_admin(username, password)
+
+
+
+
+      
+      
+      
         # ===== ACTIVATION ENDPOINTS (UPDATED) =====
         elif endpoint == 'activation/status':
             try:
@@ -844,6 +899,7 @@ def route_request(req_type, action, data):
         else:
             logger.warning(f"Unknown endpoint: {endpoint}")
             return {'success': False, 'message': f'Unknown endpoint: {endpoint}'}
+            
 
     # ===== SETUP ROUTES (direct) =====
     elif req_type == 'setup' and action == 'school-and-admin':
@@ -893,14 +949,20 @@ def route_request(req_type, action, data):
     # ===== DATABASE ROUTES =====
     elif req_type == 'db':
         from app.activation.state import ensure_all_tables, get_activation_info
+        # from app.main import get_setup_status
         
         if action == 'init-tables':
             ensure_all_tables()
             return {'success': True, 'message': 'Tables initialized'}
         elif action == 'status':
-            return get_activation_info()
+            return get_setup_status()
         elif action == 'get-status':
-            return get_activation_info()
+            return get_setup_status()
+    
+    elif req_type == 'setup':
+        from app.main import get_setup_status
+        if action == 'status':
+            return get_setup_status()
 
     # ===== ACTIVATION ROUTES (direct) =====
     elif req_type == 'activation':
@@ -1005,18 +1067,6 @@ def route_request(req_type, action, data):
             ensure_all_tables()
             return {'success': True, 'message': 'Tables initialized'}
 
-    # ===== AUTH ROUTES =====
-    elif req_type == 'auth':
-        from app.auth.auth_service import login_user, logout_user, check_user_session, bootstrap_admin
-        
-        if action == 'login':
-            return login_user(data.get('username'), data.get('password'), data.get('role'))
-        elif action == 'logout':
-            return logout_user()
-        elif action == 'session':
-            return {'user': check_user_session()}
-        elif action == 'bootstrap':
-            return bootstrap_admin(data.get('username'), data.get('password'))
 
     # ===== SETTINGS ROUTES =====
     elif req_type == 'settings':
@@ -1235,6 +1285,7 @@ def listen_for_ipc():
 
 def main():
     """Main entry point - starts both IPC listener and FastAPI"""
+    
     logger.info("=" * 50)
     logger.info("Starting School Management System Backend")
     logger.info("=" * 50)

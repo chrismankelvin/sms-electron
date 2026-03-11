@@ -402,13 +402,14 @@ function AppRoutes() {
       try {
         console.log('🔍 Checking database status...');
         const dbStatus = await getDatabaseStatus();
+        
         console.log('✅ Database status:', dbStatus);
         
-        const newSetupStatus = {
-          school_completed: dbStatus?.school_count > 0 || false,
-          admin_completed: dbStatus?.admin_count > 0 || false,
-          activation_completed: isActivated.activated,
-        };
+     const newSetupStatus = {
+  school_completed: dbStatus?.school_completed || false,
+  admin_completed: dbStatus?.admin_completed || false,
+  activation_completed: isActivated.activated,
+};
         
         console.log('📊 Setting setup status to:', newSetupStatus);
         setSetupStatus(newSetupStatus);
