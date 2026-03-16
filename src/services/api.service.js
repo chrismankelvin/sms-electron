@@ -73,6 +73,7 @@ export async function checkActivationStatus() {
     // Use the setup/status endpoint which has all the info
     // const response = await window.electron.backend.fetchData('setup/status', 'GET');
     const response = await window.electron.activation.status();
+    // const response = 
     console.log('Setup status response:', response);
     
     // Handle different response formats
@@ -702,51 +703,212 @@ function normalizeDatabaseStatus(response) {
 }
 
 
+// export async function getDatabaseStatus() {
+//   try {
+//     if (!isElectron()) {
+//       console.log('Browser mode: mock database status');
+//       return { 
+//         school_count: 0, 
+//         admin_count: 0,
+//         school_completed: false,
+//         admin_completed: false,
+//         initialized: false 
+//       };
+//     }
+    
+//     console.log('Getting database status via db.status()...');
+    
+//     let response = null;
+    
+//     try {
+//       // Use db.status() as the only method
+//       response = await api.get('/setup/status'); //http method
+//       console.log('DB status response:', response);
+//     } catch (e) {
+//       console.error('db.status() failed:', e);
+//       response = null;
+//     } 
+    
+//     // Normalize the response
+//      return response;
+    
+//   } catch (err) {
+//     console.error("getDatabaseStatus failed:", err);
+//     return { 
+//       school_count: 0, 
+//       admin_count: 0,
+//       school_completed: false,
+//       admin_completed: false,
+//       initialized: false 
+//     };
+//   }
+// }
+
+// Helper function to normalize database status from various response formats
+
+
+// export async function getDatabaseStatus() {
+//   try {
+//     if (!isElectron()) {
+//       console.log('Browser mode: mock database status');
+//       return { 
+//         school_count: 0, 
+//         admin_count: 0,
+//         school_completed: false,
+//         admin_completed: false,
+//         initialized: false 
+//       };
+//     }
+    
+//     console.log('Getting database status via db.status()...');
+    
+//     let response = null;
+    
+//     try {
+//       // Use db.status() as the only method
+//       // response = await api.get('/setup/status'); //http method
+//      const response = await window.electron.backend.fetchData('setup/status', 'GET');
+//       console.log('DB status response:', response);
+//     } catch (e) {
+//       console.error('db.status() failed:', e);
+//       response = null;
+//     } 
+    
+//     // Normalize the response
+//      return response;
+    
+//   } catch (err) {
+//     console.error("getDatabaseStatus failed:", err);
+//     return { 
+//       school_count: 0, 
+//       admin_count: 0,
+//       school_completed: false,
+//       admin_completed: false,
+//       initialized: false 
+//     };
+//   }
+// }
+
+// export async function getDatabaseStatus() {
+//   try {
+//     if (!isElectron()) {
+//       console.log('Browser mode: mock database status');
+//       return getDefaultStatus();
+//     }
+    
+//     console.log('Getting database status via db.SetupStatus()...');
+    
+//     const response = await window.electron.db.SetupStatus();
+//     console.log('DB status response:', response);
+    
+//     // Handle different response formats
+//     if (response?.status === 'success') {
+//       return response.result || getDefaultStatus();
+//     }
+    
+//     return response || getDefaultStatus();
+    
+//   } catch (err) {
+//     console.error("getDatabaseStatus failed:", err);
+//     return getDefaultStatus();
+//   }
+// }
+
+
+
 export async function getDatabaseStatus() {
   try {
     if (!isElectron()) {
       console.log('Browser mode: mock database status');
       return { 
-        school_count: 0, 
-        admin_count: 0,
-        school_completed: false,
+        school_completed: false, 
         admin_completed: false,
-        initialized: false 
+        current_step: 'school',
+        requires_internet: true
       };
     }
     
-    console.log('Getting database status via db.status()...');
+    console.log('Getting database status...');
     
+    // Try multiple methods to get the status
     let response = null;
     
+    // Method 1: Use db.status() (from your preload)
     try {
-      // Use db.status() as the only method
-      response = await api.get('/setup/status'); //http method
-      console.log('DB status response:', response);
+      response = await window.electron.db.status();
+      console.log('db.status() response:', response);
     } catch (e) {
-      console.error('db.status() failed:', e);
-      response = null;
-    } 
+      console.log('db.status() failed, trying alternative methods...');
+    }
     
-    // Normalize the response
-     return response;
+    // Method 2: Use db.get-status()
+    if (!response) {
+      try {
+        response = await window.electron.db['get-status']?.();
+        console.log('db.get-status() response:', response);
+      } catch (e) {
+        console.log('db.get-status() failed');
+      }
+    }
+    
+    // Method 3: Use activation.getStatus()
+    if (!response) {
+      try {
+        response = await window.electron.activation.getStatus();
+        console.log('activation.getStatus() response:', response);
+      } catch (e) {
+        console.log('activation.getStatus() failed');
+      }
+    }
+    
+    // Method 4: Use backend.fetchData
+    if (!response) {
+      try {
+        response = await window.electron.backend.fetchData('setup/status', 'GET');
+        console.log('backend.fetchData response:', response);
+      } catch (e) {
+        console.log('backend.fetchData failed');
+      }
+    }
+    
+    // Handle different response formats
+    if (response) {
+      // If response has result wrapper
+      if (response.result) {
+        return response.result;
+      }
+      // Direct response
+      return response;
+    }
+    
+    // Default fallback
+    return {
+      school_completed: false,
+      admin_completed: false,
+      current_step: 'school',
+      requires_internet: true
+    };
     
   } catch (err) {
     console.error("getDatabaseStatus failed:", err);
     return { 
-      school_count: 0, 
-      admin_count: 0,
-      school_completed: false,
+      school_completed: false, 
       admin_completed: false,
-      initialized: false 
+      current_step: 'school',
+      requires_internet: true
     };
   }
 }
 
-// Helper function to normalize database status from various response formats
-
-
-
+function getDefaultStatus() {
+  return { 
+    school_count: 0, 
+    admin_count: 0,
+    school_completed: false,
+    admin_completed: false,
+    initialized: false 
+  };
+}
 
 export async function getStudents() {
   try {
@@ -985,6 +1147,683 @@ export async function callPython(type, action, data = {}) {
     throw err;
   }
 }
+
+  // =========================
+  // RECOVERY
+  // =========================
+// // External recovery server URL (will be configurable later)
+// const RECOVERY_API_URL = "http://localhost:8001";
+
+// export const recoveryAPI = {
+//   // Check if school exists by email - EXTERNAL SERVER
+//   checkSchool: async (email) => {
+//     try {
+//       const response = await fetch(`${RECOVERY_API_URL}/check-school`, {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify({ email }),
+//       });
+
+//       const result = await response.json();
+//       return {
+//         success: response.success,
+//         data: result,
+//         status: response.status
+//       };
+//     } catch (error) {
+//       console.error('Error checking school:', error);
+//       return { 
+//         success: false, 
+//         error: error.message,
+//         message: "Failed to connect to recovery server"
+//       };
+//     }
+//   },
+
+//   // Verify school details - EXTERNAL SERVER
+//   verifyDetails: async (email, schoolName, contact) => {
+//     try {
+//       const response = await fetch(`${RECOVERY_API_URL}/verify-recovery`, {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify({
+//           email: email,
+//           school_name: schoolName,
+//           contact: contact
+//         }),
+//       });
+
+//       const result = await response.json();
+//       return {
+//         success: response.ok,
+//         data: result,
+//         status: response.status
+//       };
+//     } catch (error) {
+//       console.error('Error verifying details:', error);
+//       return { 
+//         success: false, 
+//         error: error.message,
+//         message: "Failed to connect to recovery server"
+//       };
+//     }
+//   },
+
+//   // Perform recovery - EXTERNAL SERVER
+//   performRecovery: async (email, schoolName, contact) => {
+//     try {
+//       const response = await fetch(`${RECOVERY_API_URL}/perform-recovery`, {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify({
+//           email: email,
+//           school_name: schoolName,
+//           contact: contact,
+//           confirm_deactivation: true
+//         }),
+//       });
+
+//       const result = await response.json();
+//       return {
+//         success: response.ok,
+//         data: result,
+//         status: response.status
+//       };
+//     } catch (error) {
+//       console.error('Error performing recovery:', error);
+//       return { 
+//         success: false, 
+//         error: error.message,
+//         message: "Failed to connect to recovery server"
+//       };
+//     }
+//   },
+
+//   // Import blob to main app - EXTERNAL SERVER
+//   importToMainApp: async (encryptedBlob, schoolEmail) => {
+//     try {
+//       const response = await fetch(`${RECOVERY_API_URL}/recovery/import-blob`, {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({
+//           school_email: schoolEmail,
+//           encrypted_backup: encryptedBlob
+//         })
+//       });
+      
+//       const result = await response.json();
+//       return {
+//         success: response.ok,
+//         data: result,
+//         status: response.status
+//       };
+//     } catch (error) {
+//       console.error('Error importing to main app:', error);
+//       return { 
+//         success: false, 
+//         error: error.message,
+//         message: "Failed to connect to recovery server"
+//       };
+//     }
+//   },
+
+//   // Check main app status - EXTERNAL SERVER
+//   // checkMainAppStatus: async () => {
+//   //   try {
+//   //     const response = await fetch(`${API_BASE_URL}/health/test`, {
+//   //       method: "GET",
+//   //       headers: { "Content-Type": "application/json" }
+//   //     });
+      
+//   //     const result = await response.json();
+//   //     return {
+//   //       running: response.ok,
+//   //       status: response.status,
+//   //       data: result,
+//   //       message: response.ok ? "Main app is running" : `Main app returned ${response.status}`
+//   //     };
+//   //   } catch (error) {
+//   //     console.error('Error checking main app status:', error);
+//   //     return {
+//   //       running: false,
+//   //       error: error.message,
+//   //       message: "Failed to connect to recovery server"
+//   //     };
+//   //   }
+//   // },
+
+//   // Verify main app data - EXTERNAL SERVER
+//   verifyMainAppData: async () => {
+//     try {
+//       const response = await fetch(`${API_BASE_URL}/activation/status`, {
+//         method: "GET",
+//         headers: { "Content-Type": "application/json" }
+//       });
+      
+//       const result = await response.json();
+//       return {
+//         success: response.ok,
+//         data: {
+//           success: response.ok,
+//           activated: result.activated,
+//           message: result.activated ? "System is activated" : "System is deactivated"
+//         },
+//         status: response.status
+//       };
+//     } catch (error) {
+//       console.error('Error verifying main app data:', error);
+//       return { 
+//         success: false, 
+//         data: { 
+//           success: false, 
+//           message: error.message 
+//         },
+//         error: error.message
+//       };
+//     }
+//   }
+// };
+
+
+// export const recoveryLocal ={
+
+//    checkMainAppStatus: async () => {
+//     try {
+//       const response = await fetch(`${API_BASE_URL}/health/test`, {
+//         method: "GET",
+//         headers: { "Content-Type": "application/json" }
+//       });
+      
+//       const result = await response.json();
+//       console.log("bullseye")
+//       console.log(response)
+//       return {
+//         running: response.ok,
+//         status: response.status,
+//         data: result,
+//         message: response.ok ? "Main app is running" : `Main app returned ${response.status}`
+//       };
+//     } catch (error) {
+//       console.error('Error checking main app status:', error);
+//       return {
+//         running: false,
+//         error: error.message,
+//         message: "Failed to connect to recovery server"
+//       };
+//     }
+//   },
+
+// };
+
+// External recovery server URL (will be configurable later)
+const RECOVERY_API_URL = "http://localhost:8001";
+const MAIN_APP_URL = "http://localhost:8000"; // Your main app URL
+
+// export const recoveryAPI = {
+//   // Check if school exists by email - EXTERNAL SERVER
+//   checkSchool: async (email) => {
+//     try {
+//       const response = await fetch(`${RECOVERY_API_URL}/check-school`, {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify({ email }),
+//       });
+
+//       const result = await response.json();
+//       console.log(result)
+//       // Handle both response formats
+//       return {
+//         success: response.ok,
+//         data: result,
+//         status: response.status,
+//         // If result has its own success field, preserve it
+//         resultSuccess: result.success
+//       };
+//     } catch (error) {
+//       console.error('Error checking school:', error);
+//       return { 
+//         success: false, 
+//         error: error.message,
+//         message: "Failed to connect to recovery server"
+//       };
+//     }
+//   },
+
+//   // Verify school details - EXTERNAL SERVER
+//   verifyDetails: async (email, schoolName, contact) => {
+//     try {
+//       const response = await fetch(`${RECOVERY_API_URL}/verify-recovery`, {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify({
+//           email: email,
+//           school_name: schoolName,
+//           contact: contact
+//         }),
+//       });
+
+//       const result = await response.json();
+      
+//       // Handle both response formats
+//       return {
+//         success: response.ok,
+//         data: result,
+//         status: response.status,
+//         // If result has its own success/verified field, preserve it
+//         verified: result.verified || false
+//       };
+//     } catch (error) {
+//       console.error('Error verifying details:', error);
+//       return { 
+//         success: false, 
+//         error: error.message,
+//         message: "Failed to connect to recovery server"
+//       };
+//     }
+//   },
+
+//   // Perform recovery - EXTERNAL SERVER
+//   performRecovery: async (email, schoolName, contact) => {
+//     try {
+//       const response = await fetch(`${RECOVERY_API_URL}/perform-recovery`, {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify({
+//           email: email,
+//           school_name: schoolName,
+//           contact: contact,
+//           confirm_deactivation: true
+//         }),
+//       });
+
+//       const result = await response.json();
+      
+//       // Handle both response formats
+//       return {
+//         success: response.ok,
+//         data: result,
+//         status: response.status,
+//         // Extract the encrypted blob if available (for transfer)
+//         encryptedBlob: result.encrypted_blob || null,
+//         // Check if recovery was successful
+//         recoverySuccess: result.success || false
+//       };
+//     } catch (error) {
+//       console.error('Error performing recovery:', error);
+//       return { 
+//         success: false, 
+//         error: error.message,
+//         message: "Failed to connect to recovery server"
+//       };
+//     }
+//   },
+
+//   // Import blob to main app - EXTERNAL SERVER
+//   importToMainApp: async (encryptedBlob, schoolEmail) => {
+//     try {
+//       const response = await fetch(`${RECOVERY_API_URL}/recovery/import-blob`, {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({
+//           school_email: schoolEmail,
+//           encrypted_backup: encryptedBlob
+//         })
+//       });
+      
+//       const result = await response.json();
+      
+//       return {
+//         success: response.ok,
+//         data: result,
+//         status: response.status,
+//         // Extract main app response if available
+//         mainAppResponse: result.main_app_response || null
+//       };
+//     } catch (error) {
+//       console.error('Error importing to main app:', error);
+//       return { 
+//         success: false, 
+//         error: error.message,
+//         message: "Failed to connect to recovery server"
+//       };
+//     }
+//   },
+
+//   // Auto import recovery - EXTERNAL SERVER
+//   autoImportRecovery: async (schoolEmail) => {
+//     try {
+//       const response = await fetch(`${RECOVERY_API_URL}/recovery/auto-import/${encodeURIComponent(schoolEmail)}`, {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" }
+//       });
+      
+//       const result = await response.json();
+      
+//       return {
+//         success: response.ok,
+//         data: result,
+//         status: response.status
+//       };
+//     } catch (error) {
+//       console.error('Error in auto import:', error);
+//       return { 
+//         success: false, 
+//         error: error.message,
+//         message: "Failed to connect to recovery server"
+//       };
+//     }
+//   },
+
+//   // Get recovery status - EXTERNAL SERVER
+//   getRecoveryStatus: async () => {
+//     try {
+//       const response = await fetch(`${RECOVERY_API_URL}/recovery-status`);
+//       const result = await response.json();
+      
+//       return {
+//         success: response.ok,
+//         data: result,
+//         status: response.status
+//       };
+//     } catch (error) {
+//       console.error('Error getting recovery status:', error);
+//       return { 
+//         success: false, 
+//         error: error.message,
+//         message: "Failed to connect to recovery server"
+//       };
+//     }
+//   },
+
+//   // Get recovery blob - EXTERNAL SERVER
+//   getRecoveryBlob: async (schoolEmail) => {
+//     try {
+//       const response = await fetch(`${RECOVERY_API_URL}/recovery/blob/${encodeURIComponent(schoolEmail)}`);
+//       const result = await response.json();
+      
+//       return {
+//         success: response.ok,
+//         data: result,
+//         status: response.status,
+//         // Extract encrypted backup for direct use
+//         encryptedBackup: result.encrypted_backup || null
+//       };
+//     } catch (error) {
+//       console.error('Error getting recovery blob:', error);
+//       return { 
+//         success: false, 
+//         error: error.message,
+//         message: "Failed to connect to recovery server"
+//       };
+//     }
+//   },
+
+//   // Health check - EXTERNAL SERVER
+//   healthCheck: async () => {
+//     try {
+//       const response = await fetch(`${RECOVERY_API_URL}/health`);
+//       const result = await response.json();
+      
+//       return {
+//         success: response.ok,
+//         data: result,
+//         status: response.status,
+//         components: result.components || {}
+//       };
+//     } catch (error) {
+//       console.error('Health check failed:', error);
+//       return { 
+//         success: false, 
+//         error: error.message,
+//         message: "Recovery server is not reachable"
+//       };
+//     }
+//   },
+
+//   // Verify main app data - EXTERNAL SERVER (MAIN APP)
+//   verifyMainAppData: async () => {
+//     try {
+//       const response = await fetch(`${MAIN_APP_URL}/activation/status`, {
+//         method: "GET",
+//         headers: { "Content-Type": "application/json" }
+//       });
+      
+//       const result = await response.json();
+      
+//       // Handle different response formats
+//       const activated = result.activated || result.data?.activated || false;
+      
+//       return {
+//         success: response.ok,
+//         data: {
+//           success: response.ok,
+//           activated: activated,
+//           message: activated ? "System is activated" : "System is deactivated"
+//         },
+//         status: response.status
+//       };
+//     } catch (error) {
+//       console.error('Error verifying main app data:', error);
+//       return { 
+//         success: false, 
+//         data: { 
+//           success: false, 
+//           activated: false,
+//           message: error.message 
+//         },
+//         error: error.message
+//       };
+//     }
+//   }
+// };
+
+// In your api.service.js or wherever recoveryAPI is defined
+
+
+ export const recoveryAPI = {
+  async performRecovery(email, schoolName, contact) {
+    try {
+      const response = await fetch(`${RECOVERY_API_URL}/perform-recovery`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email,
+          school_name: schoolName,
+          contact: contact,
+          confirm_deactivation: true
+        })
+      });
+      
+      const data = await response.json();
+      console.log("Perform recovery response:", data);
+      
+      if (!response.ok) {
+        throw new Error(data.detail || data.message || 'Recovery failed');
+      }
+      
+      return data; // Return the full response
+    } catch (error) {
+      console.error('API performRecovery error:', error);
+      throw error;
+    }
+  },
+  async checkSchool(email) {
+    try {
+      const response = await fetch(`${RECOVERY_API_URL}/check-school`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email })
+      });
+      
+      const data = await response.json();
+      console.log("Check school response:", data);
+      
+      if (!response.ok) {
+        throw new Error(data.detail || data.message || 'Failed to check school');
+      }
+      
+      return data; // Return the full response
+    } catch (error) {
+      console.error('API checkSchool error:', error);
+      throw error;
+    }
+  },
+  
+  async importToMainApp(encryptedBlob, schoolEmail) {
+    try {
+      const response = await fetch(`${RECOVERY_API_URL}/recovery/import-blob`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          school_email: schoolEmail,
+          encrypted_backup: encryptedBlob
+        })
+      });
+      
+      const data = await response.json();
+      console.log("Import to main app response:", data);
+      
+      return {
+        success: response.ok,
+        ...data
+      };
+    } catch (error) {
+      console.error('API importToMainApp error:', error);
+      return {
+        success: false,
+        message: error.message,
+        error
+      };
+    }
+  },
+  
+  async checkMainAppStatus() {
+    try {
+      const response = await fetch('http://localhost:8000/health/test');
+      return {
+        running: response.ok,
+        status: response.status
+      };
+    } catch (error) {
+      console.error('Check main app status error:', error);
+      return { running: false };
+    }
+  },
+  
+  // async verifyMainAppData() {
+  //   try {
+  //    const response = await fetch('http://localhost:8001/verify-recovery', {
+  //     method: 'POST',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //     }
+  //   });
+  //   } catch (error) {
+  //     console.error('Verify main app data error:', error);
+  //     return { success: false };
+  //   }
+  // }
+
+async verifyMainAppData(email, schoolName, contact) {
+  try {
+    const response = await fetch('http://localhost:8001/verify-recovery', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: email,
+        school_name: schoolName,
+        contact: contact,
+        confirm_deactivation: true
+      })
+    });
+    
+    const data = await response.json();
+    console.log("Verify recovery response:", data);
+    
+    return {
+      success: response.ok,
+      data: data
+    };
+  } catch (error) {
+    console.error('Verify main app data error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+
+};
+
+
+export const recoveryLocal = {
+  // Check main app status - MAIN APP
+  checkMainAppStatus: async () => {
+    try {
+      const response = await fetch(`${MAIN_APP_URL}/health/test`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" }
+      });
+      
+      const result = await response.json();
+      console.log("Main app status response:", result);
+      
+      return {
+        running: response.ok,
+        status: response.status,
+        data: result,
+        message: response.ok ? "Main app is running" : `Main app returned ${response.status}`
+      };
+    } catch (error) {
+      console.error('Error checking main app status:', error);
+      return {
+        running: false,
+        error: error.message,
+        message: "Failed to connect to main app"
+      };
+    }
+  },
+
+  // Check if main app is accessible
+  checkMainAppConnection: async () => {
+    try {
+      const response = await fetch(`${MAIN_APP_URL}/`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" }
+      });
+      
+      return {
+        connected: response.ok,
+        status: response.status
+      };
+    } catch (error) {
+      return {
+        connected: false,
+        error: error.message
+      };
+    }
+  }
+};
+
+
 
 // ============ NAMED EXPORTS ============
 // export {

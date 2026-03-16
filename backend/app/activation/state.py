@@ -314,6 +314,19 @@ def ensure_all_tables():
         """)
 
         # ----------------- 11. ACTIVATION_STATE -----------------
+               # ----------------------------------------
+
+        cursor.execute( """
+      CREATE TABLE IF NOT EXISTS recovery_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    school_email TEXT NOT NULL,
+                    recovery_type TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    details TEXT,
+                    ip_address TEXT,
+                    recovered_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+""")
 
 
 
@@ -331,6 +344,15 @@ def ensure_all_tables():
 # =========================
 # Activation State Functions
 # =========================
+# def is_activated() -> bool:
+#     ensure_all_tables()
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
+#     cursor.execute("SELECT activated FROM activation_state WHERE id = 1")
+#     result = cursor.fetchone()
+#     conn.close()
+#     return bool(result['activated']) if result else False
+
 def is_activated() -> bool:
     ensure_all_tables()
     conn = get_db_connection()
@@ -339,6 +361,8 @@ def is_activated() -> bool:
     result = cursor.fetchone()
     conn.close()
     return bool(result['activated']) if result else False
+
+
 
 def mark_activated(activation_code: str, machine_fingerprint: str, school_name: str) -> bool:
     ensure_all_tables()

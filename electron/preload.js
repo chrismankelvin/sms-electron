@@ -62,6 +62,10 @@ setup: {
     getStatus: () => ipcRenderer.invoke('python-request', { 
       type: 'activation', 
       action: 'get-status' 
+    }),
+       stagenow: () => ipcRenderer.invoke('python-request', { 
+      type: 'activation', 
+      action: 'get-status' 
     })
   },
 
@@ -276,7 +280,33 @@ setup: {
       type: 'system', 
       action: 'health' 
     })
-  }
+  },
+
+  // =========================
+  // RECOVERY
+  // =========================
+   // NEW: Recovery methods
+  recovery: {
+ 
+    // importToMainApp: (encryptedBlob, schoolEmail) => ipcRenderer.invoke('python-request', { 
+    //   type: 'recovery', 
+    //   action: 'importToMainApp', 
+    //   data: { encryptedBlob, schoolEmail } 
+    // }),
+   
+    // verifyMainAppData: () => ipcRenderer.invoke('python-request', { 
+    //   type: 'recovery', 
+    //   action: 'verifyMainAppData' 
+    // })
+    
+  },
+
+
+  
+
+
+
+
 });
 
 // Log that preload is ready (for debugging)

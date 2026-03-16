@@ -947,9 +947,83 @@ def route_request(req_type, action, data):
             return {'success': False, 'message': str(e)}
 
     # ===== DATABASE ROUTES =====
+    # elif req_type == 'db':
+    #     from app.activation.state import ensure_all_tables, get_activation_info
+    #     from app.main import get_setup_status
+        
+    #     if action == 'init-tables':
+    #         ensure_all_tables()
+    #         return {'success': True, 'message': 'Tables initialized'}
+    #     elif action == 'status':
+    #         return get_setup_status()
+    #     elif action == 'get-status':
+    #         return get_setup_status()
+    
+        # ===== DATABASE ROUTES =====
     elif req_type == 'db':
-        from app.activation.state import ensure_all_tables, get_activation_info
-        # from app.main import get_setup_status
+        from app.activation.state import ensure_all_tables, is_activated
+        from app.main import check_school_setup_complete, check_admin_setup_complete
+        
+        # Helper function to get setup status
+        # def get_setup_status():
+        #     try:
+        #         info = get_activation_info()
+        #         school = info.get('school_completed', False)
+        #         admin = info.get('admin_completed', False)
+        #         active = info.get('activated', False)
+                
+        #         # Determine current step
+        #         if active:
+        #             current_step = "completed"
+        #         elif not school:
+        #             current_step = "school"
+        #         elif not admin:
+        #             current_step = "admin"
+        #         else:
+        #             current_step = "activation"
+                
+        #         return {
+        #             "activated": active,
+        #             "school_completed": school,
+        #             "admin_completed": admin,
+        #             "current_step": current_step,
+        #             "requires_internet": True
+        #         }
+        #     except Exception as e:
+        #         logger.error(f"Error in get_setup_status: {e}")
+        #         return {
+        #             'activated': False,
+        #             'school_completed': False,
+        #             'admin_completed': False,
+        #             'current_step': 'school'
+        #         }
+
+        def get_setup_status():
+            """Check what step we're on"""
+            activated = is_activated()
+            school_completed = check_school_setup_complete()
+            admin_completed = check_admin_setup_complete()
+            
+            # Determine current step
+            if activated:
+                current_step = "completed"
+            elif not school_completed:
+                current_step = "school"
+            elif not admin_completed:
+                current_step = "admin"
+            else:
+                current_step = "activation"
+            
+            return {
+                "activated": activated,
+                "school_completed": school_completed,
+                "admin_completed": admin_completed,
+                "current_step": current_step,
+                "requires_internet": True
+            }
+
+
+            
         
         if action == 'init-tables':
             ensure_all_tables()
@@ -958,7 +1032,11 @@ def route_request(req_type, action, data):
             return get_setup_status()
         elif action == 'get-status':
             return get_setup_status()
-    
+
+
+
+
+
     elif req_type == 'setup':
         from app.main import get_setup_status
         if action == 'status':

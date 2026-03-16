@@ -10,7 +10,7 @@ import sqlite3
 from pathlib import Path
 import hashlib
 import uuid
-
+from fastapi.responses import JSONResponse  # Add this line
 
 import json
 import base64
@@ -35,19 +35,27 @@ from app.activation.activation_service import (
 from app.minisettings.mini_settings_api import router as mini_settings_router
 from app.minisettings.settings_service import mini_settings_service
 
+print("=" * 60)
+print("MAIN.PY IS BEING LOADED - DEBUG MESSAGE")
+print("=" * 60)
+
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"
-        # "http://localhost:5173",
-        # "http://127.0.0.1:5173"
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",  # Common React port
+        "http://localhost:5000",  # Common alternative
+        "null"  # For Electron
     ],
-    allow_credentials=True,
+    allow_credentials=True,  # Set to True since we're using specific origins
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
-
 app.include_router(auth_router)
+
 app.include_router(mini_settings_router)
 # Initialize SQLiteCloud client
 
@@ -75,6 +83,61 @@ def get_db_connection():
 def hash_password(password: str) -> str:
     """Hash password for storage"""
     return hashlib.sha256(password.encode()).hexdigest()
+
+# def check_school_setup_complete() -> bool:
+#     """Check if school details have been saved"""
+#     try:
+#         conn = get_db_connection()
+#         cursor = conn.cursor()
+#         cursor.execute("SELECT id, school_name FROM school_info LIMIT 1")
+#         row = cursor.fetchone()
+        
+#         if row:
+#             school_id, school_name = row
+#             print(f"School found - ID: {school_id}, Name: {school_name}")
+#             result = True
+#         else:
+#             print("No school found in database")
+#             result = False
+            
+#         conn.close()
+#         return result
+#     except Exception as e:
+#         print(f"School check failed: {e}")
+#         return False
+
+# def check_admin_setup_complete() -> bool:
+#     """Check if admin user has been created"""
+#     try:
+#         conn = get_db_connection()
+#         cursor = conn.cursor()
+#         cursor.execute("SELECT id, username, role FROM users WHERE role = 'admin' LIMIT 1")
+#         row = cursor.fetchone()
+        
+#         if row:
+#             admin_id, username, role = row
+#             print(f"Admin found - ID: {admin_id}, Username: {username}, Role: {role}")
+#             result = True
+#         else:
+#             print("No admin user found in database")
+            
+#             # Optional: Show all users for debugging
+#             cursor.execute("SELECT id, username, role FROM users")
+#             all_users = cursor.fetchall()
+#             if all_users:
+#                 print("Other users in database:")
+#                 for user in all_users:
+#                     print(f"   - ID: {user[0]}, Username: {user[1]}, Role: {user[2]}")
+#             else:
+#                 print("No users at all in database")
+                
+#             result = False
+            
+#         conn.close()
+#         return result
+#     except Exception as e:
+#         print(f"Admin check failed: {e}")
+#         return False
 
 def check_school_setup_complete() -> bool:
     """Check if school details have been saved"""
@@ -130,6 +193,10 @@ def check_admin_setup_complete() -> bool:
     except Exception as e:
         print(f"Admin check failed: {e}")
         return False
+
+
+
+
 def save_school_to_local_db(data: dict) -> bool:
     """Save school info to local database"""
     try:
@@ -411,6 +478,11 @@ class CompleteSyncRequest(BaseModel):
 # SETUP ENDPOINTS
 # ============================================
 
+@app.get("/test-cors")
+async def test_cors():
+    return {"message": "CORS is working"}
+
+
 @app.post("/setup/school-and-admin")
 async def setup_school_and_admin(req: SchoolAndAdminRequest):
     """Create school and admin in a single transaction"""
@@ -669,6 +741,52 @@ async def setup_school_and_admin(req: SchoolAndAdminRequest):
 def activation_status():
     return {"activated": is_activated()}
 
+
+@app.get("/stage/now")
+def stage_now():
+    """Get current setup stage"""
+    school = check_school_setup_complete()
+    admin = check_admin_setup_complete()
+    active = is_activated()
+    
+    # Determine current step
+    if active:
+        step = "completed"
+        stage = 4
+        message = "Setup completed"
+    elif not school:
+        step = "school"
+        stage = 1
+        message = "School information required"
+    elif not admin:
+        step = "admin"
+        stage = 2
+        message = "Admin account required"
+    else:
+        step = "activation"
+        stage = 3
+        message = "Activation required"
+    
+    return {
+        "success": True,
+        "stage": stage,
+        "step": step,
+        "message": message,
+        "status": {
+            "school_completed": school,
+            "admin_completed": admin,
+            "activated": active
+        },
+        "requires_internet": True,
+        "progress": {
+            "school": 25 if school else 0,
+            "admin": 50 if admin else 25 if school else 0,
+            "activation": 75 if active else 50 if admin else 25 if school else 0,
+            "completed": 100 if active else 75 if admin else 50 if school else 25
+        }
+    }  
+
+
 @app.get("/activation/status/detailed")
 def detailed_activation_status():
     """Get detailed activation status"""
@@ -821,30 +939,75 @@ def get_machine_id():
 # UTILITY ENDPOINTS
 # ============================================
 
+# @app.get("/setup/status")
+# async def get_setup_status():
+#     """Check what step we're on"""
+#     activated = is_activated()
+#     school_completed = check_school_setup_complete()
+#     admin_completed = check_admin_setup_complete()
+    
+#     # Determine current step
+#     if activated:
+#         current_step = "completed"
+#     elif not school_completed:
+#         current_step = "school"
+#     elif not admin_completed:
+#         current_step = "admin"
+#     else:
+#         current_step = "activation"
+    
+#     return {
+#         "activated": activated,
+#         "school_completed": school_completed,
+#         "admin_completed": admin_completed,
+#         "current_step": current_step,
+#         "requires_internet": True
+#     }
+
 @app.get("/setup/status")
-async def get_setup_status():
-    """Check what step we're on"""
-    activated = is_activated()
-    school_completed = check_school_setup_complete()
-    admin_completed = check_admin_setup_complete()
-    
-    # Determine current step
-    if activated:
-        current_step = "completed"
-    elif not school_completed:
-        current_step = "school"
-    elif not admin_completed:
-        current_step = "admin"
-    else:
-        current_step = "activation"
-    
-    return {
-        "activated": activated,
-        "school_completed": school_completed,
-        "admin_completed": admin_completed,
-        "current_step": current_step,
-        "requires_internet": True
-    }
+def get_setup_status():
+    """Get the current setup status with step information"""
+    try:
+        # Get individual status values
+        activated = is_activated()
+        school_completed = check_school_setup_complete()
+        admin_completed = check_admin_setup_complete()
+        
+        # Determine current step
+        if activated:
+            current_step = "completed"
+        elif not school_completed:
+            current_step = "school"
+        elif not admin_completed:
+            current_step = "admin"
+        else:
+            # School and admin are complete but not activated
+            current_step = "activation"
+        
+        # Prepare the response
+        status = {
+            "activated": activated,
+            "school_completed": school_completed,
+            "admin_completed": admin_completed,
+            "current_step": current_step,
+            "requires_internet": True
+        }
+        
+        # Log the status for debugging
+        print(f"📊 Setup Status: activated={activated}, school={school_completed}, admin={admin_completed}, step={current_step}")
+        
+        return status
+        
+    except Exception as e:
+        print(f"❌ Error getting setup status: {e}")
+        # Return a safe default
+        return {
+            "activated": False,
+            "school_completed": False,
+            "admin_completed": False,
+            "current_step": "school",
+            "requires_internet": True
+        }
 
 @app.get("/health/connectivity")
 async def check_connectivity():
@@ -1671,45 +1834,250 @@ async def health_test():
     
     
     
+# @app.post("/recovery/import")
+# async def import_recovery(req: RecoveryImportRequest):
+#     """
+#     Import encrypted recovery blob from cloud.
+#     This WILL wipe local data and force reactivation.
+#     """
+#     try:
+#         payload = decrypt_recovery_blob(
+#             req.encrypted_backup,
+#             req.school_email
+#         )
+
+#         validate_recovery_payload(payload)
+
+#         conn = get_db_connection()
+
+#         wipe_local_database(conn)
+#         import_school_from_recovery(conn, payload["school"])
+#         import_admins_from_recovery(conn, payload["admins"])
+#         reset_activation_state(conn)
+
+#         conn.commit()
+#         conn.close()
+
+#         return {
+#             "success": True,
+#             "message": "Recovery completed successfully",
+#             "admins_imported": len(payload["admins"]),
+#             "system_activated": False,
+#             "next_step": "activation_required"
+#         }
+
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=400,
+#             detail=f"Recovery failed: {str(e)}"
+#         )
+import sys
+
 @app.post("/recovery/import")
 async def import_recovery(req: RecoveryImportRequest):
     """
     Import encrypted recovery blob from cloud.
     This WILL wipe local data and force reactivation.
     """
+    import sys
+    from datetime import datetime
+    import traceback
+    import json
+    
+    # Open log file in append mode
+    import os
+    print(f"📝 Current working directory: {os.getcwd()}", flush=True)
+    print(f"📝 Script directory: {os.path.dirname(os.path.abspath(__file__))}", flush=True)
+    log_file = open('recovery_import.log', 'a', encoding='utf-8')
+    
+    def log_to_file(message):
+        """Write message to log file with timestamp"""
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        log_file.write(f"{timestamp} - {message}\n")
+        log_file.flush()  # Force write to disk immediately
+    
     try:
-        payload = decrypt_recovery_blob(
-            req.encrypted_backup,
-            req.school_email
-        )
+        log_to_file("\n🔍 ===== RECOVERY IMPORT STARTED =====")
+        log_to_file(f"🔍 School email: {req.school_email}")
+        log_to_file(f"🔍 Encrypted blob length: {len(req.encrypted_backup) if req.encrypted_backup else 0}")
+        log_to_file(f"🔍 Blob preview: {req.encrypted_backup[:100] if req.encrypted_backup else 'None'}...")
+        
+        # Step 1: Decrypt the blob
+        log_to_file("🔍 Step 1: Decrypting recovery blob...")
+        try:
+            payload = decrypt_recovery_blob(
+                req.encrypted_backup,
+                req.school_email
+            )
+            log_to_file(f"✅ Blob decrypted successfully")
+            log_to_file(f"🔍 Payload schema version: {payload.get('schema_version')}")
+            log_to_file(f"🔍 Payload issued at: {payload.get('issued_at')}")
+            log_to_file(f"🔍 School data: {payload.get('school', {}).get('school_name')}")
+            log_to_file(f"🔍 Admins count: {len(payload.get('admins', []))}")
+        except Exception as decrypt_error:
+            error_msg = f"❌ Decryption failed: {decrypt_error}"
+            log_to_file(error_msg)
+            log_to_file(f"❌ Decryption error type: {type(decrypt_error)}")
+            traceback.print_exc(file=log_file)
+            log_file.close()
+            raise HTTPException(
+                status_code=400,
+                detail=f"Decryption failed: {str(decrypt_error)}"
+            )
 
-        validate_recovery_payload(payload)
+        # Step 2: Validate payload
+        log_to_file("🔍 Step 2: Validating recovery payload...")
+        try:
+            validate_recovery_payload(payload)
+            log_to_file(f"✅ Payload validation passed")
+        except Exception as validate_error:
+            log_to_file(f"❌ Validation failed: {validate_error}")
+            log_to_file(f"❌ Validation error type: {type(validate_error)}")
+            traceback.print_exc(file=log_file)
+            log_file.close()
+            raise HTTPException(
+                status_code=400,
+                detail=f"Validation failed: {str(validate_error)}"
+            )
 
-        conn = get_db_connection()
+        # Step 3: Get database connection
+        log_to_file("🔍 Step 3: Connecting to local database...")
+        try:
+            conn = get_db_connection()
+            log_to_file(f"✅ Database connection established")
+        except Exception as db_error:
+            log_to_file(f"❌ Database connection failed: {db_error}")
+            log_to_file(f"❌ DB error type: {type(db_error)}")
+            traceback.print_exc(file=log_file)
+            log_file.close()
+            raise HTTPException(
+                status_code=500,
+                detail=f"Database connection failed: {str(db_error)}"
+            )
 
-        wipe_local_database(conn)
-        import_school_from_recovery(conn, payload["school"])
-        import_admins_from_recovery(conn, payload["admins"])
-        reset_activation_state(conn)
+        # Step 4: Wipe local database
+        log_to_file("🔍 Step 4: Wiping local database...")
+        try:
+            wipe_local_database(conn)
+            log_to_file(f"✅ Local database wiped successfully")
+        except Exception as wipe_error:
+            log_to_file(f"❌ Failed to wipe database: {wipe_error}")
+            log_to_file(f"❌ Wipe error type: {type(wipe_error)}")
+            traceback.print_exc(file=log_file)
+            conn.rollback()
+            conn.close()
+            log_file.close()
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to wipe database: {str(wipe_error)}"
+            )
 
-        conn.commit()
+        # Step 5: Import school
+        log_to_file("🔍 Step 5: Importing school data...")
+        log_to_file(f"🔍 School data to import: {json.dumps(payload['school'], default=str)}")
+        try:
+            import_school_from_recovery(conn, payload["school"])
+            log_to_file(f"✅ School imported successfully")
+        except Exception as school_error:
+            log_to_file(f"❌ Failed to import school: {school_error}")
+            log_to_file(f"❌ School error type: {type(school_error)}")
+            traceback.print_exc(file=log_file)
+            conn.rollback()
+            conn.close()
+            log_file.close()
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to import school: {str(school_error)}"
+            )
+
+        # Step 6: Import admins
+        log_to_file("🔍 Step 6: Importing admin data...")
+        log_to_file(f"🔍 Admin data to import: {json.dumps(payload['admins'], default=str)}")
+        try:
+            import_admins_from_recovery(conn, payload["admins"])
+            log_to_file(f"✅ {len(payload['admins'])} admins imported successfully")
+            for i, admin in enumerate(payload['admins']):
+                log_to_file(f"  Admin {i+1}: {admin.get('email', 'No email')}")
+        except Exception as admin_error:
+            log_to_file(f"❌ Failed to import admins: {admin_error}")
+            log_to_file(f"❌ Admin error type: {type(admin_error)}")
+            traceback.print_exc(file=log_file)
+            conn.rollback()
+            conn.close()
+            log_file.close()
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to import admins: {str(admin_error)}"
+            )
+
+        # Step 7: Reset activation state
+        log_to_file("🔍 Step 7: Resetting activation state...")
+        try:
+            reset_activation_state(conn)
+            log_to_file(f"✅ Activation state reset")
+        except Exception as activation_error:
+            log_to_file(f"❌ Failed to reset activation: {activation_error}")
+            log_to_file(f"❌ Activation error type: {type(activation_error)}")
+            traceback.print_exc(file=log_file)
+            conn.rollback()
+            conn.close()
+            log_file.close()
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to reset activation: {str(activation_error)}"
+            )
+
+        # Step 8: Commit transaction
+        log_to_file("🔍 Step 8: Committing transaction...")
+        try:
+            conn.commit()
+            log_to_file(f"✅ Transaction committed successfully")
+        except Exception as commit_error:
+            log_to_file(f"❌ Failed to commit: {commit_error}")
+            log_to_file(f"❌ Commit error type: {type(commit_error)}")
+            traceback.print_exc(file=log_file)
+            conn.rollback()
+            conn.close()
+            log_file.close()
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to commit transaction: {str(commit_error)}"
+            )
+
         conn.close()
+        log_to_file(f"✅ Database connection closed")
 
-        return {
+        # Prepare response
+        response = {
             "success": True,
             "message": "Recovery completed successfully",
             "admins_imported": len(payload["admins"]),
             "system_activated": False,
             "next_step": "activation_required"
         }
+        
+        log_to_file(f"✅ Response: {json.dumps(response)}")
+        log_to_file(f"🔍 ===== RECOVERY IMPORT COMPLETED SUCCESSFULLY =====\n")
+        
+        # Close log file before returning
+        log_file.close()
+        return response
 
+    except HTTPException:
+        # Make sure to close log file before re-raising
+        log_file.close()
+        raise
     except Exception as e:
+        log_to_file(f"❌ Unhandled exception: {e}")
+        log_to_file(f"❌ Exception type: {type(e)}")
+        log_to_file(f"❌ Exception args: {e.args}")
+        traceback.print_exc(file=log_file)
+        log_file.close()
         raise HTTPException(
             status_code=400,
             detail=f"Recovery failed: {str(e)}"
         )
-
-
+    
 @app.get("/devices/{device_id}/sync")
 async def sync_single_device(device_id: str):
     """Sync a specific device by device_id"""
@@ -1742,6 +2110,9 @@ async def sync_single_device(device_id: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to sync device: {str(e)}")
+
+
+
 
 @app.on_event("shutdown")
 def shutdown_event():
