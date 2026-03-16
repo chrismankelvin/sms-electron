@@ -43,13 +43,14 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:3000",  # Common React port
-        "http://localhost:5000",  # Common alternative
-        "null"  # For Electron
+        "*",
+        # "http://localhost:5173",
+        # "http://127.0.0.1:5173",
+        # "http://localhost:3000",  # Common React port
+        # "http://localhost:5000",  # Common alternative
+        # "null"  # For Electron
     ],
-    allow_credentials=True,  # Set to True since we're using specific origins
+    allow_credentials=False,  # Set to True since we're using specific origins
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"]
