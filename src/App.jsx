@@ -1,39 +1,4 @@
 
-// import { useEffect, useState } from "react";
-// import AppRoutes from "./routes";
-// import { checkActivationStatus } from "./services/api.service";
-// import "./styles/global.css";
-
-// function App() {
-//   const [loading, setLoading] = useState(true);
-//   const [activated, setActivated] = useState(false);
-
-//   useEffect(() => {
-//     async function init() {
-//       const status = await checkActivationStatus();
-//       setActivated(status);
-//       setLoading(false);
-//     }
-//     init();
-//   }, []);
-
-//   if (loading) {
-//     return (
-//       <div className="flex-center" style={{ height: "100vh", fontSize: "1.2rem", color: "var(--text)" }}>
-//         Loading application...
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="app-layout flex" style={{ flexDirection: "column", minHeight: "100vh" }}>
-//       <AppRoutes activated={activated} setActivated={setActivated} />
-//     </div>
-//   );
-// }
-
-// export default App;
-
 
 // src/App.jsx
 import { useEffect, useState } from "react";
