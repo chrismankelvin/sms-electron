@@ -1,321 +1,3 @@
-
-// import { Routes, Route, Navigate } from "react-router-dom";
-// import { useState, useEffect } from "react";
-// import PrivateRoute from "./components/PrivateRoute";
-// import ActivationStatus from "./pages/Activation/ActivationStatus";
-// import ActivationPage from "./pages/Activation/ActivationPage";
-// import SchoolAndAdminSetupPage from "./SchoolDetails/SchoolDetailsPage";
-// import AdminDetailsPage from "./SchoolDetails/AdminDetailsPage";
-// import SchoolLogin from "./pages/Login/SchoolLogin";
-// import Dashboard from "./pages/Dashboard/Dashboard";
-// import Students from "./pages/Students/Students";
-// import Staff from "./pages/Staff/Staff";
-// import Settings from "./pages/Settings/Settings";
-// import MiniSettingsPage from "./pages/Settings/MiniSettingsPage";
-// import RecoverAccountPage from "./SchoolDetails/RecoverAccountPage";
-// import 'bootstrap/dist/css/bootstrap.min.css';
-
-// // Import API services
-// import { 
-//   checkActivationStatus, 
-//   getDatabaseStatus,
-//   isElectron 
-// } from "./services/api.service";
-
-// // Mini Settings Service
-// import { miniSettingsService } from "./services/miniSettingsService";
-
-// function AppRoutes() {
-//   const [activated, setActivated] = useState(false);
-//   const [setupStatus, setSetupStatus] = useState(null);
-//   const [isOnline, setIsOnline] = useState(navigator.onLine);
-//   const [checkingStatus, setCheckingStatus] = useState(true);
-//   const [hasSeenMiniSettings, setHasSeenMiniSettings] = useState(false);
-//   const [checkingMiniSettings, setCheckingMiniSettings] = useState(true);
-
-//   useEffect(() => {
-//     checkStatus();
-//     checkMiniSettingsStatus();
-
-//     const handleOnline = () => setIsOnline(true);
-//     const handleOffline = () => setIsOnline(false);
-
-//     window.addEventListener('online', handleOnline);
-//     window.addEventListener('offline', handleOffline);
-
-//     return () => {
-//       window.removeEventListener('online', handleOnline);
-//       window.removeEventListener('offline', handleOffline);
-//     };
-//   }, []);
-
-//   // -----------------------
-//   // MINI SETTINGS
-//   // -----------------------
-//   const checkMiniSettingsStatus = async () => {
-//     try {
-//       const hasSeen = await miniSettingsService.hasSeenMiniSettings();
-//       setHasSeenMiniSettings(hasSeen);
-//     } catch (error) {
-//       console.error("Failed to check mini settings from JSON, falling back to localStorage:", error);
-//       const seenSettings = localStorage.getItem("hasSeenMiniSettings");
-//       setHasSeenMiniSettings(seenSettings === "true");
-//     } finally {
-//       setCheckingMiniSettings(false);
-//     }
-//   };
-
-//   const handleMiniSettingsComplete = async () => {
-//     try {
-//       await miniSettingsService.setSeenMiniSettings();
-//       setHasSeenMiniSettings(true);
-//     } catch (error) {
-//       console.error("Failed to save mini settings to JSON, falling back to localStorage:", error);
-//       localStorage.setItem("hasSeenMiniSettings", "true");
-//       setHasSeenMiniSettings(true);
-//     }
-//   };
-
-//   // -----------------------
-//   // ACTIVATION STATUS - IMPROVED
-//   // -----------------------
-// //   const checkStatus = async () => {
-// //     try {
-// //       console.log('🔍 Checking activation status...');
-      
-// //       // Use the API service to check activation
-// //       const isActivated = await checkActivationStatus();
-// //       console.log('✅ Activation status:', isActivated);
-// //       setActivated(isActivated.activated);
-
-// //       // ALWAYS check database status, even if activated
-// //       // This ensures we have the latest setup status
-// //       try {
-// //         console.log('🔍 Checking database status...');
-// //         const dbStatus = await getDatabaseStatus();
-        
-// //         console.log('✅ Database status:', dbStatus);
-        
-// //      const newSetupStatus = {
-// //   school_completed: dbStatus?.school_completed || false,
-// //   admin_completed: dbStatus?.admin_completed || false,
-// //   activation_completed: isActivated.activated,
-// // };
-        
-// //         console.log('📊 Setting setup status to:', newSetupStatus);
-// //         setSetupStatus(newSetupStatus);
-        
-// //       } catch (dbError) {
-// //         console.error('❌ Failed to get database status:', dbError);
-// //         // Fallback to default values
-// //         setSetupStatus({
-// //           school_completed: false,
-// //           admin_completed: false,
-// //           activation_completed: isActivated,
-// //         });
-// //       }
-// //     } catch (error) {
-// //       console.error("❌ Failed to check status via IPC:", error);
-      
-// //       // In browser mode, set defaults
-// //       if (!isElectron()) {
-// //         console.log('🌐 Browser mode: using default setup status');
-// //         setSetupStatus({
-// //           school_completed: false,
-// //           admin_completed: false,
-// //           activation_completed: false,
-// //         });
-// //       }
-// //     } finally {
-// //       setCheckingStatus(false);
-// //     }
-// //   };
-
-// const checkStatus = async () => {
-//   try {
-//     console.log('🔍 Checking activation status...');
-    
-//     // Use the API service to check activation
-//     const isActivated = await checkActivationStatus();
-//     console.log('✅ Activation status:', isActivated);
-//     setActivated(isActivated.activated);
-
-//     // ALWAYS check database status, even if activated
-//     // This ensures we have the latest setup status
-//     try {
-//       console.log('🔍 Checking database status...');
-//       const dbStatus = await getDatabaseStatus();
-      
-//       console.log('✅ Database status:', dbStatus);
-      
-//       // Extract the status from the response
-//       // Handle different response structures
-//       let statusData = dbStatus;
-      
-//       // If the response has a 'result' wrapper (IPC format)
-//       if (dbStatus?.result) {
-//         statusData = dbStatus.result;
-//       }
-      
-//       // If the response has a 'status' object (some APIs)
-//       if (dbStatus?.status) {
-//         statusData = dbStatus.status;
-//       }
-      
-//       const newSetupStatus = {
-//         school_completed: statusData?.school_completed || false,
-//         admin_completed: statusData?.admin_completed || false,
-//         activation_completed: isActivated?.activated || false,
-//         current_step: statusData?.current_step || 'school',
-//         requires_internet: statusData?.requires_internet || true
-//       };
-      
-//       console.log('📊 Setting setup status to:', newSetupStatus);
-//       setSetupStatus(newSetupStatus);
-      
-//       // Log the current step for debugging
-//       console.log(`📍 Current step: ${newSetupStatus.current_step}`);
-      
-//     } catch (dbError) {
-//       console.error('❌ Failed to get database status:', dbError);
-//       // Fallback to default values
-//       setSetupStatus({
-//         school_completed: false,
-//         admin_completed: false,
-//         activation_completed: isActivated?.activated || false,
-//         current_step: 'school',
-//         requires_internet: true
-//       });
-//     }
-//   } catch (error) {
-//     console.error("❌ Failed to check status via IPC:", error);
-    
-//     // In browser mode, set defaults
-//     if (!isElectron()) {
-//       console.log('🌐 Browser mode: using default setup status');
-//       setSetupStatus({
-//         school_completed: false,
-//         admin_completed: false,
-//         activation_completed: false,
-//         current_step: 'school',
-//         requires_internet: true
-//       });
-//     }
-//   } finally {
-//     setCheckingStatus(false);
-//   }
-// };
-
-//   // -----------------------
-//   // LOADING STATE
-//   // -----------------------
-//   if (checkingStatus || checkingMiniSettings) {
-//     return (
-//       <div className="d-flex justify-content-center align-items-center vh-100">
-//         <div className="text-center">
-//           <div className="spinner-border text-primary" role="status">
-//             <span className="visually-hidden">Loading...</span>
-//           </div>
-//           {!isElectron() && (
-//             <p className="mt-3 text-muted">Browser mode - some features may be limited</p>
-//           )}
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   // -----------------------
-//   // SETUP FLOW
-//   // -----------------------
-//   if (!activated) {
-//     return (
-//       <Routes>
-//         <Route
-//           path="/"
-//           element={
-//             <SetupFlow 
-//               setupStatus={setupStatus}
-//               isOnline={isOnline}
-//               onActivated={() => {
-//                 setActivated(true);
-//                 // Refresh mini settings check after activation
-//                 const checkMini = async () => {
-//                   const hasSeen = await miniSettingsService.hasSeenMiniSettings();
-//                   if (!hasSeen) setHasSeenMiniSettings(false);
-//                 };
-//                 checkMini();
-//               }}
-//               onStatusUpdate={checkStatus}
-//             />
-//           }
-//         />
-//         <Route path="/status" element={<ActivationStatus />} />
-//         <Route path="/recover-account" element={<RecoverAccountPage />} />
-//         <Route path="*" element={<Navigate to="/" replace />} />
-//       </Routes>
-//     );
-//   }
-
-//   const showMiniSettings = activated && !hasSeenMiniSettings;
-
-//   // -----------------------
-//   // POST-ACTIVATION ROUTES
-//   // -----------------------
-//   return (
-//     <Routes>
-//       {showMiniSettings ? (
-//         <Route path="/" element={<MiniSettingsPage onComplete={handleMiniSettingsComplete} />} />
-//       ) : (
-//         <Route path="/" element={<SchoolLogin />} />
-//       )}
-
-//       <Route path="/home" element={<SchoolLogin />} />
-
-//       <Route
-//         path="/dashboard"
-//         element={
-//           <PrivateRoute roles={["SUPER_ADMIN", "ADMIN"]}>
-//             <Dashboard />
-//           </PrivateRoute>
-//         }
-//       />
-
-//       <Route
-//         path="/students"
-//         element={
-//           <PrivateRoute roles={["STUDENT", "STAFF", "ADMIN", "SUPER_ADMIN"]}>
-//             <Students />
-//           </PrivateRoute>
-//         }
-//       />
-
-//       <Route
-//         path="/staff"
-//         element={
-//           <PrivateRoute roles={["STAFF", "ADMIN", "SUPER_ADMIN"]}>
-//             <Staff />
-//           </PrivateRoute>
-//         }
-//       />
-
-//       <Route
-//         path="/settings"
-//         element={
-//           <PrivateRoute roles={["SUPER_ADMIN"]}>
-//             <Settings />
-//           </PrivateRoute>
-//         }
-//       />
-
-//       <Route path="*" element={<Navigate to={showMiniSettings ? "/" : "/home"} replace />} />
-//     </Routes>
-//   );
-// }
-
-
-
-
-
 // src/routes/index.jsx (or AppRoutes.jsx)
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -332,6 +14,7 @@ import Staff from "./pages/Staff/Staff";
 import Settings from "./pages/Settings/Settings";
 import MiniSettingsPage from "./pages/Settings/MiniSettingsPage";
 import RecoverAccountPage from "./SchoolDetails/RecoverAccountPage";
+import Unauthorized from "./pages/Unauthorized";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 // Import your new pages
@@ -339,7 +22,11 @@ import ViewTeachers from "./pages/Adminpages/View/ViewTeachers";
 import ViewStudent from "./pages/Adminpages/View/ViewStudents"  
 // import ViewStudents from "../pages/View/ViewStudents";
 // import ScheduleSemester from "../pages/Schedule/Semester";
-// import RegistrationTeachers from "../pages/Registration/Teachers";
+import TeacherRegistration from "./pages/Adminpages/Registration/TeacherRegistration";
+import StudentRegistration from "./pages/Adminpages/Registration/StudentRegistration";
+import TeachingAssistantRegistration from "./pages/Adminpages/Registration/TeachingAssistantRegistration";
+import NonStaffRegistration from "./pages/Adminpages/Registration/NonStaffRegistration"
+import AdministratorRegistration from "./pages/Adminpages/Registration/AdministratorRegistration";
 // import MiscellaneousNotifications from "../pages/Miscellaneous/Notifications";
 // import StatisticsStaff from "../pages/Statistics/Staff";
 // import Account from "../pages/Account/Account";
@@ -608,11 +295,52 @@ function AppRoutes() {
         element={
           <PrivateRoute roles={["SUPER_ADMIN", "ADMIN"]}>
             <MainLayout>
-              {/* <RegistrationTeachers /> */}
+              <TeacherRegistration />
             </MainLayout>
           </PrivateRoute>
         }
       />
+        <Route
+        path="/registration/students"
+        element={
+          <PrivateRoute roles={["SUPER_ADMIN", "ADMIN"]}>
+            <MainLayout>
+              <StudentRegistration />
+            </MainLayout>
+          </PrivateRoute>
+        }
+      />
+              <Route
+        path="/registration/teaching-assistants"
+        element={
+          <PrivateRoute roles={["SUPER_ADMIN", "ADMIN"]}>
+            <MainLayout>
+              <TeachingAssistantRegistration />
+            </MainLayout>
+          </PrivateRoute>
+        }
+      />
+              <Route
+        path="/registration/non-staff"
+        element={
+          <PrivateRoute roles={["SUPER_ADMIN", "ADMIN"]}>
+            <MainLayout>
+              <NonStaffRegistration />
+            </MainLayout>
+          </PrivateRoute>
+        }
+      />
+              <Route
+        path="/registration/administrators"
+        element={
+          <PrivateRoute roles={["SUPER_ADMIN", "ADMIN"]}>
+            <MainLayout>
+              <AdministratorRegistration />
+            </MainLayout>
+          </PrivateRoute>
+        }
+      />
+
 
       {/* Miscellaneous Routes */}
       <Route

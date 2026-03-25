@@ -1,15 +1,6 @@
-
-
-
-// ---------------- DEEPSEEK ----------------
-// ---------------- DEEPSEEK ----------------
-// ---------------- DEEPSEEK ----------------
-// ---------------- DEEPSEEK ----------------
-// ---------------- DEEPSEEK ----------------
-
-
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useMemo } from "react";
 import API from "../../services/api.service";
+import { ROLE_PERMISSIONS } from "./permissions.js";
 
 const AuthContext = createContext(null);
 
@@ -17,28 +8,66 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // ✅ Restore session on refresh
   useEffect(() => {
-    async function fetchSession() {
-      const currentUser = await API.checkSession();
-      setUser(currentUser);
-      setLoading(false);
+    const storedUser = localStorage.getItem("auth_user");
+
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
     }
-    fetchSession();
+
+    setLoading(false);
   }, []);
 
-  const login = async ({ username, password, role = null }) => {
-    const res = await API.login(username, password, role);
-    if (res.user) setUser(res.user);
-    return res;
+  // ✅ LOGIN
+  const login = async ({ username, password, role }) => {
+    try {
+      const res = await API.login(username, password, role);
+
+      if (res?.user) {
+        setUser(res.user);
+        localStorage.setItem("auth_user", JSON.stringify(res.user));
+      }
+
+      return res;
+    } catch (err) {
+      throw err;
+    }
   };
 
+  // ✅ LOGOUT
   const logout = async () => {
-    await API.logout();
-    setUser(null);
+    try {
+      await API.logout();
+    } catch (err) {
+      console.warn("Logout failed");
+    } finally {
+      localStorage.removeItem("auth_user");
+      setUser(null);
+    }
   };
+
+  // 🔥 PERMISSION CHECKER
+  const can = (permission) => {
+    if (!user) return false;
+
+    const rolePermissions = ROLE_PERMISSIONS[user.role] || [];
+    return rolePermissions.includes(permission);
+  };
+
+  const isAuthenticated = !!user;
+
+  const value = useMemo(() => ({
+    user,
+    login,
+    logout,
+    loading,
+    isAuthenticated,
+    can
+  }), [user, loading]);
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

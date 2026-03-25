@@ -125,37 +125,35 @@ setup: {
   // =========================
   // STUDENTS
   // =========================
-  students: {
-    getAll: () => ipcRenderer.invoke('python-request', { 
-      type: 'students', 
-      action: 'get-all' 
-    }),
+// In preload.js - Add to the existing electron object
+students: {
+    getAll: () => ipcRenderer.invoke('python-request', { type: 'students', action: 'get-all' }),
     add: (studentData) => ipcRenderer.invoke('python-request', { 
-      type: 'students', 
-      action: 'add', 
-      data: studentData 
+        type: 'students', 
+        action: 'add', 
+        data: studentData 
     }),
     update: (id, studentData) => ipcRenderer.invoke('python-request', { 
-      type: 'students', 
-      action: 'update', 
-      data: { id, ...studentData } 
+        type: 'students', 
+        action: 'update', 
+        data: { id, ...studentData } 
     }),
     delete: (id) => ipcRenderer.invoke('python-request', { 
-      type: 'students', 
-      action: 'delete', 
-      data: { id } 
+        type: 'students', 
+        action: 'delete', 
+        data: { id } 
     }),
     search: (query) => ipcRenderer.invoke('python-request', { 
-      type: 'students', 
-      action: 'search', 
-      data: { query } 
+        type: 'students', 
+        action: 'search', 
+        data: { query } 
     }),
-    getByClass: (className) => ipcRenderer.invoke('python-request', { 
-      type: 'students', 
-      action: 'get-by-class', 
-      data: { class: className } 
+    register: (studentData) => ipcRenderer.invoke('python-request', { 
+        type: 'students', 
+        action: 'register', 
+        data: studentData 
     })
-  },
+},
 
   // =========================
   // STAFF
@@ -165,10 +163,10 @@ setup: {
       type: 'staff', 
       action: 'get-all' 
     }),
-    add: (staffData) => ipcRenderer.invoke('python-request', { 
-      type: 'staff', 
-      action: 'add', 
-      data: staffData 
+    register: (staffData) => ipcRenderer.invoke('python-request', { 
+        type: 'staff', 
+        action: 'register', 
+        data: staffData 
     }),
     update: (id, staffData) => ipcRenderer.invoke('python-request', { 
       type: 'staff', 
@@ -186,6 +184,69 @@ setup: {
       data: { role } 
     })
   },
+
+  
+  // In preload.js - Add to your existing electron object
+
+nonStaff: {
+    getAll: () => ipcRenderer.invoke('python-request', { type: 'non_staff', action: 'get-all' }),
+    getById: (id) => ipcRenderer.invoke('python-request', { 
+        type: 'non_staff', 
+        action: 'get-by-id', 
+        data: { id } 
+    }),
+    register: (nonStaffData) => ipcRenderer.invoke('python-request', { 
+        type: 'non_staff', 
+        action: 'register', 
+        data: nonStaffData 
+    }),
+    update: (id, nonStaffData) => ipcRenderer.invoke('python-request', { 
+        type: 'non_staff', 
+        action: 'update', 
+        data: { id, ...nonStaffData } 
+    }),
+    delete: (id) => ipcRenderer.invoke('python-request', { 
+        type: 'non_staff', 
+        action: 'delete', 
+        data: { id } 
+    }),
+    search: (query) => ipcRenderer.invoke('python-request', { 
+        type: 'non_staff', 
+        action: 'search', 
+        data: { query } 
+    })
+},
+
+  // In preload.js - Add to your existing electron object
+
+teachingAssistants: {
+    getAll: () => ipcRenderer.invoke('python-request', { type: 'teaching_assistants', action: 'get-all' }),
+    getById: (id) => ipcRenderer.invoke('python-request', { 
+        type: 'teaching_assistants', 
+        action: 'get-by-id', 
+        data: { id } 
+    }),
+    register: (taData) => ipcRenderer.invoke('python-request', { 
+        type: 'teaching_assistants', 
+        action: 'register', 
+        data: taData 
+    }),
+    update: (id, taData) => ipcRenderer.invoke('python-request', { 
+        type: 'teaching_assistants', 
+        action: 'update', 
+        data: { id, ...taData } 
+    }),
+    delete: (id) => ipcRenderer.invoke('python-request', { 
+        type: 'teaching_assistants', 
+        action: 'delete', 
+        data: { id } 
+    }),
+    search: (query) => ipcRenderer.invoke('python-request', { 
+        type: 'teaching_assistants', 
+        action: 'search', 
+        data: { query } 
+    })
+},
 
   // =========================
   // DASHBOARD

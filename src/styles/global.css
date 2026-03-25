@@ -15,6 +15,7 @@ html {
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background-color: var(--bg);
+
   color: var(--text);
   transition: background-color 0.3s ease, color 0.3s ease;
   overflow-x: hidden;
@@ -72,11 +73,13 @@ body.dark-mode {
 /* Main content area that scrolls */
 .main-content {
   flex: 1;
+  margin-top: 70px;
   padding: 1.5rem;
   background-color: var(--bg);
   transition: margin-left 0.3s ease;
   overflow-y: auto;
   min-height: 0; /* Critical for scrolling */
+    /* background-color: #10b981; */
 }
 
 /* For pages without sidebar */

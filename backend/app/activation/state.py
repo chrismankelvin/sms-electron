@@ -327,7 +327,42 @@ def ensure_all_tables():
                     recovered_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
                 )
 """)
+        
+        
+        # ----------------- 12. TEACHING ASISTANTS -----------------
+               # ----------------------------------------
 
+        cursor.execute( """
+     -- Teaching Assistants Table Schema
+CREATE TABLE IF NOT EXISTS teaching_assistants (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    person_id INTEGER NOT NULL,
+    user_id INTEGER,
+    unique_id TEXT,
+    ta_number TEXT NOT NULL,
+    college_university TEXT,
+    college_index_number TEXT,
+    course_of_study TEXT,
+    current_level TEXT,
+    mentee_type TEXT,
+    national_service_id TEXT,
+    date_of_authorization DATE,
+    date_of_termination DATE,
+    status TEXT DEFAULT 'active',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (person_id) REFERENCES person_details(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+""")
+
+   # ----------------- 13. NON_STAFF  -----------------
+               # ----------------------------------------
+
+        cursor.execute( """
+     CREATE TABLE IF NOT EXISTS non_staff (id INTEGER PRIMARY KEY AUTOINCREMENT, person_id INTEGER NOT NULL, user_id INTEGER, unique_id TEXT, non_staff_number TEXT NOT NULL, role TEXT NOT NULL, department TEXT, designation TEXT, hired_at DATE, status TEXT DEFAULT 'active', fathers_name TEXT, fathers_contact TEXT, mothers_name TEXT, mothers_contact TEXT, next_of_kin_name TEXT, next_of_kin_contact TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (person_id) REFERENCES person_details(id), FOREIGN KEY (user_id) REFERENCES users(id));
+""")
+        
 
 
 

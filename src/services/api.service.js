@@ -923,16 +923,28 @@ export async function getStudents() {
   }
 }
 
-export async function addStudent(studentData) {
-  try {
-    if (!isElectron()) {
-      return { success: true, id: Date.now() };
+// In api.service.js - Add or update the registerStudent function
+export async function registerStudent(studentData) {
+    try {
+        if (!isElectron()) {
+            console.log('Browser mode: mock student registration');
+            return { 
+                success: true, 
+                message: "Student registered successfully (mock)",
+                student_id: Math.floor(Math.random() * 10000),
+                student_number: `STU/${new Date().getFullYear()}/MOCK${Math.floor(Math.random() * 1000)}`
+            };
+        }
+        
+        console.log('Registering student via IPC...');
+        const response = await window.electron.students.register(studentData);
+        console.log('Registration response:', response);
+        
+        return response;
+    } catch (err) {
+        console.error("registerStudent failed:", err);
+        return { success: false, message: err.message };
     }
-    return await window.electron.students.add(studentData);
-  } catch (err) {
-    console.error("addStudent failed:", err);
-    return { success: false, message: err.message };
-  }
 }
 
 export async function updateStudent(id, studentData) {
@@ -973,18 +985,95 @@ export async function searchStudents(query) {
 }
 
 // ============ STAFF ============
-export async function getStaff() {
+// In api.service.js - Add this function
+
+export async function registerStaff(staffData) {
   try {
     if (!isElectron()) {
-      return { staff: [] };
+      console.log('Browser mode: mock staff registration');
+      return { 
+        success: true, 
+        message: `${staffData.role || 'Staff'} registered successfully (mock)`,
+        staff_id: Math.floor(Math.random() * 10000),
+        person_id: Math.floor(Math.random() * 10000),
+        user_id: Math.floor(Math.random() * 10000),
+        staff_number: `${staffData.role === 'teacher' ? 'TCH' : 'ADM'}/${new Date().getFullYear()}/MOCK${Math.floor(Math.random() * 1000)}`,
+        username: `${staffData.first_name.toLowerCase()}.${staffData.surname.toLowerCase()}`,
+        default_password: "password123"
+      };
     }
-    const response = await window.electron.staff.getAll();
-    return response.staff || [];
+    
+    console.log('Registering staff via IPC...');
+    const response = await window.electron.staff.register(staffData);
+    console.log('Staff registration response:', response);
+    
+    return response;
   } catch (err) {
-    console.error("getStaff failed:", err);
-    return [];
+    console.error("registerStaff failed:", err);
+    return { success: false, message: err.message };
   }
 }
+
+// ============== TEACHING ASISTANTS=============
+// In api.service.js - Add this function
+
+export async function registerTeachingAssistant(taData) {
+  try {
+    if (!isElectron()) {
+      console.log('Browser mode: mock teaching assistant registration');
+      return { 
+        success: true, 
+        message: "Teaching Assistant registered successfully (mock)",
+        ta_id: Math.floor(Math.random() * 10000),
+        person_id: Math.floor(Math.random() * 10000),
+        user_id: Math.floor(Math.random() * 10000),
+        ta_number: `TA/${new Date().getFullYear()}/MOCK${Math.floor(Math.random() * 1000)}`,
+        username: `${taData.first_name.toLowerCase()}.${taData.surname.toLowerCase()}`,
+        default_password: "password123"
+      };
+    }
+    
+    console.log('Registering teaching assistant via IPC...');
+    const response = await window.electron.teachingAssistants.register(taData);
+    console.log('TA registration response:', response);
+    
+    return response;
+  } catch (err) {
+    console.error("registerTeachingAssistant failed:", err);
+    return { success: false, message: err.message };
+  }
+}
+
+
+// In api.service.js - Add this function
+
+export async function registerNonStaff(nonStaffData) {
+  try {
+    if (!isElectron()) {
+      console.log('Browser mode: mock non-staff registration');
+      return { 
+        success: true, 
+        message: "Non-Teaching Staff registered successfully (mock)",
+        non_staff_id: Math.floor(Math.random() * 10000),
+        person_id: Math.floor(Math.random() * 10000),
+        user_id: Math.floor(Math.random() * 10000),
+        non_staff_number: `NS/${new Date().getFullYear()}/MOCK${Math.floor(Math.random() * 1000)}`,
+        username: `${nonStaffData.first_name.toLowerCase()}.${nonStaffData.surname.toLowerCase()}`,
+        default_password: "password123"
+      };
+    }
+    
+    console.log('Registering non-staff via IPC...');
+    const response = await window.electron.nonStaff.register(nonStaffData);
+    console.log('Non-staff registration response:', response);
+    
+    return response;
+  } catch (err) {
+    console.error("registerNonStaff failed:", err);
+    return { success: false, message: err.message };
+  }
+}
+
 
 export async function addStaff(staffData) {
   try {
@@ -1365,272 +1454,6 @@ export async function callPython(type, action, data = {}) {
 const RECOVERY_API_URL = "http://localhost:8001";
 const MAIN_APP_URL = "http://localhost:8000"; // Your main app URL
 
-// export const recoveryAPI = {
-//   // Check if school exists by email - EXTERNAL SERVER
-//   checkSchool: async (email) => {
-//     try {
-//       const response = await fetch(`${RECOVERY_API_URL}/check-school`, {
-//         method: "POST",
-//         headers: {
-//           "Content-Type": "application/json",
-//         },
-//         body: JSON.stringify({ email }),
-//       });
-
-//       const result = await response.json();
-//       console.log(result)
-//       // Handle both response formats
-//       return {
-//         success: response.ok,
-//         data: result,
-//         status: response.status,
-//         // If result has its own success field, preserve it
-//         resultSuccess: result.success
-//       };
-//     } catch (error) {
-//       console.error('Error checking school:', error);
-//       return { 
-//         success: false, 
-//         error: error.message,
-//         message: "Failed to connect to recovery server"
-//       };
-//     }
-//   },
-
-//   // Verify school details - EXTERNAL SERVER
-//   verifyDetails: async (email, schoolName, contact) => {
-//     try {
-//       const response = await fetch(`${RECOVERY_API_URL}/verify-recovery`, {
-//         method: "POST",
-//         headers: {
-//           "Content-Type": "application/json",
-//         },
-//         body: JSON.stringify({
-//           email: email,
-//           school_name: schoolName,
-//           contact: contact
-//         }),
-//       });
-
-//       const result = await response.json();
-      
-//       // Handle both response formats
-//       return {
-//         success: response.ok,
-//         data: result,
-//         status: response.status,
-//         // If result has its own success/verified field, preserve it
-//         verified: result.verified || false
-//       };
-//     } catch (error) {
-//       console.error('Error verifying details:', error);
-//       return { 
-//         success: false, 
-//         error: error.message,
-//         message: "Failed to connect to recovery server"
-//       };
-//     }
-//   },
-
-//   // Perform recovery - EXTERNAL SERVER
-//   performRecovery: async (email, schoolName, contact) => {
-//     try {
-//       const response = await fetch(`${RECOVERY_API_URL}/perform-recovery`, {
-//         method: "POST",
-//         headers: {
-//           "Content-Type": "application/json",
-//         },
-//         body: JSON.stringify({
-//           email: email,
-//           school_name: schoolName,
-//           contact: contact,
-//           confirm_deactivation: true
-//         }),
-//       });
-
-//       const result = await response.json();
-      
-//       // Handle both response formats
-//       return {
-//         success: response.ok,
-//         data: result,
-//         status: response.status,
-//         // Extract the encrypted blob if available (for transfer)
-//         encryptedBlob: result.encrypted_blob || null,
-//         // Check if recovery was successful
-//         recoverySuccess: result.success || false
-//       };
-//     } catch (error) {
-//       console.error('Error performing recovery:', error);
-//       return { 
-//         success: false, 
-//         error: error.message,
-//         message: "Failed to connect to recovery server"
-//       };
-//     }
-//   },
-
-//   // Import blob to main app - EXTERNAL SERVER
-//   importToMainApp: async (encryptedBlob, schoolEmail) => {
-//     try {
-//       const response = await fetch(`${RECOVERY_API_URL}/recovery/import-blob`, {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({
-//           school_email: schoolEmail,
-//           encrypted_backup: encryptedBlob
-//         })
-//       });
-      
-//       const result = await response.json();
-      
-//       return {
-//         success: response.ok,
-//         data: result,
-//         status: response.status,
-//         // Extract main app response if available
-//         mainAppResponse: result.main_app_response || null
-//       };
-//     } catch (error) {
-//       console.error('Error importing to main app:', error);
-//       return { 
-//         success: false, 
-//         error: error.message,
-//         message: "Failed to connect to recovery server"
-//       };
-//     }
-//   },
-
-//   // Auto import recovery - EXTERNAL SERVER
-//   autoImportRecovery: async (schoolEmail) => {
-//     try {
-//       const response = await fetch(`${RECOVERY_API_URL}/recovery/auto-import/${encodeURIComponent(schoolEmail)}`, {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" }
-//       });
-      
-//       const result = await response.json();
-      
-//       return {
-//         success: response.ok,
-//         data: result,
-//         status: response.status
-//       };
-//     } catch (error) {
-//       console.error('Error in auto import:', error);
-//       return { 
-//         success: false, 
-//         error: error.message,
-//         message: "Failed to connect to recovery server"
-//       };
-//     }
-//   },
-
-//   // Get recovery status - EXTERNAL SERVER
-//   getRecoveryStatus: async () => {
-//     try {
-//       const response = await fetch(`${RECOVERY_API_URL}/recovery-status`);
-//       const result = await response.json();
-      
-//       return {
-//         success: response.ok,
-//         data: result,
-//         status: response.status
-//       };
-//     } catch (error) {
-//       console.error('Error getting recovery status:', error);
-//       return { 
-//         success: false, 
-//         error: error.message,
-//         message: "Failed to connect to recovery server"
-//       };
-//     }
-//   },
-
-//   // Get recovery blob - EXTERNAL SERVER
-//   getRecoveryBlob: async (schoolEmail) => {
-//     try {
-//       const response = await fetch(`${RECOVERY_API_URL}/recovery/blob/${encodeURIComponent(schoolEmail)}`);
-//       const result = await response.json();
-      
-//       return {
-//         success: response.ok,
-//         data: result,
-//         status: response.status,
-//         // Extract encrypted backup for direct use
-//         encryptedBackup: result.encrypted_backup || null
-//       };
-//     } catch (error) {
-//       console.error('Error getting recovery blob:', error);
-//       return { 
-//         success: false, 
-//         error: error.message,
-//         message: "Failed to connect to recovery server"
-//       };
-//     }
-//   },
-
-//   // Health check - EXTERNAL SERVER
-//   healthCheck: async () => {
-//     try {
-//       const response = await fetch(`${RECOVERY_API_URL}/health`);
-//       const result = await response.json();
-      
-//       return {
-//         success: response.ok,
-//         data: result,
-//         status: response.status,
-//         components: result.components || {}
-//       };
-//     } catch (error) {
-//       console.error('Health check failed:', error);
-//       return { 
-//         success: false, 
-//         error: error.message,
-//         message: "Recovery server is not reachable"
-//       };
-//     }
-//   },
-
-//   // Verify main app data - EXTERNAL SERVER (MAIN APP)
-//   verifyMainAppData: async () => {
-//     try {
-//       const response = await fetch(`${MAIN_APP_URL}/activation/status`, {
-//         method: "GET",
-//         headers: { "Content-Type": "application/json" }
-//       });
-      
-//       const result = await response.json();
-      
-//       // Handle different response formats
-//       const activated = result.activated || result.data?.activated || false;
-      
-//       return {
-//         success: response.ok,
-//         data: {
-//           success: response.ok,
-//           activated: activated,
-//           message: activated ? "System is activated" : "System is deactivated"
-//         },
-//         status: response.status
-//       };
-//     } catch (error) {
-//       console.error('Error verifying main app data:', error);
-//       return { 
-//         success: false, 
-//         data: { 
-//           success: false, 
-//           activated: false,
-//           message: error.message 
-//         },
-//         error: error.message
-//       };
-//     }
-//   }
-// };
-
-// In your api.service.js or wherever recoveryAPI is defined
-
 
  export const recoveryAPI = {
   async performRecovery(email, schoolName, contact) {
@@ -1825,59 +1648,7 @@ export const recoveryLocal = {
 
 
 
-// ============ NAMED EXPORTS ============
-// export {
-//   // Helper
-//   // isElectron,
-  
-//   // Activation
-//   checkActivationStatus,
-//   activateSystem,
-//   deactivateSystem,
-//   getFingerprint,
-  
-//   // Auth
-//   login,
-//   logout,
-//   checkSession,
-//   bootstrapSuperAdmin,
-  
-//   // Database
-//   initDatabase,
-//   getDatabaseStatus,
-  
-//   // Students
-//   getStudents,
-//   addStudent,
-//   updateStudent,
-//   deleteStudent,
-//   searchStudents,
-  
-//   // Staff
-//   getStaff,
-//   addStaff,
-//   updateStaff,
-//   deleteStaff,
-  
-//   // Dashboard
-//   getDashboardStats,
-  
-//   // Settings
-//   getSettings,
-//   updateSettings,
-  
-//   // System
-//   checkHealth,
-//   getSystemInfo,
-  
-//   // Backup
-//   createBackup,
-//   listBackups,
-//   restoreBackup,
-  
-//   // Generic
-//   callPython
-// };
+
 
 // ============ DEFAULT EXPORT ============
 export default {
@@ -1908,14 +1679,17 @@ export default {
   
   // Students
   getStudents,
-  addStudent,
+  registerStudent,
+  // addStudent,
   updateStudent,
   deleteStudent,
   searchStudents,
   
   // Staff
-  getStaff,
-  addStaff,
+  // getStaff,
+  // addStaff,
+  registerTeachingAssistant,
+  registerStaff,
   updateStaff,
   deleteStaff,
   
