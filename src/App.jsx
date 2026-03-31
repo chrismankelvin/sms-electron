@@ -1,9 +1,7 @@
-
-
 // src/App.jsx
 import { useEffect, useState } from "react";
+import { AuthProvider } from "./pages/Login/useAuth";
 import AppRoutes from "./routes";
-
 import { checkActivationStatus, initDatabase, isElectron } from "./services/api.service";
 import "./styles/global.css";
 
@@ -15,11 +13,8 @@ function App() {
   useEffect(() => {
     async function init() {
       try {
-        // Log environment
         if (isElectron()) {
           console.log('Running in Electron mode');
-          
-          // Initialize database tables if needed
           try {
             await initDatabase();
           } catch (dbError) {
@@ -29,9 +24,8 @@ function App() {
           console.log('Running in browser mode');
         }
 
-        // Check activation status
         const status = await checkActivationStatus();
-        setActivated(status);
+        setActivated(status.activated || status);
       } catch (err) {
         console.error('Initialization error:', err);
         setError(err.message);
@@ -83,12 +77,14 @@ function App() {
   }
 
   return (
-    <div className="app-layout flex" style={{ 
-      flexDirection: "column", 
-      minHeight: "100vh" 
-    }}>
-      <AppRoutes activated={activated} setActivated={setActivated} />
-    </div>
+    <AuthProvider>
+      <div className="app-layout" style={{ 
+        flexDirection: "column", 
+        minHeight: "100vh" 
+      }}>
+        <AppRoutes activated={activated} setActivated={setActivated} />
+      </div>
+    </AuthProvider>
   );
 }
 

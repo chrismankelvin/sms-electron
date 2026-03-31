@@ -1,8 +1,8 @@
-// src/routes/index.jsx (or AppRoutes.jsx)
+// src/routes/index.jsx
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import PrivateRoute from "./components/PrivateRoute";
-import MainLayout from "./layouts/MainLayout";
+import RoleBasedLayout from "./layouts/RoleBasedLayout";
 import ActivationStatus from "./pages/Activation/ActivationStatus";
 import ActivationPage from "./pages/Activation/ActivationPage";
 import SchoolAndAdminSetupPage from "./SchoolDetails/SchoolDetailsPage";
@@ -11,38 +11,34 @@ import SchoolLogin from "./pages/Login/SchoolLogin";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Students from "./pages/Students/Students";
 import Staff from "./pages/Staff/Staff";
+
 import Settings from "./pages/Settings/Settings";
 import MiniSettingsPage from "./pages/Settings/MiniSettingsPage";
 import RecoverAccountPage from "./SchoolDetails/RecoverAccountPage";
 import Unauthorized from "./pages/Unauthorized";
 import 'bootstrap/dist/css/bootstrap.min.css';
+import Accountant from "./pages/Accountant/Accountant";
 
-// Import your new pages
+// Import your pages
 import ViewTeachers from "./pages/Adminpages/View/ViewTeachers";
-import ViewStudent from "./pages/Adminpages/View/ViewStudents"  
-// import ViewStudents from "../pages/View/ViewStudents";
-// import ScheduleSemester from "../pages/Schedule/Semester";
+import ViewStudent from "./pages/Adminpages/View/ViewStudents";
 import TeacherRegistration from "./pages/Adminpages/Registration/TeacherRegistration";
 import StudentRegistration from "./pages/Adminpages/Registration/StudentRegistration";
 import TeachingAssistantRegistration from "./pages/Adminpages/Registration/TeachingAssistantRegistration";
-import NonStaffRegistration from "./pages/Adminpages/Registration/NonStaffRegistration"
+import NonStaffRegistration from "./pages/Adminpages/Registration/NonStaffRegistration";
 import AdministratorRegistration from "./pages/Adminpages/Registration/AdministratorRegistration";
-// import MiscellaneousNotifications from "../pages/Miscellaneous/Notifications";
-// import StatisticsStaff from "../pages/Statistics/Staff";
-// import Account from "../pages/Account/Account";
-// import Help from "../pages/Help/Help";
 
 // Import API services
 import { 
-  checkActivationStatus, 
+  checkActivationStatus,
   getDatabaseStatus,
   isElectron 
 } from "./services/api.service";
 
 import { miniSettingsService } from "./services/miniSettingsService";
+import AccountantRegistration from "./pages/Adminpages/Registration/AccountantRegistration";
 
-function AppRoutes() {
-  const [activated, setActivated] = useState(false);
+function AppRoutes({ activated, setActivated }) {
   const [setupStatus, setSetupStatus] = useState(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [checkingStatus, setCheckingStatus] = useState(true);
@@ -50,8 +46,10 @@ function AppRoutes() {
   const [checkingMiniSettings, setCheckingMiniSettings] = useState(true);
 
   useEffect(() => {
+    if (activated) {
+      checkMiniSettingsStatus();
+    }
     checkStatus();
-    checkMiniSettingsStatus();
 
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -63,7 +61,7 @@ function AppRoutes() {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, []);
+  }, [activated]);
 
   const checkMiniSettingsStatus = async () => {
     try {
@@ -92,57 +90,48 @@ function AppRoutes() {
   const checkStatus = async () => {
     try {
       console.log('🔍 Checking activation status...');
+      
+      // Use the API service to check activation
       const isActivated = await checkActivationStatus();
       console.log('✅ Activation status:', isActivated);
       setActivated(isActivated.activated);
 
+      // ALWAYS check database status, even if activated
+      // This ensures we have the latest setup status
       try {
         console.log('🔍 Checking database status...');
         const dbStatus = await getDatabaseStatus();
+        
         console.log('✅ Database status:', dbStatus);
         
-        let statusData = dbStatus;
-        
-        if (dbStatus?.result) {
-          statusData = dbStatus.result;
-        }
-        
-        if (dbStatus?.status) {
-          statusData = dbStatus.status;
-        }
-        
-        const newSetupStatus = {
-          school_completed: statusData?.school_completed || false,
-          admin_completed: statusData?.admin_completed || false,
-          activation_completed: isActivated?.activated || false,
-          current_step: statusData?.current_step || 'school',
-          requires_internet: statusData?.requires_internet || true
-        };
+     const newSetupStatus = {
+  school_completed: dbStatus?.school_completed || false,
+  admin_completed: dbStatus?.admin_completed || false,
+  activation_completed: isActivated.activated,
+};
         
         console.log('📊 Setting setup status to:', newSetupStatus);
         setSetupStatus(newSetupStatus);
         
       } catch (dbError) {
         console.error('❌ Failed to get database status:', dbError);
+        // Fallback to default values
         setSetupStatus({
           school_completed: false,
           admin_completed: false,
-          activation_completed: isActivated?.activated || false,
-          current_step: 'school',
-          requires_internet: true
+          activation_completed: isActivated,
         });
       }
     } catch (error) {
-      console.error("❌ Failed to check status:", error);
+      console.error("❌ Failed to check status via IPC:", error);
       
+      // In browser mode, set defaults
       if (!isElectron()) {
         console.log('🌐 Browser mode: using default setup status');
         setSetupStatus({
           school_completed: false,
           admin_completed: false,
           activation_completed: false,
-          current_step: 'school',
-          requires_internet: true
         });
       }
     } finally {
@@ -195,7 +184,7 @@ function AppRoutes() {
 
   const showMiniSettings = activated && !hasSeenMiniSettings;
 
-  // PROTECTED ROUTES WITH MAINLAYOUT
+  // PROTECTED ROUTES WITH ROLE-BASED LAYOUT
   return (
     <Routes>
       {showMiniSettings ? (
@@ -206,14 +195,14 @@ function AppRoutes() {
 
       <Route path="/home" element={<SchoolLogin />} />
 
-      {/* Dashboard Routes with MainLayout */}
+      {/* Dashboard - Accessible by all authenticated users */}
       <Route
         path="/dashboard"
         element={
-          <PrivateRoute roles={["SUPER_ADMIN", "ADMIN"]}>
-            <MainLayout>
+          <PrivateRoute allowedRoles={["administrator","staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
               <Dashboard />
-            </MainLayout>
+            </RoleBasedLayout>
           </PrivateRoute>
         }
       />
@@ -222,10 +211,10 @@ function AppRoutes() {
       <Route
         path="/students"
         element={
-          <PrivateRoute roles={["STUDENT", "STAFF", "ADMIN", "SUPER_ADMIN"]}>
-            <MainLayout>
-              {/* <Students /> */}
-            </MainLayout>
+          <PrivateRoute allowedRoles={["administrator", "teacher"]}>
+            <RoleBasedLayout>
+              <Students />
+            </RoleBasedLayout>
           </PrivateRoute>
         }
       />
@@ -234,10 +223,10 @@ function AppRoutes() {
       <Route
         path="/staff"
         element={
-          <PrivateRoute roles={["STAFF", "ADMIN", "SUPER_ADMIN"]}>
-            <MainLayout>
-              {/* <Staff /> */}
-            </MainLayout>
+          <PrivateRoute allowedRoles={["administrator","Staff"]}>
+            <RoleBasedLayout>
+              <Staff />
+            </RoleBasedLayout>
           </PrivateRoute>
         }
       />
@@ -246,22 +235,33 @@ function AppRoutes() {
       <Route
         path="/settings"
         element={
-          <PrivateRoute roles={["SUPER_ADMIN"]}>
-            <MainLayout>
-              {/* <Settings /> */}
-            </MainLayout>
+          <PrivateRoute allowedRoles={["administrator"]}>
+            <RoleBasedLayout>
+              <Settings />
+            </RoleBasedLayout>
           </PrivateRoute>
         }
       />
+
+      <Route
+  path="/accountant"
+  element={
+    <PrivateRoute allowedRoles={["accountant", "administrator"]}>
+      <RoleBasedLayout>
+        <Accountant />
+      </RoleBasedLayout>
+    </PrivateRoute>
+  }
+/>
 
       {/* View Section Routes */}
       <Route
         path="/view/teachers"
         element={
-          <PrivateRoute roles={["SUPER_ADMIN", "ADMIN"]}>
-            <MainLayout>
+          <PrivateRoute allowedRoles={["administrator"]}>
+            <RoleBasedLayout>
               <ViewTeachers />
-            </MainLayout>
+            </RoleBasedLayout>
           </PrivateRoute>
         }
       />
@@ -269,22 +269,10 @@ function AppRoutes() {
       <Route
         path="/view/students"
         element={
-          <PrivateRoute roles={["SUPER_ADMIN", "ADMIN"]}>
-            <MainLayout>
-              {/* <ViewStudents /> */}
-            </MainLayout>
-          </PrivateRoute>
-        }
-      />
-
-      {/* Schedule Section Routes */}
-      <Route
-        path="/schedule/semester"
-        element={
-          <PrivateRoute roles={["SUPER_ADMIN", "ADMIN"]}>
-            <MainLayout>
-              {/* <ScheduleSemester /> */}
-            </MainLayout>
+          <PrivateRoute allowedRoles={["administrator"]}>
+            <RoleBasedLayout>
+              <ViewStudent />
+            </RoleBasedLayout>
           </PrivateRoute>
         }
       />
@@ -293,108 +281,72 @@ function AppRoutes() {
       <Route
         path="/registration/teachers"
         element={
-          <PrivateRoute roles={["SUPER_ADMIN", "ADMIN"]}>
-            <MainLayout>
+          <PrivateRoute allowedRoles={["administrator"]}>
+            <RoleBasedLayout>
               <TeacherRegistration />
-            </MainLayout>
+            </RoleBasedLayout>
           </PrivateRoute>
         }
       />
-        <Route
+          <Route
+        path="/registration/accountant"
+        element={
+          <PrivateRoute allowedRoles={["administrator"]}>
+            <RoleBasedLayout>
+              <AccountantRegistration />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
         path="/registration/students"
         element={
-          <PrivateRoute roles={["SUPER_ADMIN", "ADMIN"]}>
-            <MainLayout>
+          <PrivateRoute allowedRoles={["administrator"]}>
+            <RoleBasedLayout>
               <StudentRegistration />
-            </MainLayout>
+            </RoleBasedLayout>
           </PrivateRoute>
         }
       />
-              <Route
+      <Route
         path="/registration/teaching-assistants"
         element={
-          <PrivateRoute roles={["SUPER_ADMIN", "ADMIN"]}>
-            <MainLayout>
+          <PrivateRoute allowedRoles={["administrator"]}>
+            <RoleBasedLayout>
               <TeachingAssistantRegistration />
-            </MainLayout>
+            </RoleBasedLayout>
           </PrivateRoute>
         }
       />
-              <Route
+      <Route
         path="/registration/non-staff"
         element={
-          <PrivateRoute roles={["SUPER_ADMIN", "ADMIN"]}>
-            <MainLayout>
+          <PrivateRoute allowedRoles={["administrator"]}>
+            <RoleBasedLayout>
               <NonStaffRegistration />
-            </MainLayout>
+            </RoleBasedLayout>
           </PrivateRoute>
         }
       />
-              <Route
+      <Route
         path="/registration/administrators"
         element={
-          <PrivateRoute roles={["SUPER_ADMIN", "ADMIN"]}>
-            <MainLayout>
+          <PrivateRoute allowedRoles={["administrator"]}>
+            <RoleBasedLayout>
               <AdministratorRegistration />
-            </MainLayout>
+            </RoleBasedLayout>
           </PrivateRoute>
         }
       />
 
+      {/* Unauthorized Page */}
+      <Route path="/unauthorized" element={<Unauthorized />} />
 
-      {/* Miscellaneous Routes */}
-      <Route
-        path="/miscellaneous/notifications"
-        element={
-          <PrivateRoute roles={["SUPER_ADMIN", "ADMIN", "STAFF"]}>
-            <MainLayout>
-              {/* <MiscellaneousNotifications /> */}
-            </MainLayout>
-          </PrivateRoute>
-        }
-      />
-
-      {/* Statistics Routes */}
-      <Route
-        path="/statistics/staff"
-        element={
-          <PrivateRoute roles={["SUPER_ADMIN", "ADMIN"]}>
-            <MainLayout>
-              {/* <StatisticsStaff /> */}
-            </MainLayout>
-          </PrivateRoute>
-        }
-      />
-
-      {/* Account Routes */}
-      <Route
-        path="/account"
-        element={
-          <PrivateRoute roles={["SUPER_ADMIN", "ADMIN", "STAFF", "STUDENT"]}>
-            <MainLayout>
-              {/* <Account /> */}
-            </MainLayout>
-          </PrivateRoute>
-        }
-      />
-
-      {/* Help Routes */}
-      <Route
-        path="/help"
-        element={
-          <PrivateRoute roles={["SUPER_ADMIN", "ADMIN", "STAFF", "STUDENT"]}>
-            <MainLayout>
-              {/* <Help /> */}
-            </MainLayout>
-          </PrivateRoute>
-        }
-      />
-
+      {/* Catch all - redirect based on auth */}
       <Route path="*" element={<Navigate to={showMiniSettings ? "/" : "/home"} replace />} />
     </Routes>
   );
 }
-
 
 // -----------------------
 // SETUP FLOW COMPONENT - FIXED VERSION

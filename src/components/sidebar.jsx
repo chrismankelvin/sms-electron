@@ -78,6 +78,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         { icon: UserCog, label: 'Administrator', path: '/registration/administrators' },
         { icon: Briefcase, label: 'Non Staff', path: '/registration/non-staff' },
         { icon: School, label: 'Teaching Assistant', path: '/registration/teaching-assistants' },
+        { icon: FileSpreadsheet, label: 'Accountant', path: '/registration/accountant' },
         { icon: BookOpen, label: 'Course', path: '/registration/courses' },
         { icon: Layout, label: 'Class', path: '/registration/classes' },
         { icon: BookCopy, label: 'Subject', path: '/registration/subjects' },

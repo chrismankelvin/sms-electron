@@ -1,29 +1,35 @@
-import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "../pages/Login/useAuth.jsx";
+// src/components/PrivateRoute.jsx
+import { Navigate } from "react-router-dom";
+import { useAuth } from "../pages/Login/useAuth";
 
-export default function PrivateRoute({ children, roles, permissions }) {
-  const { user, loading, can } = useAuth();
-  const location = useLocation();
+const PrivateRoute = ({ children, allowedRoles = [] }) => {
+  const { user, loading } = useAuth();
 
-  if (loading) return <div className="page-loader">Loading...</div>;
-
-  if (!user) {
-    return <Navigate to="/" state={{ from: location }} replace />;
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center vh-100">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
   }
 
-  // ✅ Role check
-  if (roles && !roles.includes(user.role)) {
+  if (!user) {
+    return <Navigate to="/home" replace />;
+  }
+
+  // Normalize allowedRoles for comparison
+  const normalizedAllowedRoles = allowedRoles.map(role => role.toLowerCase());
+  const userRole = user.role?.toLowerCase();
+
+  // Check if user has required role
+  if (normalizedAllowedRoles.length > 0 && !normalizedAllowedRoles.includes(userRole)) {
+    console.log(`Access denied. User role: ${userRole}, Required roles: ${normalizedAllowedRoles.join(', ')}`);
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // 🔥 Permission check
-  if (permissions) {
-    const hasPermission = permissions.every(p => can(p));
-
-    if (!hasPermission) {
-      return <Navigate to="/unauthorized" replace />;
-    }
-  }
-
   return children;
-}
+};
+
+export default PrivateRoute;

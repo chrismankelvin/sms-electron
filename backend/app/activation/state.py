@@ -99,8 +99,8 @@ def ensure_all_tables():
             username TEXT NOT NULL UNIQUE,
             email TEXT UNIQUE,
             password_hash TEXT NOT NULL,
-            role TEXT NOT NULL CHECK (role IN ('admin', 'teacher', 'ta', 'accountant', 'student')),
-            status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'suspended', 'disabled')),
+            role TEXT NOT NULL CHECK (role IN ('admin', 'teacher', 'ta', 'accountant', 'student', 'non_staff')),
+            status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'suspended','on_leave', 'disabled')),
             last_login DATETIME,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         )

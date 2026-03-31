@@ -684,6 +684,11 @@ async def setup_school_and_admin(req: SchoolAndAdminRequest):
             print(f"[warn] WARNING: Failed to save admin to local database")
         else:
             print(f"[ok] DEBUG: Admin saved to local database")
+
+####### 5.5 INSERTING THE ACTIVATION REQUEST TO THE CLOUD REQUEST
+
+
+
         
         # ===== 6. FINAL CONFIRMATION =====
         print(f"[debug] DEBUG: Final confirmation...")

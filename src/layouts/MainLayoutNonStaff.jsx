@@ -4,7 +4,7 @@ import Navbar from "../components/navbar.jsx";
 import Sidebar from "../components/SidebarNonStaff.jsx";
 import { useState } from "react";
 
-function MainLayout({ children }) {
+function MainLayoutNonStaff({ children }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const toggleSidebar = () => {
@@ -26,4 +26,4 @@ function MainLayout({ children }) {
   );
 }
 
-export default MainLayout;
+export default MainLayoutNonStaff;

@@ -484,3 +484,14 @@ a:hover {
     font-size: 0.875rem;
   }
 }
+
+/* Add to your global.css */
+.screensaver-active {
+  overflow: hidden;
+}
+
+/* Optional: Add blur effect to background when screensaver is active */
+.app-layout.blur-background {
+  filter: blur(5px);
+  transition: filter 0.3s ease;
+}

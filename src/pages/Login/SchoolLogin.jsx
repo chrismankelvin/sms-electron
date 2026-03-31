@@ -13,6 +13,8 @@ const FRONTEND_ROLES = [
   "Student",
   "Teaching Assistant",
   "Accountant",
+  "non_staff",
+  "other"
 ];
 
 const ROLE_MAPPING = {
@@ -20,7 +22,7 @@ const ROLE_MAPPING = {
   "Teacher": ["STAFF"],
   "Teaching Assistant": ["STAFF"],
   "Accountant": ["STAFF"],
-  "Student": ["STUDENT"]
+  "Student": ["STUDENT"],
 };
 
 export default function SchoolLogin() {
