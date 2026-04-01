@@ -1,0 +1,24 @@
+-- activation_requests table schema
+CREATE TABLE IF NOT EXISTS activation_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    school_name TEXT NOT NULL,
+    school_email TEXT NOT NULL,
+    admin_name TEXT NOT NULL,
+    admin_email TEXT NOT NULL,
+    machine_fingerprint TEXT NOT NULL,
+    request_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status TEXT DEFAULT 'pending',  -- pending, approved, rejected, expired
+    activation_code TEXT,
+    approved_by TEXT,
+    approved_at TIMESTAMP,
+    expires_at TIMESTAMP,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for better query performance
+CREATE INDEX idx_activation_requests_fingerprint ON activation_requests(machine_fingerprint);
+CREATE INDEX idx_activation_requests_status ON activation_requests(status);
+CREATE INDEX idx_activation_requests_admin_email ON activation_requests(admin_email);
+CREATE INDEX idx_activation_requests_school_email ON activation_requests(school_email);

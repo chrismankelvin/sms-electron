@@ -490,7 +490,180 @@ class SQLiteCloudClient:
             return result.get("rows", [])
         except:
             return []
-    
+
+    # def insert_activation_request(self, request_data: Dict[str, Any]) -> Optional[int]:
+    #     """Insert an activation request into the cloud database"""
+    #     try:
+    #         query = """
+    #             INSERT INTO activation_requests 
+    #             (school_name, school_email, admin_name, admin_email, 
+    #             machine_fingerprint, request_time, status, school_id, admin_id)
+    #             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    #             RETURNING id
+    #         """
+            
+    #         params = (
+    #             request_data.get("school_name"),
+    #             request_data.get("school_email"),
+    #             request_data.get("admin_name"),
+    #             request_data.get("admin_email"),
+    #             request_data.get("machine_fingerprint"),
+    #             request_data.get("request_time"),
+    #             request_data.get("status", "pending"),
+    #             request_data.get("school_id"),
+    #             request_data.get("admin_id")
+    #         )
+            
+    #         result = self.execute_query(query, params)
+            
+    #         if result.get("success") and result.get("rows"):
+    #             return result["rows"][0]["id"]
+            
+    #         print(f"[ERROR] Failed to insert activation request: {result.get('error')}")
+    #         return None
+            
+    #     except Exception as e:
+    #         print(f"[ERROR] Error inserting activation request: {e}")
+    #         return None
+
+
+    # def insert_activation_request(self, request_data: Dict[str, Any]) -> Optional[int]:
+    #     """Insert an activation request into the cloud database"""
+    #     try:
+    #         print(f"[debug] DEBUG: Inserting activation request with data: {request_data}")
+            
+    #         # First, check if the table exists and has correct structure
+    #         table_check = self.execute_query(
+    #             "SELECT name FROM sqlite_master WHERE type='table' AND name='activation_requests'"
+    #         )
+            
+    #         if not table_check.get("success") or not table_check.get("rows"):
+    #             print(f"[warn] DEBUG: activation_requests table doesn't exist, creating it...")
+                
+    #             # Create the table with all required columns
+    #             create_table_sql = """
+    #                 CREATE TABLE IF NOT EXISTS activation_requests (
+    #                     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    #                     school_name TEXT NOT NULL,
+    #                     school_email TEXT NOT NULL,
+    #                     admin_name TEXT NOT NULL,
+    #                     admin_email TEXT NOT NULL,
+    #                     machine_fingerprint TEXT NOT NULL,
+    #                     request_time TEXT NOT NULL,
+    #                     status TEXT DEFAULT 'pending',
+    #                     school_id INTEGER,
+    #                     admin_id INTEGER,
+    #                     activation_code TEXT,
+    #                     approved_by TEXT,
+    #                     approved_at TEXT,
+    #                     expires_at TEXT,
+    #                     notes TEXT,
+    #                     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    #                     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    #                 )
+    #             """
+    #             create_result = self.execute_query(create_table_sql)
+                
+    #             if not create_result.get("success"):
+    #                 print(f"[ERROR] DEBUG: Failed to create activation_requests table: {create_result}")
+    #                 return None
+                
+    #             print(f"[ok] DEBUG: Created activation_requests table")
+            
+    #         # Check if the table has all required columns (especially school_id)
+    #         pragma_query = "PRAGMA table_info(activation_requests)"
+    #         pragma_result = self.execute_query(pragma_query)
+            
+    #         has_school_id = False
+    #         has_admin_id = False
+            
+    #         if pragma_result.get("success") and pragma_result.get("rows"):
+    #             for column in pragma_result["rows"]:
+    #                 if column["name"] == "school_id":
+    #                     has_school_id = True
+    #                 if column["name"] == "admin_id":
+    #                     has_admin_id = True
+            
+    #         # If columns are missing, alter the table
+    #         if not has_school_id:
+    #             print(f"[warn] DEBUG: Adding missing school_id column...")
+    #             self.execute_query("ALTER TABLE activation_requests ADD COLUMN school_id INTEGER")
+            
+    #         if not has_admin_id:
+    #             print(f"[warn] DEBUG: Adding missing admin_id column...")
+    #             self.execute_query("ALTER TABLE activation_requests ADD COLUMN admin_id INTEGER")
+            
+    #         # Prepare the insert query
+    #         current_time = datetime.now().isoformat()
+            
+    #         query = """
+    #             INSERT INTO activation_requests 
+    #             (school_name, school_email, admin_name, admin_email, 
+    #             machine_fingerprint, request_time, status, school_id, admin_id, created_at, updated_at)
+    #             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    #         """
+            
+    #         params = (
+    #             request_data.get("school_name", ""),
+    #             request_data.get("school_email", ""),
+    #             request_data.get("admin_name", ""),
+    #             request_data.get("admin_email", ""),
+    #             request_data.get("machine_fingerprint", ""),
+    #             request_data.get("request_time", current_time),
+    #             request_data.get("status", "pending"),
+    #             request_data.get("school_id"),
+    #             request_data.get("admin_id"),
+    #             current_time,  # created_at
+    #             current_time   # updated_at
+    #         )
+            
+    #         print(f"[debug] DEBUG: Executing insert query...")
+    #         print(f"[debug] DEBUG: Query: {query}")
+    #         print(f"[debug] DEBUG: Params: {params}")
+            
+    #         # Execute the insert
+    #         result = self.execute_query(query, params)
+            
+    #         print(f"[debug] DEBUG: Insert result: {result}")
+            
+    #         if result.get("success"):
+    #             # Get the last inserted ID
+    #             id_query = "SELECT last_insert_rowid() as id"
+    #             id_result = self.execute_query(id_query)
+                
+    #             if id_result.get("success") and id_result.get("rows"):
+    #                 inserted_id = id_result["rows"][0]["id"]
+    #                 print(f"[ok] DEBUG: Activation request inserted with ID: {inserted_id}")
+                    
+    #                 # Verify the insertion
+    #                 verify_query = "SELECT * FROM activation_requests WHERE id = ?"
+    #                 verify_result = self.execute_query(verify_query, (inserted_id,))
+                    
+    #                 if verify_result.get("success") and verify_result.get("rows"):
+    #                     print(f"[ok] DEBUG: Verified activation request:")
+    #                     print(f"  ID: {verify_result['rows'][0]['id']}")
+    #                     print(f"  School: {verify_result['rows'][0]['school_name']}")
+    #                     print(f"  Admin: {verify_result['rows'][0]['admin_name']}")
+    #                     print(f"  Status: {verify_result['rows'][0]['status']}")
+    #                     print(f"  School ID: {verify_result['rows'][0]['school_id']}")
+    #                     print(f"  Admin ID: {verify_result['rows'][0]['admin_id']}")
+                    
+    #                 return inserted_id
+    #             else:
+    #                 print(f"[ERROR] DEBUG: Could not get last insert ID: {id_result}")
+    #                 return None
+    #         else:
+    #             print(f"[ERROR] DEBUG: Insert failed: {result.get('error')}")
+    #             return None
+                
+    #     except Exception as e:
+    #         print(f"[ERROR] Error inserting activation request: {e}")
+    #         import traceback
+    #         traceback.print_exc()
+    #         return None
+
+
+
     def check_connection(self) -> bool:
         """Check if we can connect to SQLiteCloud"""
         try:

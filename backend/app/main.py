@@ -484,6 +484,260 @@ async def test_cors():
     return {"message": "CORS is working"}
 
 
+# @app.post("/setup/school-and-admin")
+# async def setup_school_and_admin(req: SchoolAndAdminRequest):
+#     """Create school and admin in a single transaction"""
+#     try:
+#         # Check if already activated
+#         if is_activated():
+#             raise HTTPException(status_code=400, detail="System already activated")
+        
+#         # Validate passwords
+#         if req.password != req.confirm_password:
+#             raise HTTPException(status_code=400, detail="Passwords do not match")
+        
+#         if len(req.password) < 6:
+#             raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+        
+#         # Check SQLiteCloud connection
+#         if not cloud_client.check_connection():
+#             raise HTTPException(
+#                 status_code=503, 
+#                 detail="Cannot connect to cloud database. Please check your internet connection."
+#             )
+        
+#         print(f"[debug] DEBUG: Starting school and admin setup for: {req.school_name}")
+        
+#         # ===== 1. CREATE SCHOOL IN CLOUD =====
+#         school_data = {
+#             "school_name": req.school_name,
+#             "school_email": req.school_email,
+#             "school_contact": req.school_contact,
+#             "school_type": req.school_type,
+#             "county": req.county,
+#             "region": req.region,
+#             "city": req.city,
+#             "town": req.town,
+#             "gps_address": req.gps_address,
+#             "country": req.country,
+#             "created_at": datetime.now().isoformat()
+#         }
+        
+#         print(f"[debug] DEBUG: Inserting school into cloud: {req.school_name}")
+#         school_id = cloud_client.insert_school(school_data)
+        
+#         if not school_id:
+#             print(f"[ERROR] DEBUG: School insertion failed - no school_id returned")
+#             raise HTTPException(status_code=500, detail="Failed to create school in cloud database")
+        
+#         print(f"[ok] DEBUG: School inserted with ID: {school_id}")
+        
+#         # VERIFY SCHOOL WAS ACTUALLY CREATED
+#         print(f"[debug] DEBUG: Verifying school creation...")
+#         school_check = cloud_client.execute_query(
+#             "SELECT id, school_name FROM school_installations WHERE id = ?",
+#             (school_id,)
+#         )
+        
+#         if not school_check.get("success"):
+#             print(f"[ERROR] DEBUG: School verification query failed: {school_check.get('error')}")
+#             raise HTTPException(status_code=500, detail="Failed to verify school creation")
+        
+#         if not school_check.get("rows"):
+#             print(f"[ERROR] DEBUG: School not found in cloud after insertion")
+#             raise HTTPException(status_code=500, detail="School not found after creation")
+        
+#         print(f"[ok] DEBUG: School verified: {school_check['rows'][0]['school_name']}")
+        
+#         # ===== 2. CHECK FOR DUPLICATE ADMIN =====
+#         print(f"[debug] DEBUG: Checking for duplicate admin...")
+        
+#         # Check by email
+#         email_check = cloud_client.execute_query(
+#             "SELECT id FROM admin_table WHERE email = ?",
+#             (req.admin_email,)
+#         )
+        
+#         if email_check.get("rows"):
+#             print(f"[ERROR] DEBUG: Admin email {req.admin_email} already exists!")
+#             # Clean up school
+#             cloud_client.execute_query("DELETE FROM school_installations WHERE id = ?", (school_id,))
+#             raise HTTPException(
+#                 status_code=400, 
+#                 detail=f"Admin email {req.admin_email} is already registered. Please use a different email."
+#             )
+        
+#         # Check by contact
+#         contact_check = cloud_client.execute_query(
+#             "SELECT id FROM admin_table WHERE contact = ?",
+#             (req.contact,)
+#         )
+        
+#         if contact_check.get("rows"):
+#             print(f"[ERROR] DEBUG: Admin contact {req.contact} already exists!")
+#             # Clean up school
+#             cloud_client.execute_query("DELETE FROM school_installations WHERE id = ?", (school_id,))
+#             raise HTTPException(
+#                 status_code=400, 
+#                 detail=f"Contact number {req.contact} is already registered. Please use a different contact."
+#             )
+        
+#         print(f"[ok] DEBUG: No duplicate admin found")
+        
+#         # ===== 3. CREATE ADMIN IN CLOUD =====
+#         admin_data = {
+#             "first_name": req.first_name,
+#             "middle_name": req.middle_name,
+#             "last_name": req.last_name,
+#             "contact": req.contact,
+#             "password_hash": hash_password(req.password),
+#             "email": req.admin_email,
+#             "school_id": school_id,  # Link to the school
+#             "role": "super_admin",
+#             "created_at": datetime.now().isoformat()
+#         }
+        
+#         print(f"[debug] DEBUG: Creating new admin in cloud: {req.admin_email}")
+        
+#         # Call insert_admin directly (it should handle duplicates but we already checked)
+#         admin_id = cloud_client.insert_admin(school_id, admin_data)
+        
+#         if not admin_id:
+#             print(f"[ERROR] DEBUG: Admin insertion failed - no admin_id returned")
+#             # Clean up school
+#             cloud_client.execute_query("DELETE FROM school_installations WHERE id = ?", (school_id,))
+#             raise HTTPException(status_code=500, detail="Failed to create admin in cloud database")
+        
+#         print(f"[ok] DEBUG: Admin created with ID: {admin_id}")
+        
+#         # ===== 4. VERIFY ADMIN CREATION =====
+#         print(f"[debug] DEBUG: Verifying admin creation...")
+        
+#         # First, check if we got a NEW admin ID (not an existing one)
+#         admin_check = cloud_client.execute_query(
+#             "SELECT id, email, school_id, created_at FROM admin_table WHERE id = ?",
+#             (admin_id,)
+#         )
+        
+#         if not admin_check.get("success"):
+#             print(f"[ERROR] DEBUG: Admin verification query failed")
+#             # Clean up
+#             cloud_client.execute_query("DELETE FROM admin_table WHERE id = ?", (admin_id,))
+#             cloud_client.execute_query("DELETE FROM school_installations WHERE id = ?", (school_id,))
+#             raise HTTPException(status_code=500, detail="Failed to verify admin creation")
+        
+#         if not admin_check.get("rows"):
+#             print(f"[ERROR] DEBUG: Admin not found after creation")
+#             # Clean up school
+#             cloud_client.execute_query("DELETE FROM school_installations WHERE id = ?", (school_id,))
+#             raise HTTPException(status_code=500, detail="Admin not found after creation")
+        
+#         admin_info = admin_check['rows'][0]
+#         print(f"[ok] DEBUG: Admin found: {admin_info['email']}")
+        
+#         # Verify it's linked to OUR school
+#         if admin_info['school_id'] != school_id:
+#             print(f"[ERROR] DEBUG: Admin created with wrong school_id!")
+#             print(f"  Expected: {school_id}, Got: {admin_info['school_id']}")
+#             # Clean up both
+#             cloud_client.execute_query("DELETE FROM admin_table WHERE id = ?", (admin_id,))
+#             cloud_client.execute_query("DELETE FROM school_installations WHERE id = ?", (school_id,))
+#             raise HTTPException(status_code=500, detail="Admin created with incorrect school association")
+        
+#         # Verify email matches
+#         if admin_info['email'] != req.admin_email:
+#             print(f"[ERROR] DEBUG: Admin email mismatch!")
+#             print(f"  Expected: {req.admin_email}, Got: {admin_info['email']}")
+#             # Clean up both
+#             cloud_client.execute_query("DELETE FROM admin_table WHERE id = ?", (admin_id,))
+#             cloud_client.execute_query("DELETE FROM school_installations WHERE id = ?", (school_id,))
+#             raise HTTPException(status_code=500, detail="Admin email mismatch")
+        
+#         print(f"[ok] DEBUG: Admin properly created and verified")
+        
+#         # ===== 5. SAVE TO LOCAL DATABASE =====
+#         local_errors = []
+        
+#         # Save school to local DB
+#         print(f"[debug] DEBUG: Saving school to local database...")
+#         local_school_success = save_school_to_local_db(school_data)
+        
+#         if not local_school_success:
+#             local_errors.append("Failed to save school to local database")
+#             print(f"[warn] WARNING: Failed to save school to local database")
+#         else:
+#             print(f"[ok] DEBUG: School saved to local database")
+        
+#         # Save admin to local DB
+#         print(f"[debug] DEBUG: Saving admin to local database...")
+#         local_admin_success = save_admin_to_local_db({
+#             "email": req.admin_email,
+#             "password": req.password,
+#             "first_name": req.first_name,
+#             "last_name": req.last_name,
+#             "contact": req.contact,
+#             "school_id": school_id
+#         })
+        
+#         if not local_admin_success:
+#             local_errors.append("Failed to save admin to local database")
+#             print(f"[warn] WARNING: Failed to save admin to local database")
+#         else:
+#             print(f"[ok] DEBUG: Admin saved to local database")
+
+# ####### 5.5 INSERTING THE ACTIVATION REQUEST TO THE CLOUD REQUEST #####
+
+
+
+        
+#         # ===== 6. FINAL CONFIRMATION =====
+#         print(f"[debug] DEBUG: Final confirmation...")
+        
+#         # Simple count check
+#         school_count = cloud_client.execute_query(
+#             "SELECT COUNT(*) as count FROM school_installations WHERE id = ?",
+#             (school_id,)
+#         )
+        
+#         admin_count = cloud_client.execute_query(
+#             "SELECT COUNT(*) as count FROM admin_table WHERE id = ? AND school_id = ?",
+#             (admin_id, school_id)
+#         )
+        
+#         if (not school_count.get("success") or 
+#             not admin_count.get("success") or
+#             school_count['rows'][0]['count'] != 1 or
+#             admin_count['rows'][0]['count'] != 1):
+#             print(f"[ERROR] DEBUG: Final count verification failed!")
+#             raise HTTPException(status_code=500, detail="Final verification failed")
+        
+#         print(f"[ok] DEBUG: Setup completed successfully!")
+#         print(f"  School ID: {school_id}")
+#         print(f"  Admin ID: {admin_id}")
+        
+#         return {
+#             "success": True,
+#             "message": "School and admin created successfully",
+#             "school_id": school_id,
+#             "admin_id": admin_id,
+#             "cloud_verified": True,
+#             "local_saved": {
+#                 "school": local_school_success,
+#                 "admin": local_admin_success
+#             },
+#             "warnings": local_errors if local_errors else None,
+#             "next_step": "activation"
+#         }
+        
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         print(f"[ERROR] ERROR in setup_school_and_admin: {str(e)}")
+#         import traceback
+#         traceback.print_exc()
+#         raise HTTPException(status_code=500, detail=f"Setup failed: {str(e)}")
+
+# ACTIVATTION KEY AUTO REQUEST ADDED STABLE VERSION (USES DIRECT SQL NO CLOUD CLIENT)
 @app.post("/setup/school-and-admin")
 async def setup_school_and_admin(req: SchoolAndAdminRequest):
     """Create school and admin in a single transaction"""
@@ -685,10 +939,169 @@ async def setup_school_and_admin(req: SchoolAndAdminRequest):
         else:
             print(f"[ok] DEBUG: Admin saved to local database")
 
-####### 5.5 INSERTING THE ACTIVATION REQUEST TO THE CLOUD REQUEST
-
-
-
+        # ===== 5.5 INSERTING THE ACTIVATION REQUEST TO THE CLOUD =====
+        print(f"[debug] DEBUG: ===== STARTING ACTIVATION REQUEST INSERTION =====")
+        
+        # Get the machine fingerprint
+        try:
+            from app.activation.fingerprint import get_or_create_machine_fingerprint
+            machine_fingerprint = get_or_create_machine_fingerprint()
+            print(f"[debug] DEBUG: Machine fingerprint obtained: {machine_fingerprint}")
+            print(f"[debug] DEBUG: Fingerprint length: {len(machine_fingerprint)}")
+        except Exception as fp_error:
+            print(f"[ERROR] DEBUG: Failed to get machine fingerprint: {fp_error}")
+            import traceback
+            traceback.print_exc()
+            machine_fingerprint = f"error_{datetime.now().timestamp()}"
+        
+        # Create admin full name
+        admin_full_name = " ".join(filter(None, [req.first_name, req.middle_name, req.last_name])).strip()
+        print(f"[debug] DEBUG: Admin full name: {admin_full_name}")
+        
+        current_time = datetime.now().isoformat()
+        print(f"[debug] DEBUG: Current time: {current_time}")
+        
+        # FIRST: Check if activation_requests table exists and has correct structure
+        print(f"[debug] DEBUG: Checking if activation_requests table exists...")
+        table_check = cloud_client.execute_query(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='activation_requests'"
+        )
+        print(f"[debug] DEBUG: Table check result: {table_check}")
+        
+        # Drop the existing table if it has wrong structure
+        if table_check.get("rows"):
+            print(f"[warn] DEBUG: activation_requests table exists, checking structure...")
+            pragma_query = "PRAGMA table_info(activation_requests)"
+            pragma_result = cloud_client.execute_query(pragma_query)
+            print(f"[debug] DEBUG: Current table structure: {pragma_result}")
+            
+            # Check if school_id column exists
+            has_school_id = False
+            if pragma_result.get("rows"):
+                for column in pragma_result["rows"]:
+                    if column["name"] == "school_id":
+                        has_school_id = True
+                        break
+            
+            if not has_school_id:
+                print(f"[warn] DEBUG: Table missing school_id column, dropping and recreating...")
+                cloud_client.execute_query("DROP TABLE IF EXISTS activation_requests")
+                table_check = {"rows": []}  # Force recreation
+        
+        if not table_check.get("rows"):
+            print(f"[warn] DEBUG: Creating activation_requests table with correct structure...")
+            
+            # Create the table with ALL required columns including school_id and admin_id
+            create_table_sql = """
+                CREATE TABLE IF NOT EXISTS activation_requests (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    school_name TEXT NOT NULL,
+                    school_email TEXT NOT NULL,
+                    admin_name TEXT NOT NULL,
+                    admin_email TEXT NOT NULL,
+                    machine_fingerprint TEXT NOT NULL,
+                    request_time TEXT NOT NULL,
+                    status TEXT DEFAULT 'pending',
+                    school_id INTEGER,
+                    admin_id INTEGER,
+                    activation_code TEXT,
+                    approved_by TEXT,
+                    approved_at TEXT,
+                    expires_at TEXT,
+                    notes TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            """
+            create_result = cloud_client.execute_query(create_table_sql)
+            print(f"[debug] DEBUG: Table creation result: {create_result}")
+            
+            if not create_result.get("success"):
+                print(f"[ERROR] DEBUG: Failed to create activation_requests table!")
+                local_errors.append("Could not create activation_requests table in cloud")
+                activation_request_id = None
+            else:
+                print(f"[ok] DEBUG: Successfully created activation_requests table with all columns")
+        
+        # Insert activation request with all fields
+        print(f"[debug] DEBUG: Attempting to insert activation request...")
+        
+        insert_sql = """
+            INSERT INTO activation_requests 
+            (school_name, school_email, admin_name, admin_email, 
+             machine_fingerprint, request_time, status, school_id, admin_id, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        
+        insert_params = (
+            req.school_name,
+            req.school_email,
+            admin_full_name,
+            req.admin_email,
+            machine_fingerprint,
+            current_time,
+            "pending",
+            school_id,
+            admin_id,
+            current_time,
+            current_time
+        )
+        
+        print(f"[debug] DEBUG: Insert SQL: {insert_sql}")
+        print(f"[debug] DEBUG: Insert params: {insert_params}")
+        
+        # Execute the insert
+        insert_result = cloud_client.execute_query(insert_sql, insert_params)
+        print(f"[debug] DEBUG: Insert result: {insert_result}")
+        
+        activation_request_id = None
+        
+        if insert_result.get("success"):
+            # Get the last inserted ID
+            id_query = "SELECT last_insert_rowid() as id"
+            id_result = cloud_client.execute_query(id_query)
+            print(f"[debug] DEBUG: Last insert ID result: {id_result}")
+            
+            if id_result.get("success") and id_result.get("rows"):
+                activation_request_id = id_result["rows"][0]["id"]
+                print(f"[ok] DEBUG: ✓ Activation request inserted with ID: {activation_request_id}")
+                
+                # Verify the insertion
+                verify_query = "SELECT * FROM activation_requests WHERE id = ?"
+                verify_result = cloud_client.execute_query(verify_query, (activation_request_id,))
+                print(f"[debug] DEBUG: Verification result: {verify_result}")
+                
+                if verify_result.get("success") and verify_result.get("rows"):
+                    print(f"[ok] DEBUG: ✓ Verified activation request in cloud")
+                    print(f"  ID: {verify_result['rows'][0]['id']}")
+                    print(f"  School: {verify_result['rows'][0]['school_name']}")
+                    print(f"  Admin: {verify_result['rows'][0]['admin_name']}")
+                    print(f"  Fingerprint: {verify_result['rows'][0]['machine_fingerprint'][:16]}...")
+                    print(f"  Status: {verify_result['rows'][0]['status']}")
+                    print(f"  School ID: {verify_result['rows'][0]['school_id']}")
+                    print(f"  Admin ID: {verify_result['rows'][0]['admin_id']}")
+                else:
+                    print(f"[ERROR] DEBUG: ✗ Could not verify insertion")
+            else:
+                print(f"[ERROR] DEBUG: ✗ Could not get last insert ID: {id_result}")
+        else:
+            print(f"[ERROR] DEBUG: ✗ Insert failed: {insert_result.get('error')}")
+            print(f"[ERROR] DEBUG: Full error: {insert_result}")
+            local_errors.append(f"Failed to create activation request: {insert_result.get('error')}")
+        
+        # Final status
+        if activation_request_id:
+            print(f"[ok] DEBUG: ===== ACTIVATION REQUEST SUCCESSFULLY INSERTED =====")
+            print(f"  Request ID: {activation_request_id}")
+            print(f"  Fingerprint: {machine_fingerprint[:16]}...")
+            print(f"  School: {req.school_name}")
+            print(f"  Admin: {admin_full_name}")
+        else:
+            print(f"[ERROR] DEBUG: ===== ACTIVATION REQUEST INSERTION FAILED =====")
+            print(f"  All insertion attempts failed")
+            local_errors.append("Failed to create activation request in cloud")
+        
+        print(f"[debug] DEBUG: ===== COMPLETED ACTIVATION REQUEST INSERTION =====")
         
         # ===== 6. FINAL CONFIRMATION =====
         print(f"[debug] DEBUG: Final confirmation...")
@@ -714,19 +1127,24 @@ async def setup_school_and_admin(req: SchoolAndAdminRequest):
         print(f"[ok] DEBUG: Setup completed successfully!")
         print(f"  School ID: {school_id}")
         print(f"  Admin ID: {admin_id}")
-        
+        print(f"  Machine Fingerprint: {machine_fingerprint[:16]}...")
+        print(f"  Activation Request ID: {activation_request_id if activation_request_id else 'Failed'}")
+  
         return {
             "success": True,
-            "message": "School and admin created successfully",
+            "message": "School, admin, and activation request created successfully",
             "school_id": school_id,
             "admin_id": admin_id,
+            "activation_request_id": activation_request_id,
+            "machine_fingerprint": machine_fingerprint,
             "cloud_verified": True,
             "local_saved": {
                 "school": local_school_success,
-                "admin": local_admin_success
+                "admin": local_admin_success,
+                "activation_request": activation_request_id is not None
             },
             "warnings": local_errors if local_errors else None,
-            "next_step": "activation"
+            "next_step": "pending_activation"
         }
         
     except HTTPException:
@@ -736,8 +1154,6 @@ async def setup_school_and_admin(req: SchoolAndAdminRequest):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Setup failed: {str(e)}")
-
-
 
 # ============================================
 # ACTIVATION ENDPOINTS
