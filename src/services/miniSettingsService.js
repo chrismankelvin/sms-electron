@@ -59,13 +59,11 @@ class MiniSettingsService {
   // Update theme
   async updateTheme(theme) {
     try {
-      const response = await fetch(`${API_BASE_URL}/mini-settings/theme`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(theme),
-      });
+
+
+   const response = await fetch(`${API_BASE_URL}/mini-settings/theme?theme=${theme}`, {
+  method: 'POST',
+});
       
       if (!response.ok) throw new Error('Failed to update theme');
       
@@ -79,6 +77,7 @@ class MiniSettingsService {
       localStorage.setItem('theme', theme);
       return false;
     }
+  
   }
 
   // Get screensaver setting
@@ -100,29 +99,45 @@ class MiniSettingsService {
   }
 
   // Update screensaver
+  // async updateScreensaver(enabled) {
+  //   try {
+  //     const response = await fetch(`${API_BASE_URL}/mini-settings/screensaver?screensaver=${enabled}`, {
+  // method: 'POST',
+      
+  //     });
+      
+  //     if (!response.ok) throw new Error('Failed to update screensaver');
+      
+  //     // Also store in localStorage as backup
+  //     localStorage.setItem('screensaver', enabled.toString());
+      
+  //     return true;
+  //   } catch (error) {
+  //     console.error('Error updating screensaver:', error);
+  //     // Fallback to localStorage
+  //     localStorage.setItem('screensaver', enabled.toString());
+  //     return false;
+  //   }
+  // }
+
   async updateScreensaver(enabled) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/mini-settings/screensaver`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(enabled),
-      });
-      
-      if (!response.ok) throw new Error('Failed to update screensaver');
-      
-      // Also store in localStorage as backup
-      localStorage.setItem('screensaver', enabled.toString());
-      
-      return true;
-    } catch (error) {
-      console.error('Error updating screensaver:', error);
-      // Fallback to localStorage
-      localStorage.setItem('screensaver', enabled.toString());
-      return false;
-    }
+  try {
+    const response = await fetch(`${API_BASE_URL}/mini-settings/screensaver?enabled=${enabled}`, {
+  method: 'POST',
+});
+
+    if (!response.ok) throw new Error('Failed to update screensaver');
+
+    localStorage.setItem("screensaver", enabled.toString());
+    return true;
+  } catch (error) {
+    console.error('Error updating screensaver:', error);
+    localStorage.setItem("screensaver", enabled.toString());
+    return false;
   }
+}
+
+
 
   // Get school type
   async getSchoolType() {
@@ -141,31 +156,44 @@ class MiniSettingsService {
   }
 
   // Update school type
-  async updateSchoolType(schoolType) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/mini-settings/school-type`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(schoolType),
-      });
+//   async updateSchoolType(schoolType) {
+//     try {
+//       const response = await fetch(`${API_BASE_URL}/mini-settings/school-type?school-type=${schoolType}`, {
+//   method: 'POST',
+// });
       
-      if (!response.ok) throw new Error('Failed to update school type');
+//       if (!response.ok) throw new Error('Failed to update school type');
       
-      // Also store in localStorage as backup
-      localStorage.setItem('schoolType', schoolType);
+//       // Also store in localStorage as backup
+//       localStorage.setItem('schoolType', schoolType);
       
-      return true;
-    } catch (error) {
-      console.error('Error updating school type:', error);
-      // Fallback to localStorage
-      localStorage.setItem('schoolType', schoolType);
-      return false;
-    }
-  }
+//       return true;
+//     } catch (error) {
+//       console.error('Error updating school type:', error);
+//       // Fallback to localStorage
+//       localStorage.setItem('schoolType', schoolType);
+//       return false;
+//     }
+//   }
 
-  // Get all mini settings at once
+async updateSchoolType(schoolType) {
+  try {
+    console.log({ school_type: schoolType });
+    const response =await fetch(
+  `${API_BASE_URL}/mini-settings/school-type?school_type=${schoolType}`,
+  { method: 'POST' }
+);
+
+    if (!response.ok) throw new Error('Failed to update school type');
+
+    return true;
+  } catch (error) {
+    console.error('Error updating school type:', error);
+    return false;
+  }
+}
+
+// Get all mini settings at once
   async getAllMiniSettings() {
     try {
       const response = await fetch(`${API_BASE_URL}/mini-settings/`);

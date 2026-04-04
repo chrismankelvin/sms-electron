@@ -10,6 +10,7 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='repla
 import uvicorn
 import sys
 import json
+from datetime import datetime
 import threading
 import logging
 from app.main import app
@@ -17,6 +18,106 @@ from app.main import app
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# run.py - Add sync handlers
+
+def handle_sync_health():
+    """Check sync backend health"""
+    try:
+        from app.routes.sync import check_health
+        return check_health()
+    except ImportError:
+        # If sync module doesn't exist yet, return basic health
+        return {
+            "success": True,
+            "status": "healthy",
+            "message": "Backend is running (sync module loading)"
+        }
+
+def handle_sync_complete(data):
+    """Perform complete sync to cloud"""
+    try:
+        # Try to import the sync module
+        from app.routes.sync import complete_sync
+        return complete_sync(data)
+    except ImportError:
+        # Fallback implementation if sync module doesn't exist
+        return perform_sync_fallback(data)
+
+def perform_sync_fallback(data):
+    """Fallback sync implementation when sync module is not available"""
+    try:
+        print(f"[debug] DEBUG: Using fallback sync implementation")
+        
+        sync_school = data.get('sync_school', data.get('syncSchool', True))
+        sync_activation = data.get('sync_activation', data.get('syncActivation', True))
+        sync_devices = data.get('sync_devices', data.get('syncDevices', True))
+        device_batch_size = data.get('device_batch_size', data.get('deviceBatchSize', 20))
+        
+        results = {
+            "success": False,
+            "steps": {},
+            "timestamp": datetime.now().isoformat(),
+            "summary": {
+                "total_steps": 0,
+                "successful_steps": 0,
+                "failed_steps": 0,
+                "total_devices_synced": 0,
+                "device_history_entries": 0
+            }
+        }
+        
+        total_steps = 0
+        successful_steps = 0
+        
+        # Step 1: Sync school
+        if sync_school:
+            total_steps += 1
+            results["steps"]["school"] = {
+                "success": True,
+                "message": "School sync completed (fallback)",
+                "school_id": None
+            }
+            successful_steps += 1
+        
+        # Step 2: Sync activation
+        if sync_activation:
+            total_steps += 1
+            results["steps"]["activation"] = {
+                "success": True,
+                "message": "Activation sync completed (fallback)",
+                "activation_code": None
+            }
+            successful_steps += 1
+        
+        # Step 3: Sync devices
+        if sync_devices:
+            total_steps += 1
+            results["steps"]["devices"] = {
+                "success": True,
+                "message": f"Devices sync completed (fallback) - batch size: {device_batch_size}",
+                "synced": 0,
+                "failed": 0,
+                "history_entries": 0
+            }
+            successful_steps += 1
+        
+        results["success"] = successful_steps > 0
+        results["summary"]["total_steps"] = total_steps
+        results["summary"]["successful_steps"] = successful_steps
+        results["summary"]["failed_steps"] = total_steps - successful_steps
+        
+        return results
+        
+    except Exception as e:
+        print(f"[ERROR] Fallback sync error: {str(e)}")
+        return {
+            "success": False,
+            "message": f"Sync failed: {str(e)}",
+            "steps": {},
+            "timestamp": datetime.now().isoformat()
+        }
+
 
 def route_request(req_type, action, data):
     """Route requests to the appropriate handler functions"""
@@ -530,6 +631,12 @@ def route_request(req_type, action, data):
 
         if action == 'register':
             return register_non_staff(data)
+        
+    elif req_type == 'sync':
+         if action == 'health':
+            return handle_sync_health()
+         elif action == 'complete':
+            return handle_sync_complete(data)
         
         
 

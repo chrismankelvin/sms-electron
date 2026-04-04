@@ -1593,6 +1593,10 @@ async verifyMainAppData(email, schoolName, contact) {
   }
 }
 
+// MINISETTINS'S
+
+
+
 
 };
 
@@ -1646,6 +1650,194 @@ export const recoveryLocal = {
   }
 };
 
+
+// api.service.js - Add these functions
+
+// Check backend health via IPC
+export async function checkBackendHealth() {
+  try {
+    if (!isElectron()) {
+      console.log('Browser mode: mock health check');
+      return { success: true, status: 'healthy' };
+    }
+    
+    console.log('Checking backend health via IPC...');
+    const response = await window.electron.sync.health();
+    return response;
+  } catch (err) {
+    console.error("checkBackendHealth failed:", err);
+    return { success: false, message: err.message };
+  }
+}
+
+// Sync data to cloud via IPC - matches your FastAPI endpoint
+export async function syncData(syncOptions) {
+  try {
+    if (!isElectron()) {
+      console.log('Browser mode: mock sync');
+      return { 
+        success: true, 
+        steps: {
+          school: { success: true, message: 'School synced (mock)' },
+          activation: { success: true, message: 'Activation synced (mock)' },
+          devices: { success: true, message: 'Devices synced (mock)', synced: 5 }
+        },
+        summary: {
+          total_steps: 3,
+          successful_steps: 3,
+          failed_steps: 0,
+          total_devices_synced: 5,
+          device_history_entries: 0
+        },
+        timestamp: new Date().toISOString()
+      };
+    }
+    
+    console.log('Syncing data via IPC...');
+    const response = await window.electron.sync.complete(syncOptions);
+    return response;
+  } catch (err) {
+    console.error("syncData failed:", err);
+    return { success: false, message: err.message };
+  }
+}
+
+
+// MINISETTINGS'S
+export async  function getAllMiniSettings() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/mini-settings/`);
+      if (!response.ok) {
+        // Fallback to localStorage
+        return this.getLocalMiniSettings();
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching all mini settings:', error);
+      return this.getLocalMiniSettings();
+    }
+  }
+
+export async  function updateTheme(theme) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/mini-settings/theme`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(theme),
+      });
+      
+      if (!response.ok) throw new Error('Failed to update theme');
+      
+      // Also store in localStorage as backup
+      localStorage.setItem('theme', theme);
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating theme:', error);
+      // Fallback to localStorage
+      localStorage.setItem('theme', theme);
+      return false;
+    }
+  }
+
+export async function updateSchoolType(schoolType) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/mini-settings/school-type`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(schoolType),
+      });
+      
+      if (!response.ok) throw new Error('Failed to update school type');
+      
+      // Also store in localStorage as backup
+      localStorage.setItem('schoolType', schoolType);
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating school type:', error);
+      // Fallback to localStorage
+      localStorage.setItem('schoolType', schoolType);
+      return false;
+    }
+  }
+
+  export async function saveAllMiniSettings(settings) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/mini-settings/save-all`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          hasSeenMiniSettings: settings.hasSeenMiniSettings,
+          theme: settings.theme,
+          screensaver: settings.screensaver,
+          schoolType: settings.schoolType
+        }),
+      });
+      
+      if (!response.ok) throw new Error('Failed to save mini settings');
+      
+      // Also store in localStorage as backup
+      this.saveLocalMiniSettings(settings);
+      
+      return true;
+    } catch (error) {
+      console.error('Error saving all mini settings:', error);
+      // Fallback to localStorage
+      this.saveLocalMiniSettings(settings);
+      return false;
+    }
+  }
+
+  export async function setSeenMiniSettings() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/mini-settings/seen`, {
+        method: 'POST',
+      });
+      
+      if (!response.ok) throw new Error('Failed to update mini settings');
+      
+      // Also store in localStorage as backup
+      localStorage.setItem('hasSeenMiniSettings', 'true');
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating mini settings:', error);
+      // Fallback to localStorage
+      localStorage.setItem('hasSeenMiniSettings', 'true');
+      return false;
+    }
+  }
+
+  export async function  updateScreensaver(enabled) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/mini-settings/screensaver`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(enabled),
+      });
+      
+      if (!response.ok) throw new Error('Failed to update screensaver');
+      
+      // Also store in localStorage as backup
+      localStorage.setItem('screensaver', enabled.toString());
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating screensaver:', error);
+      // Fallback to localStorage
+      localStorage.setItem('screensaver', enabled.toString());
+      return false;
+    }
+  }
 
 
 

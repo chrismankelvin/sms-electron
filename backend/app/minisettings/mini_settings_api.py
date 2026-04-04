@@ -17,6 +17,12 @@ class CompleteMiniSettings(BaseModel):
     screensaver: bool
     schoolType: str
 
+class ScreensaverRequest(BaseModel):
+    enabled: bool
+
+class SchoolTypeRequest(BaseModel):
+    school_type: str
+
 @router.get("/")
 async def get_mini_settings():
     """Get all mini settings."""
@@ -52,11 +58,17 @@ async def get_screensaver():
     """Get screensaver setting."""
     return {"screensaver": mini_settings_service.get_screensaver()}
 
+# @router.post("/screensaver")
+# async def update_screensaver(enabled: bool):
+#     """Update screensaver setting."""
+#     mini_settings_service.set_screensaver(enabled)
+#     status = "enabled" if enabled else "disabled"
+#     return {"message": f"Screensaver {status}", "success": True}
+
 @router.post("/screensaver")
-async def update_screensaver(enabled: bool):
-    """Update screensaver setting."""
-    mini_settings_service.set_screensaver(enabled)
-    status = "enabled" if enabled else "disabled"
+async def update_screensaver(req: ScreensaverRequest):
+    mini_settings_service.set_screensaver(req.enabled)
+    status = "enabled" if req.enabled else "disabled"
     return {"message": f"Screensaver {status}", "success": True}
 
 @router.get("/school-type")
@@ -64,18 +76,32 @@ async def get_school_type():
     """Get school type."""
     return {"schoolType": mini_settings_service.get_school_type()}
 
+# @router.post("/school-type")
+# async def update_school_type(school_type: str):
+#     """Update school type."""
+#     valid_types = ["JHS", "SHS", "Basic School"]
+#     if school_type not in valid_types:
+#         raise HTTPException(
+#             status_code=400, 
+#             detail=f"School type must be one of: {valid_types}"
+#         )
+    
+#     mini_settings_service.set_school_type(school_type)
+#     return {"message": f"School type updated to {school_type}", "success": True}
+
 @router.post("/school-type")
-async def update_school_type(school_type: str):
-    """Update school type."""
+async def update_school_type(req: SchoolTypeRequest):
     valid_types = ["JHS", "SHS", "Basic School"]
-    if school_type not in valid_types:
+
+    if req.school_type not in valid_types:
         raise HTTPException(
-            status_code=400, 
+            status_code=400,
             detail=f"School type must be one of: {valid_types}"
         )
-    
-    mini_settings_service.set_school_type(school_type)
-    return {"message": f"School type updated to {school_type}", "success": True}
+
+    mini_settings_service.set_school_type(req.school_type)
+    return {"message": f"School type updated to {req.school_type}", "success": True}
+
 
 @router.post("/update")
 async def update_multiple_settings(updates: MiniSettingsUpdate):

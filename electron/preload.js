@@ -342,6 +342,19 @@ teachingAssistants: {
       action: 'health' 
     })
   },
+  // preload.js - Add sync methods
+
+sync: {
+  health: () => ipcRenderer.invoke('python-request', { 
+    type: 'sync', 
+    action: 'health' 
+  }),
+  complete: (options) => ipcRenderer.invoke('python-request', { 
+    type: 'sync', 
+    action: 'complete', 
+    data: options 
+  })
+},
 
   // =========================
   // RECOVERY
