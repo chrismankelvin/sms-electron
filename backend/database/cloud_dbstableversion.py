@@ -1,19 +1,14 @@
+# SYNCING DEVICE DATA# SYNCING DEVICE DATA# SYNCING DEVICE DATA# SYNCING DEVICE DATA# SYNCING DEVICE DATA
+# SYNCING DEVICE DATA# SYNCING DEVICE DATA# SYNCING DEVICE DATA# SYNCING DEVICE DATA# SYNCING DEVICE DATA
+# SYNCING DEVICE DATA# SYNCING DEVICE DATA# SYNCING DEVICE DATA# SYNCING DEVICE DATA# SYNCING DEVICE DATA
+# SYNCING DEVICE DATA# SYNCING DEVICE DATA# SYNCING DEVICE DATA# SYNCING DEVICE DATA# SYNCING DEVICE DATA
+# SYNCING DEVICE DATA# SYNCING DEVICE DATA# SYNCING DEVICE DATA# SYNCING DEVICE DATA# SYNCING DEVICE DATA
+
 # app/database/cloud_db.py
 import sqlitecloud
 from datetime import datetime
 from typing import Optional, Dict, Any, List
 import os
-import time
-import threading
-from functools import wraps
-
-class ConnectionStatus:
-    """Enum-like class for connection status"""
-    UNKNOWN = "unknown"
-    CONNECTED = "connected"
-    DISCONNECTED = "disconnected"
-    ERROR = "error"
-    CHECKING = "checking"
 
 class SQLiteCloudClient:
     def __init__(self):
@@ -23,184 +18,26 @@ class SQLiteCloudClient:
             "sqlitecloud://crp6lwxvnz.g2.sqlite.cloud:8860/sms_cloud?apikey=CWwoReVnb5JGoUcHzuZgVuaLpIVt2Vyag7iHbW1ixMU"
         )
         self.conn = None
-        self._connection_status = ConnectionStatus.UNKNOWN
-        self._last_check_time = None
-        self._status_message = ""
-        self._check_interval = 30  # Check every 30 seconds by default
-        self._auto_check_enabled = False
-        self._check_thread = None
-        self._stop_checking = False
         
-    def connect(self, force_reconnect=False):
-        """Establish connection to SQLiteCloud with real-time status"""
-        if force_reconnect and self.conn:
-            try:
-                self.close()
-            except:
-                pass
-        
+    def connect(self):
+        """Establish connection to SQLiteCloud"""
         try:
-            # Update status to checking
-            self._update_status(ConnectionStatus.CHECKING, "Establishing connection...")
-            
             self.conn = sqlitecloud.connect(self.connection_string)
-            
-            # Verify connection with a simple query
-            cursor = self.conn.cursor()
-            cursor.execute("SELECT 1 as test")
-            cursor.fetchone()
-            
-            self._update_status(ConnectionStatus.CONNECTED, "Connected successfully")
-            self._last_check_time = datetime.now()
             return True
-            
         except Exception as e:
-            error_msg = f"Failed to connect: {str(e)}"
-            self._update_status(ConnectionStatus.DISCONNECTED, error_msg)
-            print(error_msg)
+            print(f"Failed to connect to SQLiteCloud: {str(e)}")
             return False
     
     def close(self):
         """Close the connection"""
         if self.conn:
-            try:
-                self.conn.close()
-            except:
-                pass
-            finally:
-                self.conn = None
-                self._update_status(ConnectionStatus.DISCONNECTED, "Connection closed")
+            self.conn.close()
+            self.conn = None
     
-    def _update_status(self, status: str, message: str = ""):
-        """Update connection status internally"""
-        self._connection_status = status
-        self._status_message = message
-        self._last_check_time = datetime.now()
-    
-    def check_connection(self, force_refresh: bool = False) -> Dict[str, Any]:
-        """
-        Check if we can connect to SQLiteCloud in real-time
-        
-        Args:
-            force_refresh: Force a fresh check even if recently checked
-            
-        Returns:
-            Dict containing connection status details
-        """
-        # If not forcing refresh and we have a valid connection recently checked
-        if not force_refresh and self._last_check_time:
-            seconds_since_check = (datetime.now() - self._last_check_time).total_seconds()
-            if seconds_since_check < 5 and self._connection_status == ConnectionStatus.CONNECTED:
-                return self.get_connection_status()
-        
-        # Update status to checking
-        self._update_status(ConnectionStatus.CHECKING, "Checking connection...")
-        
-        try:
-            # Try to get a fresh connection if none exists or if we need to test
-            if not self.conn:
-                if not self.connect():
-                    return self.get_connection_status()
-            
-            # Test the connection with a simple query
-            cursor = self.conn.cursor()
-            cursor.execute("SELECT datetime('now') as current_time, 1 as test")
-            result = cursor.fetchone()
-            
-            # Check if we got valid result
-            if result:
-                self._update_status(
-                    ConnectionStatus.CONNECTED, 
-                    f"Connected - Server time: {result[0] if result else 'unknown'}"
-                )
-                return self.get_connection_status()
-            else:
-                raise Exception("No result from test query")
-                
-        except Exception as e:
-            error_msg = f"Connection failed: {str(e)}"
-            self._update_status(ConnectionStatus.DISCONNECTED, error_msg)
-            
-            # Try to reconnect once
-            try:
-                print("Attempting to reconnect...")
-                if self.connect(force_reconnect=True):
-                    return self.get_connection_status()
-            except:
-                pass
-            
-            return self.get_connection_status()
-    
-    def get_connection_status(self) -> Dict[str, Any]:
-        """Get the current connection status with details"""
-        return {
-            "status": self._connection_status,
-            "message": self._status_message,
-            "last_check": self._last_check_time.isoformat() if self._last_check_time else None,
-            "is_connected": self._connection_status == ConnectionStatus.CONNECTED,
-            "is_checking": self._connection_status == ConnectionStatus.CHECKING,
-            "auto_check_enabled": self._auto_check_enabled,
-            "check_interval": self._check_interval
-        }
-    
-    def start_auto_check(self, interval_seconds: int = 30, callback=None):
-        """
-        Start automatic background connection checking
-        
-        Args:
-            interval_seconds: How often to check connection (seconds)
-            callback: Optional callback function that receives status updates
-        """
-        if self._auto_check_enabled:
-            print("Auto-check already running")
-            return
-        
-        self._auto_check_enabled = True
-        self._check_interval = interval_seconds
-        self._stop_checking = False
-        
-        def check_loop():
-            while not self._stop_checking:
-                try:
-                    # Perform connection check
-                    status = self.check_connection(force_refresh=True)
-                    
-                    # Call callback if provided
-                    if callback and callable(callback):
-                        callback(status)
-                    
-                    # Wait for next check
-                    time.sleep(self._check_interval)
-                except Exception as e:
-                    print(f"Auto-check error: {e}")
-                    time.sleep(5)  # Wait 5 seconds before retrying on error
-        
-        # Start the checking thread
-        self._check_thread = threading.Thread(target=check_loop, daemon=True)
-        self._check_thread.start()
-        print(f"Auto connection check started (interval: {interval_seconds}s)")
-    
-    def stop_auto_check(self):
-        """Stop automatic background connection checking"""
-        self._auto_check_enabled = False
-        self._stop_checking = True
-        if self._check_thread:
-            self._check_thread.join(timeout=2)
-        print("Auto connection check stopped")
-    
-    def execute_query(self, query: str, params: tuple = None, retry_on_fail: bool = True) -> Dict[str, Any]:
-        """
-        Execute a query on SQLiteCloud with automatic retry and connection check
-        
-        Args:
-            query: SQL query to execute
-            params: Query parameters
-            retry_on_fail: Whether to retry if connection fails
-        """
-        # Check connection before executing
-        if not self.check_connection(force_refresh=False).get("is_connected"):
-            if not self.connect():
-                raise Exception("No connection to SQLiteCloud")
+    def execute_query(self, query: str, params: tuple = None) -> Dict[str, Any]:
+        """Execute a query on SQLiteCloud"""
+        if not self.conn and not self.connect():
+            raise Exception("Failed to connect to SQLiteCloud")
         
         try:
             cursor = self.conn.cursor()
@@ -241,18 +78,9 @@ class SQLiteCloudClient:
                     self.conn.rollback()
                 except:
                     pass
-            
-            # If connection error and retry is enabled, try to reconnect
-            if retry_on_fail and ("connection" in str(e).lower() or "disconnected" in str(e).lower()):
-                print(f"Connection error detected: {e}. Attempting to reconnect...")
-                if self.connect(force_reconnect=True):
-                    print("Reconnected successfully, retrying query...")
-                    return self.execute_query(query, params, retry_on_fail=False)
-            
             raise Exception(f"SQLiteCloud query error: {str(e)}")
     
-    # Your existing methods remain the same, but they will use the updated execute_query
-   
+
 
     def insert_school(self, data: Dict) -> Optional[str]:
         """Insert school into cloud database and return school_id"""
@@ -484,6 +312,18 @@ class SQLiteCloudClient:
             return []
 
 
+
+    def check_connection(self) -> bool:
+        """Check if we can connect to SQLiteCloud"""
+        try:
+            if not self.conn and not self.connect():
+                return False
+            
+            # Try a simple query
+            result = self.execute_query("SELECT 1 as test")
+            return result.get("success", False)
+        except:
+            return False
     
     def create_devices_table(self):
         """Create devices table if it doesn't exist"""
@@ -491,29 +331,39 @@ class SQLiteCloudClient:
         CREATE TABLE IF NOT EXISTS devices (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             device_id TEXT NOT NULL UNIQUE,
+            
+            -- Link to school_installation instead of users
             school_installation_id INTEGER,
             admin_id INTEGER,
+            
             device_name TEXT,
             device_type TEXT,
             os_name TEXT,
             os_version TEXT,
             activation_key TEXT UNIQUE,
             activation_status TEXT DEFAULT 'pending',
+            
+            -- Activation info
             activation_token_hash TEXT,
             license_type TEXT DEFAULT 'STANDARD',
             activated_at DATETIME,
             license_valid_until DATE,
             last_license_check DATETIME,
+            
             last_activated_at DATETIME,
             registered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            
+            -- Additional fields for sync
             local_user_id INTEGER,
             local_user_email TEXT,
             local_user_unique_id TEXT,
             cloud_sync_status TEXT DEFAULT 'pending',
             last_sync_at DATETIME,
             sync_attempts INTEGER DEFAULT 0,
+            
+            -- Foreign keys to link with existing cloud tables
             FOREIGN KEY (school_installation_id) REFERENCES school_installations(id),
             FOREIGN KEY (admin_id) REFERENCES admin_table(id)
         )
@@ -539,3 +389,6 @@ class SQLiteCloudClient:
                     
         except Exception as e:
             print(f"❌ Error creating devices table: {e}")
+
+
+

@@ -120,11 +120,15 @@ class MiniSettingsService {
   //   }
   // }
 
-  async updateScreensaver(enabled) {
+async updateScreensaver(enabled) {
   try {
-    const response = await fetch(`${API_BASE_URL}/mini-settings/screensaver?enabled=${enabled}`, {
-  method: 'POST',
-});
+    const response = await fetch(`${API_BASE_URL}/mini-settings/screensaver`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ enabled }), // ✅ FIX
+    });
 
     if (!response.ok) throw new Error('Failed to update screensaver');
 
@@ -178,11 +182,13 @@ class MiniSettingsService {
 
 async updateSchoolType(schoolType) {
   try {
-    console.log({ school_type: schoolType });
-    const response =await fetch(
-  `${API_BASE_URL}/mini-settings/school-type?school_type=${schoolType}`,
-  { method: 'POST' }
-);
+    const response = await fetch(`${API_BASE_URL}/mini-settings/school-type`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ school_type: schoolType }), // ✅ clean
+    });
 
     if (!response.ok) throw new Error('Failed to update school type');
 
