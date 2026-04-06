@@ -21,6 +21,39 @@ logger = logging.getLogger(__name__)
 
 # run.py - Add sync handlers
 
+def handle_recovery_import(data):
+    """Handle recovery import from cloud"""
+    try:
+        from app.routes.recovery import import_recovery
+        return import_recovery(data)
+    except ImportError:
+        return {
+            "success": False,
+            "error": "Recovery module not available"
+        }
+
+def handle_recovery_request_code(data):
+    """Handle recovery code request"""
+    try:
+        from app.routes.recovery import request_recovery_code
+        return request_recovery_code(data)
+    except ImportError:
+        return {
+            "success": False,
+            "error": "Recovery module not available"
+        }
+
+def handle_recovery_verify_code(data):
+    """Handle recovery code verification"""
+    try:
+        from app.routes.recovery import verify_recovery_code
+        return verify_recovery_code(data)
+    except ImportError:
+        return {
+            "success": False,
+            "error": "Recovery module not available"
+        }
+
 def handle_sync_health():
     """Check sync backend health"""
     try:
@@ -656,6 +689,18 @@ def route_request(req_type, action, data):
                 'python_version': platform.python_version(),
                 'cwd': os.getcwd()
             }
+  # ===== REOCVERY ROUTES =====
+
+    elif req_type == 'recovery':
+        if action == 'import':
+            return handle_recovery_import(data)
+        elif action == 'request-code':
+            return handle_recovery_request_code(data)
+        elif action == 'verify-code':
+            return handle_recovery_verify_code(data)
+
+
+
 
     # ===== BACKUP ROUTES =====
     elif req_type == 'backup':

@@ -1651,6 +1651,97 @@ export const recoveryLocal = {
 };
 
 
+// api.service.js - Add these functions 
+
+// Import recovery data via IPC
+export async function importRecoveryData(schoolEmail, encryptedBackup) {
+  try {
+    if (!isElectron()) {
+      console.log('Browser mode: mock recovery import');
+      return { 
+        success: true, 
+        message: "Recovery completed successfully (mock)",
+        admins_imported: 1,
+        system_activated: false,
+        next_step: "activation_required"
+      };
+    }
+    
+    console.log('Importing recovery data via IPC...');
+    const response = await window.electron.recovery.import({
+      school_email: schoolEmail,
+      encrypted_backup: encryptedBackup
+    });
+    
+    console.log('Recovery import response:', response);
+    return response;
+  } catch (err) {
+    console.error("importRecoveryData failed:", err);
+    return { 
+      success: false, 
+      error: err.message 
+    };
+  }
+}
+
+// Request recovery code from cloud via IPC
+export async function requestRecoveryCode(schoolEmail) {
+  try {
+    if (!isElectron()) {
+      console.log('Browser mode: mock recovery code request');
+      return { 
+        success: true, 
+        message: "Recovery code sent to email (mock)",
+        recovery_id: "mock-recovery-id-123"
+      };
+    }
+    
+    console.log('Requesting recovery code via IPC...');
+    const response = await window.electron.recovery.requestCode({
+      school_email: schoolEmail
+    });
+    
+    return response;
+  } catch (err) {
+    console.error("requestRecoveryCode failed:", err);
+    return { 
+      success: false, 
+      error: err.message 
+    };
+  }
+}
+
+// Verify recovery code and get backup via IPC
+export async function verifyRecoveryCode(schoolEmail, recoveryCode) {
+  try {
+    if (!isElectron()) {
+      console.log('Browser mode: mock recovery verification');
+      return { 
+        success: true, 
+        encrypted_backup: "mock-encrypted-backup-data",
+        message: "Recovery code verified"
+      };
+    }
+    
+    console.log('Verifying recovery code via IPC...');
+    const response = await window.electron.recovery.verifyCode({
+      school_email: schoolEmail,
+      recovery_code: recoveryCode
+    });
+    
+    return response;
+  } catch (err) {
+    console.error("verifyRecoveryCode failed:", err);
+    return { 
+      success: false, 
+      error: err.message 
+    };
+  }
+}
+
+
+
+
 // api.service.js - Add these functions
 
 // Check backend health via IPC
@@ -1846,6 +1937,7 @@ export async function updateSchoolType(schoolType) {
 export default {
   // Helper
   isElectron,
+  importRecoveryData,
   
   // Activation
   checkActivationStatus,

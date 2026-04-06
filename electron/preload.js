@@ -360,20 +360,23 @@ sync: {
   // RECOVERY
   // =========================
    // NEW: Recovery methods
-  recovery: {
- 
-    // importToMainApp: (encryptedBlob, schoolEmail) => ipcRenderer.invoke('python-request', { 
-    //   type: 'recovery', 
-    //   action: 'importToMainApp', 
-    //   data: { encryptedBlob, schoolEmail } 
-    // }),
-   
-    // verifyMainAppData: () => ipcRenderer.invoke('python-request', { 
-    //   type: 'recovery', 
-    //   action: 'verifyMainAppData' 
-    // })
-    
-  },
+recovery: {
+  import: (data) => ipcRenderer.invoke('python-request', { 
+    type: 'recovery', 
+    action: 'import', 
+    data: data 
+  }),
+  requestCode: (data) => ipcRenderer.invoke('python-request', { 
+    type: 'recovery', 
+    action: 'request-code', 
+    data: data 
+  }),
+  verifyCode: (data) => ipcRenderer.invoke('python-request', { 
+    type: 'recovery', 
+    action: 'verify-code', 
+    data: data 
+  })
+}
 
 
   

@@ -1,13 +1,14 @@
-// pages/RecoverAccount/RecoverAccountPage.jsx
+// pages/RecoverAccount/RecoverAccountPage.jsx (FIXED VERSION)
 import { useState, useEffect } from "react";
 import { Mail, Search, Key, ArrowLeft, CheckCircle, AlertCircle, Wifi, User, Phone, Shield, Loader2, Database, RefreshCw } from "lucide-react";
 import Notification from "../components/Notification";
 import "../styles/school-details.css";
 import "../styles/global.css";
 import { useNavigate } from "react-router-dom";
+import { importRecoveryData } from "../services/api.service";
 
 export default function RecoverAccountPage() {
-  const [step, setStep] = useState(1); // 1: Email, 2: Verify, 3: Confirm, 4: Success, 5: Transferring
+  const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [schoolName, setSchoolName] = useState("");
   const [contact, setContact] = useState("");
@@ -21,8 +22,12 @@ export default function RecoverAccountPage() {
   const [transferStatus, setTransferStatus] = useState(null);
   const navigate = useNavigate();
 
-  const RECOVERY_API_URL = "http://localhost:8001";
+
+ const RECOVERY_API_URL = "http://localhost:8001";
   const MAIN_APP_URL = "http://localhost:8000";
+  const MAIN_APP_API_KEY = "your-api-key-here"; // Should come from env/config
+
+
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -178,7 +183,7 @@ export default function RecoverAccountPage() {
     }
   };
 
-  const performRecovery = async () => {
+ const performRecovery = async () => {
     if (!confirmDeactivation) {
       setNotification({ 
         message: "You must confirm device deactivation to proceed.", 
@@ -191,6 +196,7 @@ export default function RecoverAccountPage() {
     setNotification({ message: "", type: "" });
     
     try {
+      // Step 1: Get encrypted blob from recovery server
       const response = await fetch(`${RECOVERY_API_URL}/perform-recovery`, {
         method: "POST",
         headers: {
@@ -209,12 +215,11 @@ export default function RecoverAccountPage() {
       if (response.ok && result.success) {
         setRecoveryResult(result);
         setNotification({
-          message: result.message,
+          message: "Recovery blob created successfully",
           type: "success"
         });
-        setStep(4); // Move to transfer step
         
-        // Start data transfer to main app
+        // Step 2: Transfer to main app (directly, NOT via recovery server)
         await transferDataToMainApp(result.encrypted_blob);
         
       } else {
@@ -222,6 +227,7 @@ export default function RecoverAccountPage() {
           message: result.message || "Recovery failed.",
           type: "error"
         });
+        setStep(2); // Go back to verification
       }
     } catch (error) {
       setNotification({
@@ -233,7 +239,8 @@ export default function RecoverAccountPage() {
     }
   };
 
-  const transferDataToMainApp = async (encryptedBlob) => {
+ const transferDataToMainApp = async (encryptedBlob) => {
+    setStep(4); // Show transfer progress
     setTransferStatus({
       stage: "starting",
       message: "Starting data transfer to main application...",
@@ -258,7 +265,7 @@ export default function RecoverAccountPage() {
         return;
       }
       
-      // Step 2: Import encrypted blob
+      // Step 2: Import directly to main app (NOT through recovery server)
       setTransferStatus({
         stage: "importing",
         message: "Importing recovered data to main application...",
@@ -269,38 +276,16 @@ export default function RecoverAccountPage() {
       
       if (importResult.success) {
         setTransferStatus({
-          stage: "verifying",
-          message: "Verifying data import...",
-          progress: 60
+          stage: "complete",
+          message: "Data transfer completed successfully!",
+          progress: 100
         });
         
-        // Step 3: Verify data was imported
-        const verificationResult = await verifyMainAppData();
+        // Wait 2 seconds then go to success
+        setTimeout(() => {
+          setStep(5);
+        }, 2000);
         
-        if (verificationResult.success) {
-          setTransferStatus({
-            stage: "complete",
-            message: "Data transfer completed successfully!",
-            progress: 100
-          });
-          
-          // Wait 2 seconds then redirect
-          setTimeout(() => {
-            setStep(5); // Move to success step
-          }, 2000);
-          
-        } else {
-          setTransferStatus({
-            stage: "warning",
-            message: "Data imported but verification failed. You may need to restart the main app.",
-            progress: 80
-          });
-          
-          // Still allow continuation
-          setTimeout(() => {
-            setStep(5);
-          }, 3000);
-        }
       } else {
         setTransferStatus({
           stage: "error",
@@ -323,7 +308,7 @@ export default function RecoverAccountPage() {
       const response = await fetch(`${MAIN_APP_URL}/health/test`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
-        timeout: 10000
+        signal: AbortSignal.timeout(10000)
       });
       
       return {
@@ -339,52 +324,83 @@ export default function RecoverAccountPage() {
     }
   };
 
-  const importToMainApp = async (encryptedBlob) => {
-    try {
-      const response = await fetch(`${RECOVERY_API_URL}/recovery/import-blob`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          school_email: email,
-          encrypted_backup: encryptedBlob
-        })
-      });
+  // const importToMainApp = async (encryptedBlob) => {
+  //   try {
+  //     // DIRECT call to main app - NOT through recovery server
+  //     const response = await fetch(`${MAIN_APP_URL}/recovery/import`, {
+  //       method: "POST",
+  //       headers: { 
+  //         "Content-Type": "application/json",
+  //         "X-API-Key": MAIN_APP_API_KEY  // Required authentication
+  //       },
+  //       body: JSON.stringify({
+  //         school_email: email,
+  //         encrypted_backup: encryptedBlob
+  //       })
+  //     });
       
-      const result = await response.json();
+  //     const result = await response.json();
+  //     return {
+  //       success: response.ok,
+  //       data: result,
+  //       error: response.ok ? null : result.detail || "Import failed"
+  //     };
+  //   } catch (error) {
+  //     return {
+  //       success: false,
+  //       error: error.message
+  //     };
+  //   }
+  // };
+
+  // const verifyMainAppData = async () => {
+  //   try {
+  //     // Check activation status (should be deactivated after recovery)
+  //     const response = await fetch(`${MAIN_APP_URL}/activation/status`, {
+  //       method: "GET",
+  //       headers: { "Content-Type": "application/json" }
+  //     });
+      
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       // After recovery, system should be deactivated
+  //       return {
+  //         success: true,
+  //         activated: data.activated,
+  //         message: data.activated ? "System is activated (unexpected)" : "System is deactivated (expected)"
+  //       };
+  //     }
+  //     return { success: false, error: "Failed to check activation status" };
+  //   } catch (error) {
+  //     return { success: false, error: error.message };
+  //   }
+  // };
+
+
+  const importToMainApp = async (encryptedBlob) => {
+  try {
+    // Use IPC instead of direct HTTP call
+    const result = await importRecoveryData(email, encryptedBlob);
+    
+    if (result.success) {
       return {
-        success: response.ok,
-        data: result
+        success: true,
+        data: result,
+        error: null
       };
-    } catch (error) {
+    } else {
       return {
         success: false,
-        error: error.message
+        error: result.error || result.message || "Import failed"
       };
     }
-  };
-
-  const verifyMainAppData = async () => {
-    try {
-      // Check activation status (should be deactivated after recovery)
-      const response = await fetch(`${MAIN_APP_URL}/activation/status`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        // After recovery, system should be deactivated
-        return {
-          success: true,
-          activated: data.activated,
-          message: data.activated ? "System is activated (unexpected)" : "System is deactivated (expected)"
-        };
-      }
-      return { success: false, error: "Failed to check activation status" };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
 
   const handleManualRedirect = () => {
     setTransferStatus({
@@ -399,7 +415,7 @@ export default function RecoverAccountPage() {
     }, 500);
   };
 
-  const startNewRegistration = () => {
+ const startNewRegistration = () => {
     navigate("/school-details");
   };
 
