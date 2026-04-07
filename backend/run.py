@@ -58,9 +58,9 @@ def handle_sync_health():
     """Check sync backend health"""
     try:
         from app.routes.sync import check_health
-        return check_health()
+        result = check_health()  # ✅ Await the async function
+        return result
     except ImportError:
-        # If sync module doesn't exist yet, return basic health
         return {
             "success": True,
             "status": "healthy",

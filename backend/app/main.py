@@ -1543,11 +1543,14 @@ async def database_status():
 # ============================================
 
 @app.post("/sync/complete")
-async def complete_sync(req: CompleteSyncRequest):
+def complete_sync(req: CompleteSyncRequest):
     """Complete sync: school, activation, and devices in one call"""
     try:
         # Get the data from request
-        data = req.dict()
+        if hasattr(req, 'dict'):
+            data = req.dict()
+        else:
+            data = req
         sync_school = data.get('syncSchool', data.get('sync_school', True))
         sync_activation = data.get('syncActivation', data.get('sync_activation', True))
         sync_devices = data.get('syncDevices', data.get('sync_devices', True))
@@ -2286,7 +2289,7 @@ async def get_cloud_devices():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get cloud devices: {str(e)}")
 @app.get("/health/test")
-async def health_test():
+def health_test():
     """Simple health check endpoint"""
     return {
         "status": "ok",

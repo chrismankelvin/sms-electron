@@ -524,6 +524,7 @@ import {
 import Intro from "../../components/Intro.jsx";
 import { useNavigate } from "react-router-dom";
 import "../../styles/mini-settings.css";
+import {syncData,checkBackendHealth} from "../../services/api.service.js";
 
 // Import the mini settings service
 import { miniSettingsService } from "../../services/miniSettingsService";
@@ -688,103 +689,196 @@ export default function MiniSettingsPage({ onComplete }) {
   };
 
   // SINGLE COMPLETE SYNC FUNCTION (unchanged)
-  const performCompleteSync = async () => {
-    try {
-      // Reset progress
-      setSyncProgress({
-        school: { status: 'pending', message: 'Starting...' },
-        activation: { status: 'pending', message: 'Waiting...' },
-        devices: { status: 'pending', message: 'Waiting...' }
-      });
+  // const performCompleteSync = async () => {
+  //   try {
+  //     // Reset progress
+  //     setSyncProgress({
+  //       school: { status: 'pending', message: 'Starting...' },
+  //       activation: { status: 'pending', message: 'Waiting...' },
+  //       devices: { status: 'pending', message: 'Waiting...' }
+  //     });
       
-      setSyncMessage("Starting complete sync to cloud...");
+  //     setSyncMessage("Starting complete sync to cloud...");
       
-      // Test if backend is running
-      try {
-        await apiFetch("/health/test", {}, 5000);
-      } catch {
-        throw new Error("Backend server is not running or not responding");
-      }
+  //     // Test if backend is running
+  //     try {
+  //       await checkBackendHealth();
+  //     } catch {
+  //       throw new Error("Backend server is not running or not responding");
+  //     }
       
-      // Make ONE call to /sync/complete
-      setSyncMessage("Syncing all data to cloud...");
+  //     // Make ONE call to /sync/complete
+  //     setSyncMessage("Syncing all data to cloud...");
       
-      const result = await apiFetch("/sync/complete", {
-        method: "POST",
-        body: JSON.stringify({
-          sync_school: true,
-          sync_activation: true,
-          sync_devices: true,
-          device_batch_size: 20
-        })
-      });
+  //     const result = await syncData( {
+  //       method: "POST",
+  //       body: JSON.stringify({
+  //         sync_school: true,
+  //         sync_activation: true,
+  //         sync_devices: true,
+  //         device_batch_size: 20
+  //       })
+  //     });
       
-      // Store the full result
-      setSyncResult(result);
+  //     // Store the full result
+  //     setSyncResult(result);
       
-      // Update progress based on result
-      const steps = result.steps || {};
+  //     // Update progress based on result
+  //     const steps = result.steps || {};
       
-      // Update school progress
-      if (steps.school) {
-        setSyncProgress(prev => ({
-          ...prev,
-          school: {
-            status: steps.school.success ? 'completed' : 'failed',
-            message: steps.school.message || 
-                     (steps.school.success ? 'School synced' : 'School sync failed')
-          }
-        }));
-      }
+  //     // Update school progress
+  //     if (steps.school) {
+  //       setSyncProgress(prev => ({
+  //         ...prev,
+  //         school: {
+  //           status: steps.school.success ? 'completed' : 'failed',
+  //           message: steps.school.message || 
+  //                    (steps.school.success ? 'School synced' : 'School sync failed')
+  //         }
+  //       }));
+  //     }
       
-      // Update activation progress
-      if (steps.activation) {
-        setSyncProgress(prev => ({
-          ...prev,
-          activation: {
-            status: steps.activation.success ? 'completed' : 'failed',
-            message: steps.activation.message || 
-                     (steps.activation.success ? 'Activation synced' : 'Activation sync failed')
-          }
-        }));
-      }
+  //     // Update activation progress
+  //     if (steps.activation) {
+  //       setSyncProgress(prev => ({
+  //         ...prev,
+  //         activation: {
+  //           status: steps.activation.success ? 'completed' : 'failed',
+  //           message: steps.activation.message || 
+  //                    (steps.activation.success ? 'Activation synced' : 'Activation sync failed')
+  //         }
+  //       }));
+  //     }
       
-      // Update devices progress
-      if (steps.devices) {
-        setSyncProgress(prev => ({
-          ...prev,
-          devices: {
-            status: steps.devices.success ? 'completed' : 'failed',
-            message: steps.devices.message || 
-                     `${steps.devices.synced || 0} devices synced` ||
-                     (steps.devices.success ? 'Devices synced' : 'Device sync failed')
-          }
-        }));
-      }
+  //     // Update devices progress
+  //     if (steps.devices) {
+  //       setSyncProgress(prev => ({
+  //         ...prev,
+  //         devices: {
+  //           status: steps.devices.success ? 'completed' : 'failed',
+  //           message: steps.devices.message || 
+  //                    `${steps.devices.synced || 0} devices synced` ||
+  //                    (steps.devices.success ? 'Devices synced' : 'Device sync failed')
+  //         }
+  //       }));
+  //     }
       
-      // Check if sync was successful overall
-      if (!result.success) {
-        // Check which steps failed
-        const failedSteps = Object.entries(steps)
-          .filter(([_, step]) => !step.success)
-          .map(([name]) => name);
+  //     // Check if sync was successful overall
+  //     if (!result.success) {
+  //       // Check which steps failed
+  //       const failedSteps = Object.entries(steps)
+  //         .filter(([_, step]) => !step.success)
+  //         .map(([name]) => name);
         
-        if (failedSteps.length === Object.keys(steps).length) {
-          throw new Error(`All sync steps failed: ${failedSteps.join(', ')}`);
-        } else if (failedSteps.length > 0) {
-          // Some steps failed but others succeeded
-          console.warn(`Partial sync: ${failedSteps.join(', ')} failed`);
-          // We'll continue anyway since some data was synced
-        }
-      }
+  //       if (failedSteps.length === Object.keys(steps).length) {
+  //         throw new Error(`All sync steps failed: ${failedSteps.join(', ')}`);
+  //       } else if (failedSteps.length > 0) {
+  //         // Some steps failed but others succeeded
+  //         console.warn(`Partial sync: ${failedSteps.join(', ')} failed`);
+  //         // We'll continue anyway since some data was synced
+  //       }
+  //     }
       
-      return result.success;
+  //     return result.success;
       
-    } catch (error) {
-      console.error("Complete sync error:", error);
-      throw error;
+  //   } catch (error) {
+  //     console.error("Complete sync error:", error);
+  //     throw error;
+  //   }
+  // };
+const performCompleteSync = async () => {
+  try {
+    // Reset progress
+    setSyncProgress({
+      school: { status: 'pending', message: 'Starting...' },
+      activation: { status: 'pending', message: 'Waiting...' },
+      devices: { status: 'pending', message: 'Waiting...' }
+    });
+    
+    setSyncMessage("Starting complete sync to cloud...");
+    
+    // Test if backend is running
+    const health = await checkBackendHealth();
+    if (!health || !health.success) {
+      throw new Error("Backend server is not running or not responding");
     }
-  };
+    
+    // Make ONE call to /sync/complete
+    setSyncMessage("Syncing all data to cloud...");
+    
+    // CORRECTED: Pass options directly, not in fetch format
+    const result = await syncData({
+      sync_school: true,
+      sync_activation: true,
+      sync_devices: true,
+      device_batch_size: 20
+    });
+    
+    // Store the full result
+    setSyncResult(result);
+    
+    // Update progress based on result
+    const steps = result.steps || {};
+    
+    // Update school progress
+    if (steps.school) {
+      setSyncProgress(prev => ({
+        ...prev,
+        school: {
+          status: steps.school.success ? 'completed' : 'failed',
+          message: steps.school.message || 
+                   (steps.school.success ? 'School synced' : 'School sync failed')
+        }
+      }));
+    }
+    
+    // Update activation progress
+    if (steps.activation) {
+      setSyncProgress(prev => ({
+        ...prev,
+        activation: {
+          status: steps.activation.success ? 'completed' : 'failed',
+          message: steps.activation.message || 
+                   (steps.activation.success ? 'Activation synced' : 'Activation sync failed')
+        }
+      }));
+    }
+    
+    // Update devices progress
+    if (steps.devices) {
+      setSyncProgress(prev => ({
+        ...prev,
+        devices: {
+          status: steps.devices.success ? 'completed' : 'failed',
+          message: steps.devices.message || 
+                   `${steps.devices.synced || 0} devices synced` ||
+                   (steps.devices.success ? 'Devices synced' : 'Device sync failed')
+        }
+      }));
+    }
+    
+    // Check if sync was successful overall
+    if (!result.success) {
+      const failedSteps = Object.entries(steps)
+        .filter(([_, step]) => !step.success)
+        .map(([name]) => name);
+      
+      if (failedSteps.length === Object.keys(steps).length) {
+        throw new Error(`All sync steps failed: ${failedSteps.join(', ')}`);
+      } else if (failedSteps.length > 0) {
+        console.warn(`Partial sync: ${failedSteps.join(', ')} failed`);
+      }
+    }
+    
+    return result.success;
+    
+  } catch (error) {
+    console.error("Complete sync error:", error);
+    throw error;
+  }
+};
+
+
 
   // Save all settings to JSON file and start sync
   const handleSaveSettings = async () => {
