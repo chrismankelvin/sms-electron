@@ -309,7 +309,7 @@ def save_admin_to_local_db(data: dict) -> bool:
 # RECOVERY (Option C – Encrypted Backup Blob)
 # ============================================
 
-RECOVERY_SECRET = "CHANGE_ME_IN_PRODUCTION"
+RECOVERY_SECRET = "xK9mP2vL5nQ8rT3wY6zA1bC4dE7fG0hJ"
 
 def derive_recovery_key(school_email: str) -> bytes:
     raw = f"{school_email}:{RECOVERY_SECRET}".encode()

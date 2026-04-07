@@ -25,8 +25,8 @@ export default function RecoverAccountPage() {
 
  const RECOVERY_API_URL = "http://localhost:8001";
   const MAIN_APP_URL = "http://localhost:8000";
-  const MAIN_APP_API_KEY = "your-api-key-here"; // Should come from env/config
-
+  // const MAIN_APP_API_KEY = "your-api-key-here"; // Should come from env/config
+const MAIN_APP_API_KEY = import.meta.env.VITE_MAIN_APP_API_KEY || "local-import-key";
 
 
   useEffect(() => {
@@ -84,160 +84,368 @@ export default function RecoverAccountPage() {
     );
   }
 
+
+const getAuthHeaders = () => {
+    const headers = { "Content-Type": "application/json" };
+    
+    // For web development, add API key
+    if (!window.electron?.isElectron) {
+        const apiKey = import.meta.env.VITE_RECOVERY_API_KEY;
+        if (apiKey) {
+            headers["Authorization"] = `Bearer ${apiKey}`;
+        }
+    }
+    
+    return headers;
+};
+
+// Handle API responses
+const handleApiResponse = async (response) => {
+    if (response.status === 401) {
+        return {
+            success: false,
+            error: 'AUTH_ERROR',
+            message: 'Authentication failed. Please restart the application.'
+        };
+    }
+    
+    if (response.status === 429) {
+        return {
+            success: false,
+            error: 'RATE_LIMITED',
+            message: 'Too many recovery attempts. Please wait 1 hour before trying again.'
+        };
+    }
+    
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        return {
+            success: false,
+            error: 'API_ERROR',
+            message: error.detail || `Server error: ${response.status}`
+        };
+    }
+    
+    return await response.json();
+};
+
+
+
+
+
+  // const checkSchoolExists = async () => {
+  //   if (!email) {
+  //     setNotification({ message: "Please enter your school email address.", type: "error" });
+  //     return;
+  //   }
+
+  //   // Basic email validation
+  //   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  //   if (!emailRegex.test(email)) {
+  //     setNotification({ message: "Please enter a valid email address.", type: "error" });
+  //     return;
+  //   }
+
+  //   setLoading(true);
+  //   setNotification({ message: "", type: "" });
+    
+  //   try {
+  //     const response = await fetch(`${RECOVERY_API_URL}/check-school`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({ email }),
+  //     });
+
+  //     const result = await response.json();
+      
+  //     if (response.ok && result.exists) {
+  //       setSchoolFound(result.school);
+  //       setNotification({
+  //         message: `School found: ${result.school.school_name}`,
+  //         type: "success"
+  //       });
+  //       setStep(2); // Move to verification step
+  //     } else {
+  //       setSchoolFound(null);
+  //       setNotification({
+  //         message: result.message || "No school found with this email.",
+  //         type: "warning"
+  //       });
+  //     }
+  //   } catch (error) {
+  //     setNotification({
+  //       message: "Error checking school. Please try again.",
+  //       type: "error"
+  //     });
+  //     setSchoolFound(null);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+
+
   const checkSchoolExists = async () => {
     if (!email) {
-      setNotification({ message: "Please enter your school email address.", type: "error" });
-      return;
+        setNotification({ message: "Please enter your school email address.", type: "error" });
+        return;
     }
 
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setNotification({ message: "Please enter a valid email address.", type: "error" });
-      return;
+        setNotification({ message: "Please enter a valid email address.", type: "error" });
+        return;
     }
 
     setLoading(true);
     setNotification({ message: "", type: "" });
     
     try {
-      const response = await fetch(`${RECOVERY_API_URL}/check-school`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      const result = await response.json();
-      
-      if (response.ok && result.exists) {
-        setSchoolFound(result.school);
-        setNotification({
-          message: `School found: ${result.school.school_name}`,
-          type: "success"
+        const response = await fetch(`${RECOVERY_API_URL}/check-school`, {
+            method: "POST",
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ email }),
         });
-        setStep(2); // Move to verification step
-      } else {
+
+        const result = await handleApiResponse(response);
+        
+        if (result.error) {
+            setNotification({ message: result.message, type: "error" });
+            setSchoolFound(null);
+        } else if (result.exists) {
+            setSchoolFound(result.school);
+            setNotification({
+                message: `School found: ${result.school.school_name}`,
+                type: "success"
+            });
+            setStep(2);
+        } else {
+            setSchoolFound(null);
+            setNotification({
+                message: result.message || "No school found with this email.",
+                type: "warning"
+            });
+        }
+    } catch (error) {
+        console.error('Check school error:', error);
+        setNotification({
+            message: "Error checking school. Please check your connection.",
+            type: "error"
+        });
         setSchoolFound(null);
-        setNotification({
-          message: result.message || "No school found with this email.",
-          type: "warning"
-        });
-      }
-    } catch (error) {
-      setNotification({
-        message: "Error checking school. Please try again.",
-        type: "error"
-      });
-      setSchoolFound(null);
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
 
-  const verifySchoolDetails = async () => {
+  // const verifySchoolDetails = async () => {
+  //   if (!schoolName || !contact) {
+  //     setNotification({ message: "Please enter school name and contact number.", type: "error" });
+  //     return;
+  //   }
+
+  //   setLoading(true);
+  //   setNotification({ message: "", type: "" });
+    
+  //   try {
+  //     const response = await fetch(`${RECOVERY_API_URL}/verify-recovery`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         email: email,
+  //         school_name: schoolName,
+  //         contact: contact
+  //       }),
+  //     });
+
+  //     const result = await response.json();
+      
+  //     if (response.ok && result.verified) {
+  //       setVerificationData(result.data);
+  //       setNotification({
+  //         message: result.message,
+  //         type: "success"
+  //       });
+  //       setStep(3); // Move to confirmation step
+  //     } else {
+  //       setNotification({
+  //         message: result.message || "Verification failed. Please check your details.",
+  //         type: "error"
+  //       });
+  //     }
+  //   } catch (error) {
+  //     setNotification({
+  //       message: "Verification failed. Please try again.",
+  //       type: "error"
+  //     });
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+
+
+  // ============================================
+// UPDATED verifySchoolDetails
+// ============================================
+const verifySchoolDetails = async () => {
     if (!schoolName || !contact) {
-      setNotification({ message: "Please enter school name and contact number.", type: "error" });
-      return;
+        setNotification({ message: "Please enter school name and contact number.", type: "error" });
+        return;
     }
 
     setLoading(true);
     setNotification({ message: "", type: "" });
     
     try {
-      const response = await fetch(`${RECOVERY_API_URL}/verify-recovery`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: email,
-          school_name: schoolName,
-          contact: contact
-        }),
-      });
+        const response = await fetch(`${RECOVERY_API_URL}/verify-recovery`, {
+            method: "POST",
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                email: email,
+                school_name: schoolName,
+                contact: contact
+            }),
+        });
 
-      const result = await response.json();
-      
-      if (response.ok && result.verified) {
-        setVerificationData(result.data);
-        setNotification({
-          message: result.message,
-          type: "success"
-        });
-        setStep(3); // Move to confirmation step
-      } else {
-        setNotification({
-          message: result.message || "Verification failed. Please check your details.",
-          type: "error"
-        });
-      }
+        const result = await handleApiResponse(response);
+        
+        if (result.error) {
+            setNotification({ message: result.message, type: "error" });
+        } else if (result.verified) {
+            setVerificationData(result.data);
+            setNotification({ message: result.message, type: "success" });
+            setStep(3);
+        } else {
+            setNotification({
+                message: result.message || "Verification failed. Please check your details.",
+                type: "error"
+            });
+        }
     } catch (error) {
-      setNotification({
-        message: "Verification failed. Please try again.",
-        type: "error"
-      });
+        console.error('Verification error:', error);
+        setNotification({
+            message: "Verification failed. Please try again.",
+            type: "error"
+        });
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
 
- const performRecovery = async () => {
+
+
+//  const performRecovery = async () => {
+//     if (!confirmDeactivation) {
+//       setNotification({ 
+//         message: "You must confirm device deactivation to proceed.", 
+//         type: "error" 
+//       });
+//       return;
+//     }
+
+//     setLoading(true);
+//     setNotification({ message: "", type: "" });
+    
+//     try {
+//       // Step 1: Get encrypted blob from recovery server
+//       const response = await fetch(`${RECOVERY_API_URL}/perform-recovery`, {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify({
+//           email: email,
+//           school_name: schoolName,
+//           contact: contact,
+//           confirm_deactivation: true
+//         }),
+//       });
+
+//       const result = await response.json();
+      
+//       if (response.ok && result.success) {
+//         setRecoveryResult(result);
+//         setNotification({
+//           message: "Recovery blob created successfully",
+//           type: "success"
+//         });
+        
+//         // Step 2: Transfer to main app (directly, NOT via recovery server)
+//         await transferDataToMainApp(result.encrypted_blob);
+        
+//       } else {
+//         setNotification({
+//           message: result.message || "Recovery failed.",
+//           type: "error"
+//         });
+//         setStep(2); // Go back to verification
+//       }
+//     } catch (error) {
+//       setNotification({
+//         message: "Recovery failed. Please try again.",
+//         type: "error"
+//       });
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+
+
+
+// ============================================
+// UPDATED performRecovery
+// ============================================
+const performRecovery = async () => {
     if (!confirmDeactivation) {
-      setNotification({ 
-        message: "You must confirm device deactivation to proceed.", 
-        type: "error" 
-      });
-      return;
+        setNotification({ 
+            message: "You must confirm device deactivation to proceed.", 
+            type: "error" 
+        });
+        return;
     }
 
     setLoading(true);
     setNotification({ message: "", type: "" });
     
     try {
-      // Step 1: Get encrypted blob from recovery server
-      const response = await fetch(`${RECOVERY_API_URL}/perform-recovery`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: email,
-          school_name: schoolName,
-          contact: contact,
-          confirm_deactivation: true
-        }),
-      });
+        const response = await fetch(`${RECOVERY_API_URL}/perform-recovery`, {
+            method: "POST",
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                email: email,
+                school_name: schoolName,
+                contact: contact,
+                confirm_deactivation: true
+            }),
+        });
 
-      const result = await response.json();
-      
-      if (response.ok && result.success) {
-        setRecoveryResult(result);
-        setNotification({
-          message: "Recovery blob created successfully",
-          type: "success"
-        });
+        const result = await handleApiResponse(response);
         
-        // Step 2: Transfer to main app (directly, NOT via recovery server)
-        await transferDataToMainApp(result.encrypted_blob);
-        
-      } else {
-        setNotification({
-          message: result.message || "Recovery failed.",
-          type: "error"
-        });
-        setStep(2); // Go back to verification
-      }
+        if (result.error) {
+            setNotification({ message: result.message, type: "error" });
+            setStep(2);
+        } else if (result.success) {
+            setRecoveryResult(result);
+            setNotification({ message: "Recovery blob created successfully", type: "success" });
+            await transferDataToMainApp(result.encrypted_blob);
+        } else {
+            setNotification({ message: result.message || "Recovery failed.", type: "error" });
+            setStep(2);
+        }
     } catch (error) {
-      setNotification({
-        message: "Recovery failed. Please try again.",
-        type: "error"
-      });
+        console.error('Recovery error:', error);
+        setNotification({ message: "Recovery failed. Please try again.", type: "error" });
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
+
 
  const transferDataToMainApp = async (encryptedBlob) => {
     setStep(4); // Show transfer progress
