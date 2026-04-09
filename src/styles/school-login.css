@@ -2,123 +2,147 @@
 /*      SCHOOL LOGIN PAGE        */
 /* ============================= */
 
-.full-screen {
+.school-login-wrapper {
   width: 100%;
   height: 100vh;
-  background: var(--bg);
-  padding: 1rem;
+  display: flex;
+  background: linear-gradient(135deg, var(--bg), #0f172a);
 }
 
-.school-login-wrapper {
+/* Container */
+.login-container {
+  display: flex;
+  width: 100%;
+}
+
+/* LEFT PANEL */
+.login-left {
+  flex: 1;
+  background: linear-gradient(135deg, var(--primary), #2563eb);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 3rem;
+}
+
+.login-left h1 {
+  font-size: 3rem;
+  font-weight: 800;
+}
+
+.login-left p {
+  opacity: 0.9;
+  margin-top: 0.5rem;
+}
+
+.role-indicator {
+  margin-top: 1.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255,255,255,0.2);
+  border-radius: 999px;
+  width: fit-content;
+}
+
+/* RIGHT PANEL */
+.login-right {
+  flex: 1;
+  background: var(--card-bg);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2rem;
   position: relative;
 }
 
-/* Theme Toggle */
-.theme-toggle {
+/* Top bar */
+.top-bar {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  font-size: 0.85rem;
+  top: 1rem;
+  right: 1rem;
+}
+
+.theme-toggle {
   cursor: pointer;
+  font-size: 0.85rem;
   color: var(--secondary);
-  user-select: none;
 }
 
 .theme-toggle:hover {
   color: var(--primary);
 }
 
-.school-login-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  width: 100%;
-  max-width: 480px;
-}
-
-/* School Name */
-.school-name {
-  font-size: 2rem;
-  font-weight: 800;
-  color: var(--text);
-  animation: expandText 0.4s ease forwards;
-  text-align: center;
-}
-
-/* Login As Text */
-.login-as {
-  font-size: 1rem;
-  color: var(--secondary);
-}
-
-.login-as span {
-  font-weight: 600;
-  color: var(--primary);
-}
-
 /* Form */
 .login-form {
+  max-width: 400px;
+  width: 100%;
+  margin: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  width: 100%;
+  gap: 1rem;
+}
+
+.login-form h2 {
+  margin-bottom: 1rem;
 }
 
 .login-input {
   padding: 0.75rem 1rem;
-  border-radius: 0.375rem;
+  border-radius: 0.5rem;
   border: 1px solid var(--border);
-  background: var(--card-bg);
+  background: var(--bg);
   color: var(--text);
-  font-size: 0.95rem;
-  transition: border 0.3s ease, box-shadow 0.3s ease;
 }
 
 .login-input:focus {
-  outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+  outline: none;
 }
 
-/* Login Button */
+/* Button */
 .login-btn {
-  margin-top: 0.5rem;
-  width: 100%;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: 0.3s;
 }
 
-/* Role Buttons */
+.login-btn:hover {
+  opacity: 0.9;
+}
+
+/* Roles */
 .role-buttons {
+  margin-top: 2rem;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0.5rem;
-  width: 100%;
 }
 
 .role-btn {
-  padding: 0.55rem;
-  font-size: 0.85rem;
-  border-radius: 0.375rem;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
   border: 1px solid var(--border);
   background: transparent;
-  color: var(--text);
   cursor: pointer;
-  transition: all 0.25s ease;
 }
 
-.role-btn:hover {
+.role-btn.active {
   background: var(--primary);
   color: #fff;
-  border-color: var(--primary);
 }
 
-/* Mobile adjustments */
-@media (max-width: 360px) {
-  .school-name {
-    font-size: 1.5rem;
+/* MOBILE */
+@media (max-width: 768px) {
+  .login-container {
+    flex-direction: column;
   }
 
-  .role-buttons {
-    grid-template-columns: 1fr;
+  .login-left {
+    text-align: center;
+    padding: 2rem;
   }
 }

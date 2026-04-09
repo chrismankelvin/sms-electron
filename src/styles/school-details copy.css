@@ -1,0 +1,307 @@
+/* school-details.css */
+
+.app-login {
+  background-color: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-family: "Inter", sans-serif;
+}
+
+/* Main App Wrapper */
+.app {
+  background-color: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  width: 100%;
+  font-family: "Inter", sans-serif;
+  display: flex;
+  flex-direction: column;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  box-sizing: border-box;
+}
+
+/* Auth Wrapper Grid */
+.app-auth-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Form Section */
+.auth-main-col {
+  background-color: var(--card-bg);
+  border-radius: 0 0 0 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease;
+}
+
+.app-auth-body {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.auth-heading {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--text);
+  transition: color 0.3s ease;
+}
+
+/* Form Inputs */
+.auth-form .form-control {
+  height: 45px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background-color: var(--input-bg);
+  color: var(--text);
+  transition: all 0.3s ease;
+}
+
+.auth-form .form-control::placeholder {
+  color: var(--text-muted);
+}
+
+.auth-form .form-control:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(100, 149, 237, 0.2); /* subtle glow */
+}
+
+/* Input Icons */
+.auth-form .position-relative svg {
+  color: var(--text-muted);
+  transition: color 0.3s ease;
+}
+
+/* Buttons */
+.app-btn-primary {
+  background-color: var(--primary);
+  color: #fff;
+  font-weight: 500;
+  height: 45px;
+  border-radius: 6px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.app-btn-primary:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-2px);
+}
+
+/* Background Section */
+.auth-background-col {
+  position: relative;
+  overflow: hidden;
+  background: var(--primary-dark);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.auth-background-holder,
+.auth-background-mask {
+  position: absolute;
+  inset: 0;
+}
+
+.auth-background-overlay {
+  position: relative;
+  z-index: 2;
+}
+
+/* Step Animations */
+.auth-form > div {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInStep 0.5s forwards;
+}
+
+.auth-form > div:nth-child(1) { animation-delay: 0.1s; }
+.auth-form > div:nth-child(2) { animation-delay: 0.2s; }
+.auth-form > div:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes fadeInStep {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .auth-main-col {
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .auth-background-col {
+    display: none;
+  }
+}
+
+/* Dark/Light Theme Variables */
+:root {
+  --bg: #f5f7fa;
+  --card-bg: #ffffff;
+  --input-bg: #fff;
+  --text: #1a1a1a;
+  --text-muted: #6c757d;
+  --border: #dee2e6;
+  --primary: #4f46e5;
+  --primary-dark: #4338ca;
+}
+
+[data-theme="dark"] {
+  --bg: #1f2937;
+  --card-bg: #111827;
+  --input-bg: #1f2937;
+  --text: #f9fafb;
+  --text-muted: #9ca3af;
+  --border: #374151;
+  --primary: #6366f1;
+  --primary-dark: #4f46e5;
+}
+
+
+
+
+
+
+
+/* Add to school-details.css or create recover-account.css */
+.recovery-icon {
+  background: rgba(59, 130, 246, 0.1);
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+
+.step-number {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.step-title {
+  font-weight: 600;
+  color: white;
+  margin-bottom: 2px;
+}
+
+.step-description {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.recovery-steps {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.school-details {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.school-details p {
+  margin-bottom: 0.5rem;
+}
+
+.school-details strong {
+  color: #333;
+  display: block;
+  font-size: 0.9rem;
+  margin-bottom: 2px;
+}
+
+.school-details .text-success p {
+  color: #198754;
+}
+
+
+/* Progress Bar Styles */
+.progress-container {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #dee2e6;
+}
+
+.step-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.step-indicator span {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #dee2e6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
+  font-weight: bold;
+}
+
+.step-indicator span.active {
+  background: #0d6efd;
+  color: white;
+}
+
+.step-number {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #495057;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+}
+
+.step-number.active {
+  background: #0d6efd;
+}
+
+.step-number.active.complete {
+  background: #198754;
+}
+
+.step-title {
+  font-weight: bold;
+  color: white;
+}
+
+.step-description {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.transfer-container {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.connection-banner {
+  background: #198754;
+  color: white;
+  font-size: 0.9rem;
+}
+
+.connection-banner.offline {
+  background: #dc3545;
+}
