@@ -1,0 +1,17 @@
+.academic-reports-container {
+  padding: 0;
+}
+
+.performance-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.performance-card {
+  text-align: center;
+  padding: 1rem;
+  background: var(--bg);
+  border-radius: 0.5rem;
+}

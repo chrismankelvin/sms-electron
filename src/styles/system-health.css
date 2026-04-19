@@ -1,0 +1,30 @@
+.system-health-container {
+  padding: 0;
+}
+
+.health-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.health-status-ok {
+  color: #10b981;
+}
+
+.health-status-warning {
+  color: #f59e0b;
+}
+
+.health-status-critical {
+  color: #ef4444;
+}
+
+.metric-card {
+  background: var(--bg);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  text-align: center;
+}

@@ -1,0 +1,401 @@
+/* Dashboard Specific Styles */
+.dashboard-container {
+  padding: 0;
+}
+
+/* KPI Cards Grid */
+.dashboard-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.kpi-card {
+  border-left: 4px solid var(--primary);
+}
+
+.kpi-card.students { border-left-color: #3b82f6; }
+.kpi-card.staff { border-left-color: #10b981; }
+.kpi-card.classes { border-left-color: #8b5cf6; }
+.kpi-card.year { border-left-color: #f59e0b; }
+.kpi-card.attendance { border-left-color: #eab308; }
+.kpi-card.health { border-left-color: #ef4444; }
+
+.kpi-label {
+  font-size: 0.875rem;
+  color: var(--secondary);
+  margin-bottom: 0.5rem;
+}
+
+.kpi-value {
+  font-size: 1.875rem;
+  font-weight: bold;
+}
+
+.kpi-subvalue {
+  font-size: 0.75rem;
+  color: var(--secondary);
+  margin-top: 0.25rem;
+}
+
+/* Quick Actions */
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.quick-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.quick-action-btn:hover {
+  transform: translateY(-2px);
+  opacity: 0.9;
+}
+
+.quick-action-btn:active {
+  transform: translateY(0);
+}
+
+/* Dashboard Grid Layouts */
+.dashboard-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Timetable Styles */
+.timetable-item {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.timetable-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.timetable-time {
+  font-size: 0.75rem;
+  color: var(--secondary);
+  font-weight: 500;
+}
+
+.timetable-subject {
+  font-weight: 600;
+  margin-top: 0.25rem;
+}
+
+.timetable-details {
+  font-size: 0.75rem;
+  color: var(--secondary);
+  margin-top: 0.25rem;
+}
+
+/* Attendance Summary */
+.attendance-rate {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.attendance-percentage {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #10b981;
+}
+
+.attendance-label {
+  font-size: 0.875rem;
+  color: var(--secondary);
+}
+
+.attendance-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  text-align: center;
+}
+
+.attendance-stat-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.attendance-stat-value.present { color: #10b981; }
+.attendance-stat-value.absent { color: #ef4444; }
+.attendance-stat-value.late { color: #f59e0b; }
+
+.attendance-stat-label {
+  font-size: 0.75rem;
+  color: var(--secondary);
+}
+
+/* System Health */
+.health-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.health-label {
+  color: var(--secondary);
+}
+
+.health-value {
+  font-weight: 600;
+}
+
+.health-value.warning {
+  color: #f59e0b;
+}
+
+.health-value.success {
+  color: #10b981;
+}
+
+.license-progress {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.progress-bar-bg {
+  width: 100%;
+  background-color: var(--border);
+  border-radius: 9999px;
+  height: 0.5rem;
+}
+
+.progress-bar-fill {
+  background-color: var(--primary);
+  border-radius: 9999px;
+  height: 0.5rem;
+}
+
+.progress-text {
+  font-size: 0.75rem;
+  color: var(--secondary);
+  margin-top: 0.25rem;
+}
+
+/* Performance Chart */
+.chart-item {
+  margin-bottom: 0.75rem;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+.chart-bar-bg {
+  width: 100%;
+  background-color: var(--border);
+  border-radius: 9999px;
+  height: 0.5rem;
+}
+
+.chart-bar-fill {
+  background-color: var(--primary);
+  border-radius: 9999px;
+  height: 0.5rem;
+}
+
+/* Events List */
+.event-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.event-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.event-title {
+  font-weight: 600;
+}
+
+.event-meta {
+  font-size: 0.75rem;
+  color: var(--secondary);
+  margin-top: 0.25rem;
+}
+
+.event-days {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* Activity Feed */
+.activity-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.activity-content {
+  flex: 1;
+}
+
+.activity-action {
+  font-size: 0.875rem;
+}
+
+.activity-user {
+  font-size: 0.75rem;
+  color: var(--secondary);
+  margin-top: 0.25rem;
+}
+
+.activity-time {
+  font-size: 0.75rem;
+  color: var(--secondary);
+  margin-left: 0.5rem;
+}
+
+/* Alerts */
+.alert-item {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.alert-item:last-child {
+  margin-bottom: 0;
+}
+
+.alert-item.danger {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-left: 4px solid #ef4444;
+}
+
+.alert-item.warning {
+  background-color: rgba(245, 158, 11, 0.1);
+  border-left: 4px solid #f59e0b;
+}
+
+.alert-item.info {
+  background-color: rgba(59, 130, 246, 0.1);
+  border-left: 4px solid #3b82f6;
+}
+
+.alert-message {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.alert-priority {
+  font-size: 0.75rem;
+  color: var(--secondary);
+  margin-top: 0.25rem;
+}
+
+/* Pending Approvals Table */
+.approvals-table-container {
+  overflow-x: auto;
+}
+
+.approvals-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.approvals-table th {
+  padding: 0.75rem;
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background-color: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.approvals-table td {
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.approval-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.approve-btn {
+  background-color: #10b981;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.reject-btn {
+  background-color: #ef4444;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+/* Scrollable containers */
+.scrollable-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* Section Headers */
+.section-header {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dashboard-kpi-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+  
+  .dashboard-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .kpi-value {
+    font-size: 1.5rem;
+  }
+  
+  .approvals-table th,
+  .approvals-table td {
+    padding: 0.5rem;
+    font-size: 0.75rem;
+  }
+}

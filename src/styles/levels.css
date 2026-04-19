@@ -1,0 +1,26 @@
+.levels-container {
+  padding: 0;
+}
+
+.level-card {
+  background: linear-gradient(135deg, var(--card-bg) 0%, var(--bg) 100%);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  transition: all 0.3s ease;
+}
+
+.level-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.level-badge-jhs {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+}
+
+.level-badge-shs {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+}

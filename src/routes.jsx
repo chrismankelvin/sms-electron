@@ -9,8 +9,8 @@ import SchoolAndAdminSetupPage from "./SchoolDetails/SchoolDetailsPage";
 import AdminDetailsPage from "./SchoolDetails/AdminDetailsPage";
 import SchoolLogin from "./pages/Login/SchoolLogin";
 import Dashboard from "./pages/Dashboard/Dashboard";
-import Students from "./pages/Students/Students";
-import Staff from "./pages/Staff/Staff";
+import SchoolProfile from "./pages/Adminpages/school-setup/profile";
+import AcademicYears from "./pages/Adminpages/school-setup/AcademicYears";
 
 import Settings from "./pages/Settings/Settings";
 import MiniSettingsPage from "./pages/Settings/MiniSettingsPage";
@@ -29,14 +29,84 @@ import NonStaffRegistration from "./pages/Adminpages/Registration/NonStaffRegist
 import AdministratorRegistration from "./pages/Adminpages/Registration/AdministratorRegistration";
 
 // Import API services
-import { 
+import {
   checkActivationStatus,
   getDatabaseStatus,
-  isElectron 
+  isElectron
 } from "./services/api.service";
 
 import { miniSettingsService } from "./services/miniSettingsService";
 import AccountantRegistration from "./pages/Adminpages/Registration/AccountantRegistration";
+import Levels from "./pages/Adminpages/school-setup/Levels";
+import Programmes from "./pages/Adminpages/school-setup/Programmes";
+import GradeBoundaries from "./pages/Adminpages/school-setup/GradeBoundaries";
+import AssessmentTypes from "./pages/Adminpages/school-setup/AssessmentTypes";
+import Terms from "./pages/Adminpages/school-setup/Terms";
+import Classes from "./pages/Adminpages/academic-structure/Classes";
+import Sections from "./pages/Adminpages/academic-structure/Sections";
+import Subjects from "./pages/Adminpages/academic-structure/Subjects";
+import LevelCoreSubjects from "./pages/Adminpages/academic-structure/LevelCoreSubjects";
+import ProgrammeSubjects from "./pages/Adminpages/academic-structure/ProgrammeSubject";
+import TeacherQualifications from "./pages/Adminpages/academic-structure/TeacherQualifications";
+import Staff from "./pages/Adminpages/people-management/Staff";
+import NonStaff from "./pages/Adminpages/people-management/NonStaff";
+import Students from "./pages/Adminpages/people-management/Students";
+import TeachingAssistants from "./pages/Adminpages/people-management/TeachingAssitants";
+import Parents from "./pages/Adminpages/people-management/Parents";
+import PersonDirectory from "./pages/Adminpages/people-management/PersonDirectory";
+import WorkloadAnalysis from "./pages/Adminpages/teacher-assignment/WorkloadAnalysis";
+import AssignFormMasters from "./pages/Adminpages/teacher-assignment/AssignFormMasters";
+import AssignSubjects from "./pages/Adminpages/teacher-assignment/AssignSubjects";
+import CopyTimetable from "./pages/Adminpages/Timetable/CopyTimetable";
+import Rooms from "./pages/Adminpages/Timetable/Rooms";
+import TimeSlots from "./pages/Adminpages/Timetable/TimeSlots";
+import TimetableBuilder from  "./pages/Adminpages/Timetable/TimetableBuilder";
+import ViewTimetable from "./pages/Adminpages/Timetable/ViewTimetable";
+import WeekDays from "./pages/Adminpages/Timetable/WeekDays";
+import Assessments from "./pages/Adminpages/Assessment/Assessments";
+import BulkImport from "./pages/Adminpages/Assessment/BulkImport";
+import GradeAnalysis from "./pages/Adminpages/Assessment/GradeAnalysis";
+import ProcessResults from "./pages/Adminpages/Assessment/ProcessResults";
+import ReportCards from "./pages/Adminpages/Assessment/ReportCards";
+import ScoreEntry from "./pages/Adminpages/Assessment/ScoreEntry";
+import SubjectResults from "./pages/Adminpages/Assessment/SubjectResults";
+import TermResults from "./pages/Adminpages/Assessment/TermResults";
+import Transcripts from "./pages/Adminpages/Assessment/Transcripts";
+import MarkAttendance from "./pages/Adminpages/Attendance/MarkAttendance";
+import AttendanceReports from "./pages/Adminpages/Attendance/AttendanceReports";
+import AbsenteeismAlerts from "./pages/Adminpages/Attendance/AbsenteeismAlerts";
+import HolidaySetup from "./pages/Adminpages/Attendance/HolidaySetup";
+import PromotionRules from "./pages/Adminpages/Progression/PromotionRules";
+import BatchPromotion from "./pages/Adminpages/Progression/BatchPromotion";
+import ManualPromotion from "./pages/Adminpages/Progression/ManualPromotion";
+import Graduation from "./pages/Adminpages/Progression/Graduation";
+import StudentHistory from "./pages/Adminpages/Progression/StudentHistory";
+import ClassTransfers from "./pages/Adminpages/Progression/ClassTransfers";
+import EmailQueue from "./pages/Adminpages/Communication/EmailQueue";
+import NotificationHistory from "./pages/Adminpages/Communication/NotificationHistory";
+import SendNotification from "./pages/Adminpages/Communication/SendNotification";
+import SmsQueue from "./pages/Adminpages/Communication/SmsQueue";
+import Templates from "./pages/Adminpages/Communication/Templates";
+import UserPrefferences from "./pages/Adminpages/Communication/UserPreferences";
+import AcademicReports from "./pages/Adminpages/Reports/AcademicReports";
+import EnrollmentTrends  from "./pages/Adminpages/Reports/EnrollmentTrends";
+import ExportCenter from "./pages/Adminpages/Reports/ExportCenter";
+import StaffReports from "./pages/Adminpages/Reports/StaffReports";
+import StudentReports from "./pages/Adminpages/Reports/StaffReports";
+import PerformanceAnalytics  from "./pages/Adminpages/Reports/PerformanceAnalytics";
+import AuditLogs from "./pages/Adminpages/DataManagement/AuditLogs";
+import BackupRestore from "./pages/Adminpages/DataManagement/BackupRestore";
+import ExportData from  "./pages/Adminpages/DataManagement/ExportData";
+import ImportData from "./pages/Adminpages/DataManagement/ImportData";
+import Migrations from "./pages/Adminpages/DataManagement/Migrations";
+import GlobalSettings from "./pages/Adminpages/SystemAdmin/GlobalSettings";
+import LicenseManagement from "./pages/Adminpages/SystemAdmin/LicenseManagement";
+import RolesPermissions from "./pages/Adminpages/SystemAdmin/RolesPermissions";
+import SystemHealth from "./pages/Adminpages/SystemAdmin/SystemHealth";
+import SystemLogs from "./pages/Adminpages/SystemAdmin/SystemLogs";
+import UserManagement from "./pages/Adminpages/SystemAdmin/UserManagement";
+// import from "./pages/Adminpages";
+
 
 function AppRoutes({ activated, setActivated }) {
   const [setupStatus, setSetupStatus] = useState(null);
@@ -90,7 +160,7 @@ function AppRoutes({ activated, setActivated }) {
   const checkStatus = async () => {
     try {
       console.log('🔍 Checking activation status...');
-      
+
       // Use the API service to check activation
       const isActivated = await checkActivationStatus();
       console.log('✅ Activation status:', isActivated);
@@ -101,18 +171,18 @@ function AppRoutes({ activated, setActivated }) {
       try {
         console.log('🔍 Checking database status...');
         const dbStatus = await getDatabaseStatus();
-        
+
         console.log('✅ Database status:', dbStatus);
-        
-     const newSetupStatus = {
-  school_completed: dbStatus?.school_completed || false,
-  admin_completed: dbStatus?.admin_completed || false,
-  activation_completed: isActivated.activated,
-};
-        
+
+        const newSetupStatus = {
+          school_completed: dbStatus?.school_completed || false,
+          admin_completed: dbStatus?.admin_completed || false,
+          activation_completed: isActivated.activated,
+        };
+
         console.log('📊 Setting setup status to:', newSetupStatus);
         setSetupStatus(newSetupStatus);
-        
+
       } catch (dbError) {
         console.error('❌ Failed to get database status:', dbError);
         // Fallback to default values
@@ -124,7 +194,7 @@ function AppRoutes({ activated, setActivated }) {
       }
     } catch (error) {
       console.error("❌ Failed to check status via IPC:", error);
-      
+
       // In browser mode, set defaults
       if (!isElectron()) {
         console.log('🌐 Browser mode: using default setup status');
@@ -160,7 +230,7 @@ function AppRoutes({ activated, setActivated }) {
         <Route
           path="/"
           element={
-            <SetupFlow 
+            <SetupFlow
               setupStatus={setupStatus}
               isOnline={isOnline}
               onActivated={() => {
@@ -199,13 +269,725 @@ function AppRoutes({ activated, setActivated }) {
       <Route
         path="/dashboard"
         element={
-          <PrivateRoute allowedRoles={["administrator","staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
             <RoleBasedLayout>
               <Dashboard />
             </RoleBasedLayout>
           </PrivateRoute>
         }
       />
+      <Route
+        path="/school-setup/profile"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <SchoolProfile />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/school-setup/academic-years"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <AcademicYears />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/school-setup/levels"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <Levels />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/school-setup/programmes"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <Programmes />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/school-setup/grade-boundaries"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <GradeBoundaries />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/school-setup/assessment-types"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <AssessmentTypes />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/school-setup/terms"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <Terms />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/academic/classes"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <Classes />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/academic/sections"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <Sections />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/academic/subjects"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <Subjects />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/academic/level-core-subjects"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <LevelCoreSubjects />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/academic/programme-subjects"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <ProgrammeSubjects />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/academic/teacher-qualifications"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <TeacherQualifications />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/people/staff"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <Staff />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/people/non-staff"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <NonStaff />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/people/Students"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <Students />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/people/teaching-assistants"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <TeachingAssistants />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/people/parents"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <Parents />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/people/directory"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <PersonDirectory />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/timetable/time-slots"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <TimeSlots />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/timetable/week-days"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <WeekDays />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/timetable/rooms"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <Rooms />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/timetable/builder"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <TimetableBuilder />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/timetable/view"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <ViewTimetable />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/timetable/copy"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <CopyTimetable />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/teacher-assignments/subjects"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <AssignSubjects />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/teacher-assignments/workload"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <WorkloadAnalysis />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/teacher-assignments/form-masters"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <AssignFormMasters />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+
+       <Route
+        path="/assessment/assessments"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <Assessments />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+        <Route
+        path="/assessment/score-entry"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <ScoreEntry />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+        <Route
+        path="/assessment/bulk-import"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <BulkImport />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+        <Route
+        path="/assessment/process-results"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <ProcessResults />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+        <Route
+        path="/assessment/Subject-results"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <SubjectResults />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+        <Route
+        path="/assessment/term-results"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <TermResults />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+        <Route
+        path="/assessment/report-cards"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <ReportCards />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+        <Route
+        path="/assessment/transcripts"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <Transcripts />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+        <Route
+        path="/assessment/grade-analysis"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <GradeAnalysis />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+        <Route
+        path="/attendance/mark"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <MarkAttendance />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+        <Route
+        path="/attendance/reports"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <AttendanceReports />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+        <Route
+        path="/attendance/alerts"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <AbsenteeismAlerts />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+        <Route
+        path="/attendance/holidays"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <HolidaySetup />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+        <Route
+        path="/progression/rules"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <PromotionRules />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/progression/batch-promotion"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <BatchPromotion />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/progression/manual"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <ManualPromotion />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/progression/graduation"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <Graduation />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/progression/student-history"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <StudentHistory />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/progression/transfers"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <ClassTransfers />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+       <Route
+        path="/communication/send"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <SendNotification />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/communication/email-queue"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <EmailQueue />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/communication/sms-queue"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <SmsQueue />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/communication/templates"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <Templates />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/communication/preferences"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <UserPrefferences />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/communication/history"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <NotificationHistory />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/reports/students"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <StudentReports />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/reports/staff"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <StaffReports />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/reports/academic"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <AcademicReports />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/reports/performance"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <PerformanceAnalytics />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/reports/enrollment"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <EnrollmentTrends />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/reports/export"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <ExportCenter />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+          <Route
+        path="/data/export"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <ExportData />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+          <Route
+        path="/data/import"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <ImportData />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+         <Route
+        path="/data/migrations"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <Migrations />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />   <Route
+        path="/data/audit-logs"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <AuditLogs />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+         <Route
+        path="/data/backup"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <BackupRestore />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+         <Route
+        path="/system/users"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <UserManagement />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+        <Route
+        path="/system/roles"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <RolesPermissions />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+        <Route
+        path="/system/logs"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <SystemLogs />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+        <Route
+        path="/system/license"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <LicenseManagement />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+        <Route
+        path="/system/settings"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <GlobalSettings />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+        <Route
+        path="/system/health"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <SystemHealth />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      
+      
+      
+
+
+
+
+
+
 
       {/* Students Routes */}
       <Route
@@ -223,7 +1005,7 @@ function AppRoutes({ activated, setActivated }) {
       <Route
         path="/staff"
         element={
-          <PrivateRoute allowedRoles={["administrator","Staff"]}>
+          <PrivateRoute allowedRoles={["administrator", "Staff"]}>
             <RoleBasedLayout>
               <Staff />
             </RoleBasedLayout>
@@ -244,15 +1026,15 @@ function AppRoutes({ activated, setActivated }) {
       />
 
       <Route
-  path="/accountant"
-  element={
-    <PrivateRoute allowedRoles={["accountant", "administrator"]}>
-      <RoleBasedLayout>
-        <Accountant />
-      </RoleBasedLayout>
-    </PrivateRoute>
-  }
-/>
+        path="/accountant"
+        element={
+          <PrivateRoute allowedRoles={["accountant", "administrator"]}>
+            <RoleBasedLayout>
+              <Accountant />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
 
       {/* View Section Routes */}
       <Route
@@ -288,7 +1070,7 @@ function AppRoutes({ activated, setActivated }) {
           </PrivateRoute>
         }
       />
-          <Route
+      <Route
         path="/registration/accountant"
         element={
           <PrivateRoute allowedRoles={["administrator"]}>
@@ -367,7 +1149,7 @@ function SetupFlow({ setupStatus, isOnline, onActivated, onStatusUpdate }) {
     if (!isNavigating && setupStatus) {
       console.log('🔄 SetupFlow useEffect - setupStatus:', setupStatus);
       console.log('🔄 SetupFlow useEffect - isOnline:', isOnline);
-      
+
       if (!isOnline) {
         console.log('📱 Device is offline');
         setCurrentStep("offline");
@@ -391,13 +1173,13 @@ function SetupFlow({ setupStatus, isOnline, onActivated, onStatusUpdate }) {
     console.log('🎉 School completed successfully');
     setIsNavigating(true);
     setError(null);
-    
+
     try {
       // Call status update and wait for it
       console.log('🔄 Refreshing status after school completion...');
       await onStatusUpdate();
       console.log('✅ Status refreshed, moving to admin step');
-      
+
       // Manually set to admin step
       setCurrentStep("admin");
     } catch (err) {
@@ -412,13 +1194,13 @@ function SetupFlow({ setupStatus, isOnline, onActivated, onStatusUpdate }) {
     console.log('🎉 Admin completed successfully');
     setIsNavigating(true);
     setError(null);
-    
+
     try {
       // Call status update and wait for it
       console.log('🔄 Refreshing status after admin completion...');
       await onStatusUpdate();
       console.log('✅ Status refreshed, moving to activation step');
-      
+
       // Manually set to activation step
       setCurrentStep("activation");
     } catch (err) {
@@ -433,7 +1215,7 @@ function SetupFlow({ setupStatus, isOnline, onActivated, onStatusUpdate }) {
     console.log('🎉 Activation completed successfully');
     setIsNavigating(true);
     setError(null);
-    
+
     try {
       await onActivated();
       console.log('✅ Activation processed, redirecting...');
@@ -463,8 +1245,8 @@ function SetupFlow({ setupStatus, isOnline, onActivated, onStatusUpdate }) {
           <div className="card-body text-center p-5">
             <h3 className="mb-3 text-danger">Error</h3>
             <p className="text-muted mb-4">{error}</p>
-            <button 
-              className="btn btn-primary" 
+            <button
+              className="btn btn-primary"
               onClick={() => {
                 setError(null);
                 onStatusUpdate();
@@ -487,8 +1269,8 @@ function SetupFlow({ setupStatus, isOnline, onActivated, onStatusUpdate }) {
             <p className="text-muted">
               Please connect to the internet to complete the setup process.
             </p>
-            <button 
-              className="btn btn-primary" 
+            <button
+              className="btn btn-primary"
               onClick={() => window.location.reload()}
             >
               Refresh Page
@@ -526,32 +1308,32 @@ function SetupFlow({ setupStatus, isOnline, onActivated, onStatusUpdate }) {
     case "school":
       console.log('🏫 Rendering SchoolAndAdminSetupPage');
       return (
-        <SchoolAndAdminSetupPage 
-          onSuccess={handleSchoolSuccess} 
-          isOnline={isOnline} 
+        <SchoolAndAdminSetupPage
+          onSuccess={handleSchoolSuccess}
+          isOnline={isOnline}
         />
       );
-    
+
     case "admin":
       console.log('👤 Rendering AdminDetailsPage');
       return (
-        <AdminDetailsPage 
-          onSuccess={handleAdminSuccess} 
-          onBack={() => handleBack('admin')} 
-          isOnline={isOnline} 
+        <AdminDetailsPage
+          onSuccess={handleAdminSuccess}
+          onBack={() => handleBack('admin')}
+          isOnline={isOnline}
         />
       );
-    
+
     case "activation":
       console.log('🔑 Rendering ActivationPage');
       return (
-        <ActivationPage 
-          onActivated={handleActivationSuccess} 
-          onBack={() => handleBack('activation')} 
-          isOnline={isOnline} 
+        <ActivationPage
+          onActivated={handleActivationSuccess}
+          onBack={() => handleBack('activation')}
+          isOnline={isOnline}
         />
       );
-    
+
     case "completed":
       console.log('✅ Setup completed, redirecting...');
       return (
@@ -562,15 +1344,15 @@ function SetupFlow({ setupStatus, isOnline, onActivated, onStatusUpdate }) {
           </div>
         </div>
       );
-    
+
     default:
       console.log('❌ Unknown step:', currentStep);
       return (
         <div className="d-flex justify-content-center align-items-center vh-100">
           <div className="text-center">
             <p className="text-danger">Setup error occurred. Please refresh the page.</p>
-            <button 
-              className="btn btn-primary" 
+            <button
+              className="btn btn-primary"
               onClick={() => window.location.reload()}
             >
               Refresh

@@ -1,0 +1,257 @@
+/* Transcripts Specific Styles */
+.transcripts-container {
+  padding: 0;
+}
+
+/* Transcript Preview Styles */
+.transcript-preview {
+  background: white;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Transcript Header */
+.transcript-header {
+  text-align: center;
+  border-bottom: 2px solid #333;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.transcript-header h2 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+  color: #1f2937;
+}
+
+.transcript-header p {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+/* Student Information Section */
+.student-info {
+  background: #f9fafb;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 0.75rem;
+}
+
+.student-info p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.student-info strong {
+  color: #374151;
+  font-weight: 600;
+}
+
+/* Term Section */
+.term-section {
+  margin-bottom: 1.5rem;
+}
+
+.term-section h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--primary);
+  color: var(--primary);
+}
+
+/* Transcript Table */
+.transcript-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0.5rem;
+}
+
+.transcript-table th,
+.transcript-table td {
+  border: 1px solid #e5e7eb;
+  padding: 0.5rem;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.transcript-table th {
+  background-color: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+}
+
+.transcript-table tr:hover {
+  background-color: #f9fafb;
+}
+
+.total-row {
+  background-color: #f3f4f6;
+  font-weight: 600;
+}
+
+.total-row td {
+  border-top: 2px solid #d1d5db;
+}
+
+/* Summary Section */
+.summary-section {
+  background: linear-gradient(135deg, var(--primary) 0%, #2563eb 100%);
+  color: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.summary-section p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.summary-section strong {
+  font-weight: 600;
+}
+
+/* Transcript Footer */
+.transcript-footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* Print Styles */
+@media print {
+  .transcripts-container {
+    background: white;
+  }
+  
+  .transcript-preview {
+    box-shadow: none;
+    padding: 0;
+  }
+  
+  .filter-bar,
+  .stats-cards,
+  .button,
+  button {
+    display: none !important;
+  }
+  
+  .transcript-table th,
+  .transcript-table td {
+    border: 1px solid #000;
+  }
+  
+  .summary-section {
+    background: #f3f4f6;
+    color: #000;
+    border: 1px solid #ddd;
+  }
+  
+  hr {
+    display: none;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .transcript-preview {
+    padding: 1rem;
+  }
+  
+  .student-info {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  
+  .transcript-table th,
+  .transcript-table td {
+    padding: 0.375rem;
+    font-size: 0.75rem;
+  }
+  
+  .summary-section {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  
+  .transcript-footer {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+}
+
+/* Animation for loading */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.transcript-preview {
+  animation: fadeIn 0.3s ease;
+}
+
+/* Grade Colors */
+.grade-A {
+  color: #10b981;
+  font-weight: bold;
+}
+
+.grade-B {
+  color: #3b82f6;
+  font-weight: bold;
+}
+
+.grade-C {
+  color: #f59e0b;
+  font-weight: bold;
+}
+
+.grade-D {
+  color: #ef4444;
+  font-weight: bold;
+}
+
+.grade-F {
+  color: #6b7280;
+  font-weight: bold;
+}
+
+/* Watermark for unofficial transcripts */
+.watermark {
+  position: relative;
+}
+
+.watermark::after {
+  content: "UNOFFICIAL COPY";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  font-size: 3rem;
+  opacity: 0.1;
+  pointer-events: none;
+  white-space: nowrap;
+}

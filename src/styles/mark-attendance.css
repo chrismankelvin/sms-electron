@@ -1,0 +1,52 @@
+.mark-attendance-container {
+  padding: 0;
+}
+
+.attendance-grid {
+  overflow-x: auto;
+}
+
+.status-badge-present {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.status-badge-absent {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.status-badge-late {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.status-badge-excused {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.attendance-dots {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.attendance-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.dot-present { background-color: #10b981; }
+.dot-absent { background-color: #ef4444; }
+.dot-late { background-color: #f59e0b; }
+.dot-excused { background-color: #3b82f6; }
+
+.summary-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}

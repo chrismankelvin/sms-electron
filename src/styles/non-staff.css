@@ -1,0 +1,12 @@
+.non-staff-container {
+  padding: 0;
+}
+
+.role-badge {
+  display: inline-block;
+  background-color: #6b7280;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+}

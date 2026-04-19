@@ -1,0 +1,11 @@
+.manual-promotion-container {
+  padding: 0;
+}
+
+.student-search-result {
+  background: var(--bg);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border);
+}

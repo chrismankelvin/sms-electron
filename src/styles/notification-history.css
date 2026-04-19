@@ -1,0 +1,15 @@
+.notification-history-container {
+  padding: 0;
+}
+
+.detail-row {
+  background: var(--bg);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-top: 0.5rem;
+}
+
+.recipient-list {
+  max-height: 200px;
+  overflow-y: auto;
+}

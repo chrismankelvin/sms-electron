@@ -1,0 +1,42 @@
+.score-entry-container {
+  padding: 0;
+}
+
+.score-grid {
+  overflow-x: auto;
+}
+
+.score-input {
+  width: 100px;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.absent-checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.auto-fill-bar {
+  background: var(--bg);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.draft-status {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}

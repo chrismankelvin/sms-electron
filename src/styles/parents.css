@@ -1,0 +1,23 @@
+.parents-container {
+  padding: 0;
+}
+
+.linked-student {
+  display: inline-block;
+  background-color: var(--primary);
+  color: white;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  margin: 0.2rem;
+}
+
+.communication-log {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.communication-item {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}

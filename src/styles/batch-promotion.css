@@ -1,0 +1,15 @@
+.batch-promotion-container {
+  padding: 0;
+}
+
+.preview-student-row {
+  transition: all 0.2s ease;
+}
+
+.preview-student-row.repeat {
+  background-color: rgba(239, 68, 68, 0.05);
+}
+
+.preview-student-row.promoted {
+  background-color: rgba(16, 185, 129, 0.05);
+}

@@ -1,0 +1,13 @@
+.user-management-container {
+  padding: 0;
+}
+
+.user-status-active {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.user-status-suspended {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}

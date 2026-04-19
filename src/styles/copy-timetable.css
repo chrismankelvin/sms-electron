@@ -1,0 +1,17 @@
+.copy-timetable-container {
+  padding: 0;
+}
+
+.preview-table {
+  margin-top: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.preview-changes {
+  background: var(--bg);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}

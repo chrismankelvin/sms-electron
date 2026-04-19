@@ -1,0 +1,20 @@
+.user-preferences-container {
+  padding: 0;
+}
+
+.preference-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.preference-table th,
+.preference-table td {
+  padding: 0.75rem;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.preference-table th:first-child,
+.preference-table td:first-child {
+  text-align: left;
+}

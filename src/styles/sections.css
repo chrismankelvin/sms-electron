@@ -1,0 +1,17 @@
+.sections-container {
+  padding: 0;
+}
+
+.section-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  transition: all 0.3s ease;
+}
+
+.section-card:hover {
+  transform: translateX(4px);
+  border-left-color: var(--primary);
+  border-left-width: 3px;
+}

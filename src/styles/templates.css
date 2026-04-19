@@ -1,0 +1,25 @@
+.templates-container {
+  padding: 0;
+}
+
+.variable-chip {
+  display: inline-block;
+  background: var(--primary);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  margin: 0.25rem;
+  cursor: pointer;
+}
+
+.variable-chip:hover {
+  background: #2563eb;
+}
+
+.template-preview {
+  background: var(--bg);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-top: 1rem;
+}

@@ -1,0 +1,29 @@
+.time-slots-container {
+  padding: 0;
+}
+
+.slot-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.slot-card:hover {
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.slot-card.break {
+  border-left: 4px solid #f59e0b;
+  background-color: rgba(245, 158, 11, 0.05);
+}
+
+.move-buttons {
+  display: flex;
+  gap: 0.25rem;
+}

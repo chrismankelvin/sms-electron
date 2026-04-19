@@ -1,0 +1,65 @@
+/* Classes Specific Styles */
+.classes-container {
+  padding: 0;
+}
+
+.class-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  transition: all 0.3s ease;
+}
+
+.class-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.class-card.warning {
+  border-left: 4px solid #f59e0b;
+  background-color: rgba(245, 158, 11, 0.05);
+}
+
+.capacity-bar {
+  height: 6px;
+  background-color: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.capacity-fill {
+  height: 100%;
+  background-color: var(--primary);
+  transition: width 0.3s ease;
+}
+
+.capacity-fill.warning {
+  background-color: #f59e0b;
+}
+
+.capacity-fill.danger {
+  background-color: #ef4444;
+}
+
+.roster-modal {
+  max-width: 800px;
+}
+
+.student-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.student-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.student-item:hover {
+  background-color: var(--bg);
+}

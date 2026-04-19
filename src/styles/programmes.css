@@ -1,0 +1,25 @@
+.programmes-container {
+  padding: 0;
+}
+
+.programme-card {
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.programme-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.subject-tag {
+  display: inline-block;
+  background-color: var(--bg);
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  margin: 0.25rem;
+}

@@ -42,3 +42,5 @@ backend/database/_school_debug.db
 *.key
 *.pyc
 ./dir.txt
+/release19
+/release20

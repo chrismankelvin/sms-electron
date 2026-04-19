@@ -6,12 +6,26 @@ import sys
 # =========================
 # Paths (same as your app)
 # =========================
+
+import os
+
+# Get the user's AppData folder (recommended for Windows)
+APPDATA_PATH = Path(os.environ.get('APPDATA', Path.home() / 'AppData' / 'Roaming'))
+APP_NAME = "SchoolManagementSystem"  # Your app name
+
+# Create app-specific folder in AppData
+APP_DATA_PATH = APPDATA_PATH / APP_NAME
+APP_DATA_PATH.mkdir(parents=True, exist_ok=True)
+
+# Database paths
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+
 PROJECT_ROOT = Path(__file__).parent
 DB_DIR = PROJECT_ROOT / "database"
 
-ENCRYPTED_DB_PATH = DB_DIR / "school_encrypted.db"
-DECRYPTED_DB_PATH = DB_DIR / "_school_debug.db"
-KEY_PATH = DB_DIR / "db.key"
+ENCRYPTED_DB_PATH = APP_DATA_PATH / "school_encrypted.db"
+DECRYPTED_DB_PATH = APP_DATA_PATH / "_school_debug.db"
+KEY_PATH = APP_DATA_PATH / "db.key"
 
 # =========================
 # Load key

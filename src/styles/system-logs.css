@@ -1,0 +1,16 @@
+.system-logs-container {
+  padding: 0;
+}
+
+.log-level-ERROR {
+  color: #ef4444;
+  font-weight: bold;
+}
+
+.log-level-WARNING {
+  color: #f59e0b;
+}
+
+.log-level-INFO {
+  color: #3b82f6;
+}

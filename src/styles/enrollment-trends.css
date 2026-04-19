@@ -1,0 +1,19 @@
+.enrollment-trends-container {
+  padding: 0;
+}
+
+.trend-chart {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.donut-chart {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: conic-gradient(#3b82f6 0% 52%, #ec4898 52% 100%);
+  margin: 0 auto;
+}

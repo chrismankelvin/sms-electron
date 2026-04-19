@@ -48,6 +48,7 @@ function MainLayout({ children }) {
         <Sidebar isCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
         <main className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
           <div className="container">
+          
             {children}
           </div>
         </main>

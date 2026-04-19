@@ -1,0 +1,22 @@
+.bulk-import-container {
+  padding: 0;
+}
+
+.preview-table {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.import-success {
+  background: rgba(16, 185, 129, 0.1);
+  border-left: 4px solid #10b981;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.import-error {
+  background: rgba(239, 68, 68, 0.1);
+  border-left: 4px solid #ef4444;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}

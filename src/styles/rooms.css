@@ -1,0 +1,28 @@
+.rooms-container {
+  padding: 0;
+}
+
+.room-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  transition: all 0.3s ease;
+}
+
+.room-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.room-type {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+}
+
+.room-type-classroom { background-color: #3b82f6; color: white; }
+.room-type-lab { background-color: #8b5cf6; color: white; }
+.room-type-hall { background-color: #f59e0b; color: white; }
+.room-type-office { background-color: #10b981; color: white; }

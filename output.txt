@@ -1,0 +1,264 @@
+Folder PATH listing
+Volume serial number is A88A-E925
+E:.
+|   .env
+|   .gitignore
+|   create_local_tables.py
+|   dbinit.py
+|   eslint.config.js
+|   index.html
+|   output.txt
+|   package-lock.json
+|   package.json
+|   README.md
+|   recovery_import.log
+|   SQL.txt
+|   vite.config.js
+|   
++---backend
+    |   databaseviewer.py
+    |   output.txt
+    |   requirements.txt
+    |   run.py
+    |   structure.txt
+    |   
+    +---app
+    |   |   main.py
+    |   |   
+    |   +---activation
+    |   |   |   activation_cli.py
+    |   |   |   activation_service.py
+    |   |   |   fingerprint.py
+    |   |   |   fingerprint_cli.py
+    |   |   |   state.py
+    |   |   |   state_cli.py
+    |   |   |   
+    |   |   \---__pycache__
+    |   |           activation_service.cpython-313.pyc
+    |   |           fingerprint.cpython-313.pyc
+    |   |           state.cpython-313.pyc
+    |   |           
+    |   +---auth
+    |   |   |   auth_service.py
+    |   |   |   dependencies.py
+    |   |   |   models.py
+    |   |   |   password.py
+    |   |   |   routes.py
+    |   |   |   
+    |   |   \---__pycache__
+    |   |           auth_service.cpython-313.pyc
+    |   |           dependencies.cpython-313.pyc
+    |   |           models.cpython-313.pyc
+    |   |           routes.cpython-313.pyc
+    |   |           
+    |   +---crypto
+    |   |   |   kdf.py
+    |   |   |   
+    |   |   \---__pycache__
+    |   |           kdf.cpython-313.pyc
+    |   |           
+    |   +---minisettings
+    |   |   |   mini_settings_api.py
+    |   |   |   settings_service.py
+    |   |   |   
+    |   |   \---__pycache__
+    |   |           mini_settings_api.cpython-313.pyc
+    |   |           settings_service.cpython-313.pyc
+    |   |           
+    |   +---routes
+    |   |   |   non_staff.py
+    |   |   |   recovery.py
+    |   |   |   staff.py
+    |   |   |   students.py
+    |   |   |   sync.py
+    |   |   |   teaching_assistants.py
+    |   |   |   
+    |   |   \---__pycache__
+    |   |           non_staff.cpython-313.pyc
+    |   |           recovery.cpython-313.pyc
+    |   |           staff.cpython-313.pyc
+    |   |           students.cpython-313.pyc
+    |   |           sync.cpython-313.pyc
+    |   |           teaching_assistants.cpython-313.pyc
+    |   |           
+    |   +---sync
+    |   |   |   device_sync.py
+    |   |   |   
+    |   |   \---__pycache__
+    |   |           device_sync.cpython-313.pyc
+    |   |           
+    |   \---__pycache__
+    |           main.cpython-313.pyc
+    |           
+    \---database
+        |   cloud_db.py
+        |   cloud_dbstableversion.py
+        |   trialdbgen.py
+        |   _school_debug.db
+        |   
+        \---__pycache__
+                cloud_db.cpython-313.pyc
+                deps.cpython-313.pyc
+            
+
++---electron
+|   |   main.js
+|   |   preload.js
+|   |   updater.js
+|   |   window.js
+|   |   
+|   +---config
+|   |       electron.config.js
+|   |       
+|   \---ipc
+|           python.ipc.js
+|           
+|   |   .package-lock.json
+|   |  
++---public
+|       vite.svg
+|       
++---scripts
+|       build-electron.js
+|       generate-fingerprint.sh
+|       start-backend.sh
+|       start-dev.sh
+|       
++---src
+|   |   App copy.jsx
+|   |   App.jsx
+|   |   main.jsx
+|   |   routes.jsx
+|   |   
+|   +---components
+|   |       Footer.jsx
+|   |       Intro.jsx
+|   |       navbar.jsx
+|   |       Notification.jsx
+|   |       PageHelper.jsx
+|   |       PrivateRoute.jsx
+|   |       Screensaver.jsx
+|   |       sidebar.jsx
+|   |       SidebarAccountant.jsx
+|   |       SidebarNonStaff.jsx
+|   |       SidebarStudent.jsx
+|   |       SidebarTA.jsx
+|   |       SidebarTeacher.jsx
+|   |       
+|   +---hooks
+|   |       useInactivityTimer.js
+|   |       
+|   +---layouts
+|   |       MainLayout.jsx
+|   |       MainLayoutAccountant.jsx
+|   |       MainLayoutNonStaff.jsx
+|   |       MainLayoutStudent.jsx
+|   |       MainLayoutTA.jsx
+|   |       MainLayoutTeacher.jsx
+|   |       RoleBasedLayout.jsx
+|   |       
+|   +---otherpages
+|   +---pages
+|   |   |   Unauthorized.jsx
+|   |   |   
+|   |   +---Accountant
+|   |   |       Accountant.jsx
+|   |   |       
+|   |   +---Activation
+|   |   |       ActivationForm.jsx
+|   |   |       ActivationPage.jsx
+|   |   |       ActivationStatus.jsx
+|   |   |       
+|   |   +---Adminpages
+|   |   |   +---Accounts
+|   |   |   |       Accounts.jsx
+|   |   |   |       
+|   |   |   +---Migrations
+|   |   |   +---Miscellaneous
+|   |   |   +---Registration
+|   |   |   |       AccountantRegistration.jsx
+|   |   |   |       AdministratorRegistration.jsx
+|   |   |   |       NonStaffRegistration.jsx
+|   |   |   |       RegistrationForms.jsx
+|   |   |   |       StudentRegistration.jsx
+|   |   |   |       TeacherRegistration.jsx
+|   |   |   |       TeachingAssistantRegistration.jsx
+|   |   |   |       
+|   |   |   +---Schedule
+|   |   |   +---Statistics
+|   |   |   \---View
+|   |   |           ViewCourse.jsx
+|   |   |           ViewNonStaff.jsx
+|   |   |           ViewStudents.jsx
+|   |   |           ViewSubject.jsx
+|   |   |           ViewTeachers.jsx
+|   |   |           ViewTempStaff.jsx
+|   |   |           
+|   |   +---Dashboard
+|   |   |       Dashboard.jsx
+|   |   |       
+|   |   +---Login
+|   |   |       Login.jsx
+|   |   |       permissions.js
+|   |   |       SchoolLogin.jsx
+|   |   |       useAuth.jsx
+|   |   |       
+|   |   +---NonStaff
+|   |   |       NonStaff.jsx
+|   |   |       
+|   |   +---RestoreBackup
+|   |   |       AccountRecovery.jsx
+|   |   |       RestoreBackupPage.jsx
+|   |   |       
+|   |   +---Settings
+|   |   |       help.jsx
+|   |   |       MiniSettingsPage copy.jsx
+|   |   |       MiniSettingsPage.jsx
+|   |   |       Settings.jsx
+|   |   |       Updates.jsx
+|   |   |       
+|   |   +---Staff
+|   |   |       Staff.jsx
+|   |   |       
+|   |   \---Students
+|   |           Students.jsx
+|   |           
+|   +---SchoolDetails
+|   |       AdminDetailsPage.jsx
+|   |       RecoverAccountPage.jsx
+|   |       SchoolDetailsPage.jsx
+|   |       
+|   +---services
+|   |   |   api.service.js
+|   |   |   crypto.service.js
+|   |   |   miniSettingsService.js
+|   |   |   
+|   |   \---del
+|   |           ipc.service.js
+|   |           
+|   +---store
+|   |       auth.store.js
+|   |       
+|   +---styles
+|   |       global copy.css
+|   |       global.css
+|   |       mini-settings.css
+|   |       Navbar.css
+|   |       page-helper.css
+|   |       RegistrationForms.css
+|   |       school-details copy.css
+|   |       school-details.css
+|   |       school-login.css
+|   |       Screensaver.css
+|   |       settings.css
+|   |       Sidebar.css
+|   |       
+|   \---utils
+|           activityTracker.js
+|           settings.js
+|           
+\---zwaste
+        find_emojis.py
+        outputwin.txt
+        RecoverAccountPage copy.jsx
+        
