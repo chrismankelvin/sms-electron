@@ -34,6 +34,7 @@ from app.activation.activation_service import (
 
 from app.minisettings.mini_settings_api import router as mini_settings_router
 from app.minisettings.settings_service import mini_settings_service
+from app.minisettings.settings_api import settings_router 
 
 print("=" * 60)
 print("MAIN.PY IS BEING LOADED - DEBUG MESSAGE")
@@ -58,6 +59,8 @@ app.add_middleware(
 app.include_router(auth_router)
 
 app.include_router(mini_settings_router)
+app.include_router(settings_router)
+
 # Initialize SQLiteCloud client
 
 cloud_client = SQLiteCloudClient()

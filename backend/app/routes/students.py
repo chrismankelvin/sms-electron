@@ -148,7 +148,7 @@ def register_student(student_data: Dict[str, Any]) -> Dict[str, Any]:
             username = f"{username}{student_id}"
         
         default_password = "password123"  # This should be communicated to the student
-        password_hash = hash_password(default_password).split(':')
+        password_hash = hash_password(default_password)
         
         cursor.execute('''
             INSERT INTO users (unique_id, username, email, password_hash, role, status, created_at)

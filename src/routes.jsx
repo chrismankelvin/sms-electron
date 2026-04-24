@@ -427,6 +427,16 @@ function AppRoutes({ activated, setActivated }) {
         }
       />
       <Route
+        path="/people/administrator"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <AdministratorRegistration />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
         path="/people/Students"
         element={
           <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>

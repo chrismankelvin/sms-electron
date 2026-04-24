@@ -39,11 +39,11 @@ def generate_ta_number() -> str:
     sequence = str(count + 1).zfill(4)
     return f"TA/{year}/{sequence}"
 
-def hash_password(password: str) -> tuple:
-    """Hash a password with salt"""
-    salt = secrets.token_hex(16)
-    password_hash = hashlib.sha256(f"{password}{salt}".encode()).hexdigest()
-    return password_hash, salt
+# def hash_password(password: str) -> tuple:
+#     """Hash a password with salt"""
+#     salt = secrets.token_hex(16)
+#     password_hash = hashlib.sha256(f"{password}{salt}".encode()).hexdigest()
+#     return password_hash, salt
 
 # def register_teaching_assistant(ta_data: Dict[str, Any]) -> Dict[str, Any]:
 #     """Register a new teaching assistant with all related information"""

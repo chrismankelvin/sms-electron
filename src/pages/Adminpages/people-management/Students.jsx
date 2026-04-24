@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Users, Plus, Upload, Download, Search, Filter, Eye, Edit, 
   Repeat, UserX, X, ChevronLeft, ChevronRight, Calendar as CalendarIcon,
@@ -6,6 +7,7 @@ import {
   MapPin, Heart, AlertCircle, UserPlus, FileText, Printer
 } from 'lucide-react';
 import '../../../styles/students.css';
+// import 
 
 function Students() {
   const [students, setStudents] = useState([
@@ -15,6 +17,7 @@ function Students() {
     { id: 4, studentNumber: '2023-089', name: 'Diana Prince', class: 'JHS 3 Science', section: 'A', status: 'Graduated', parentName: 'Dr. Prince', phone: '+233 20 123 4570', enrolledDate: '2023-01-10', gender: 'Female', dob: '2010-12-01', address: '321 Elm St, Accra', healthConditions: 'None', emergencyContact: '+233 24 987 6546' },
   ]);
 
+   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showBulkImport, setShowBulkImport] = useState(false);
@@ -28,6 +31,9 @@ function Students() {
     parentName: '', phone: '', enrolledDate: '', gender: '', dob: '', address: '',
     healthConditions: '', emergencyContact: ''
   });
+   const handleNavigation = (path) => {
+    navigate(path);
+  };
 
   const classes = ['JHS 1 Science', 'JHS 2 Science', 'JHS 3 Science', 'SHS 1 Science', 'SHS 1 Arts', 'SHS 2 Science'];
   const sections = ['A', 'B', 'C'];
@@ -110,7 +116,7 @@ function Students() {
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
           <button className="button button-secondary" onClick={() => setShowBulkImport(true)}><Upload size={16} /> Bulk Import</button>
           <button className="button button-secondary"><Download size={16} /> Export</button>
-          <button className="button" onClick={() => setShowModal(true)}><Plus size={16} /> Register Student</button>
+          <button className="button" onClick={() => handleNavigation("/registration/students")}><Plus size={16} /> Register Student</button>
         </div>
       </div>
       <hr style={{ margin: '0 0 1.5rem 0', borderColor: 'var(--border)' }} />

@@ -268,3 +268,60 @@ CREATE TABLE student_class_history (
     FOREIGN KEY (class_id) REFERENCES classes(id),
     FOREIGN KEY (academic_year_id) REFERENCES academic_years(id)
 );
+
+
+CREATE TABLE system_settings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    -- General
+    date_format TEXT DEFAULT 'DD/MM/YYYY',
+    timezone TEXT DEFAULT 'Africa/Accra',
+    language TEXT DEFAULT 'English',
+
+    -- Security
+    session_timeout INTEGER DEFAULT 30,           -- minutes
+    password_expiry INTEGER DEFAULT 90,           -- days
+    two_factor_required BOOLEAN DEFAULT 1,
+
+    -- Email Configuration
+    smtp_server TEXT,
+    smtp_port INTEGER,
+    smtp_encryption TEXT CHECK (smtp_encryption IN ('TLS','SSL','NONE')) DEFAULT 'TLS',
+    email_from_address TEXT,
+    email_from_name TEXT,
+
+    -- SMS Configuration
+    sms_provider TEXT,
+    sms_api_key TEXT,
+    sms_sender_id TEXT,
+
+    -- Notifications
+    quiet_hours_start TIME,
+    quiet_hours_end TIME,
+
+    -- Features
+    enable_parent_portal BOOLEAN DEFAULT 1,
+    enable_sms BOOLEAN DEFAULT 1,
+    enable_push BOOLEAN DEFAULT 1,
+    enable_fee_module BOOLEAN DEFAULT 0,
+
+    -- Integrations
+    payment_gateway TEXT,
+    lms_url TEXT,
+
+    -- System Behavior
+    mode TEXT CHECK (mode IN ('online','offline')) DEFAULT 'online',
+    live_mode BOOLEAN DEFAULT 1,
+    peak_mode BOOLEAN DEFAULT 0,
+
+
+    -- Sync
+    last_sync DATETIME,
+
+    -- Metadata
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_by INTEGER,
+
+    FOREIGN KEY (updated_by) REFERENCES users(id)
+);

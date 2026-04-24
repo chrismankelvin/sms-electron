@@ -1477,11 +1477,680 @@
 
 
 
-// MiniSettingsPage.jsx - Restructured Modern Version
+// // MiniSettingsPage.jsx - Restructured Modern Version
+// import { useState, useEffect } from "react";
+// import { 
+//   Sun, Moon, Monitor, School, Loader2, Cloud, 
+//   CheckCircle, AlertCircle, Sparkles
+// } from "lucide-react";
+// import Intro from "../../components/Intro.jsx";
+// import { useNavigate } from "react-router-dom";
+// import "../../styles/mini-settings.css";
+// import { syncData, checkBackendHealth } from "../../services/api.service.js";
+// import { miniSettingsService } from "../../services/miniSettingsService";
+
+// const SCHOOL_TYPES = ["JHS", "SHS", "Basic School"];
+
+// export default function MiniSettingsPage({ onComplete }) {
+//   // State
+//   const [step, setStep] = useState(1);
+//   const [darkMode, setDarkMode] = useState(false);
+//   const [screensaver, setScreensaver] = useState(false);
+//   const [schoolType, setSchoolType] = useState("SHS");
+//   const [showIntro, setShowIntro] = useState(true);
+//   const [isSyncing, setIsSyncing] = useState(false);
+//   const [syncStatus, setSyncStatus] = useState({ message: "", error: null, success: false });
+//   const navigate = useNavigate();
+
+//   // ========== INITIALIZATION ==========
+//   useEffect(() => {
+//     loadSettings();
+//     const timer = setTimeout(() => setShowIntro(false), 10000);
+//     return () => clearTimeout(timer);
+//   }, []);
+
+//   const loadSettings = async () => {
+//     try {
+//       const settings = await miniSettingsService.getAllMiniSettings();
+//       applySettings(settings);
+//     } catch {
+//       // Fallback to localStorage
+//       applySettings({
+//         theme: localStorage.getItem("theme") || "light",
+//         screensaver: localStorage.getItem("screensaver") === "true",
+//         schoolType: localStorage.getItem("schoolType") || "SHS"
+//       });
+//     }
+//   };
+
+//   const applySettings = (settings) => {
+//     const isDark = settings.theme === "dark";
+//     setDarkMode(isDark);
+//     document.body.classList.toggle("dark-mode", isDark);
+//     if (settings.screensaver !== undefined) setScreensaver(settings.screensaver);
+//     if (settings.schoolType) setSchoolType(settings.schoolType);
+//   };
+
+//   // ========== SETTINGS HANDLERS ==========
+//   const updateSetting = async (key, value, saveFn) => {
+//     // Update UI immediately
+//     if (key === "theme") {
+//       setDarkMode(value === "dark");
+//       document.body.classList.toggle("dark-mode", value === "dark");
+//     } else if (key === "screensaver") {
+//       setScreensaver(value);
+//     } else if (key === "schoolType") {
+//       setSchoolType(value);
+//     }
+    
+//     // Save to storage
+//     try {
+//       await saveFn(value);
+//     } catch {
+//       localStorage.setItem(key, value.toString());
+//     }
+//   };
+
+//   const toggleTheme = (mode) => updateSetting("theme", mode, miniSettingsService.updateTheme);
+//   const handleScreensaver = (enabled) => updateSetting("screensaver", enabled, miniSettingsService.updateScreensaver);
+//   const handleSchoolType = (type) => updateSetting("schoolType", type, miniSettingsService.updateSchoolType);
+
+//   // ========== NAVIGATION ==========
+//   const nextStep = () => setStep((prev) => Math.min(prev + 1, 3));
+//   const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
+//   const handleSkipIntro = () => setShowIntro(false);
+
+//   // ========== SYNC & COMPLETE ==========
+//   const performSync = async () => {
+//     setSyncStatus({ message: "Connecting to server...", error: null, success: false });
+    
+//     const health = await checkBackendHealth();
+//     if (!health?.success) throw new Error("Server not responding");
+    
+//     setSyncStatus({ message: "Syncing data...", error: null, success: false });
+//     const result = await syncData({
+//       sync_school: true,
+//       sync_activation: true,
+//       sync_devices: true,
+//       device_batch_size: 20
+//     });
+    
+//     if (!result.success) {
+//       const failed = Object.entries(result.steps || {})
+//         .filter(([, s]) => !s.success).map(([n]) => n);
+//       if (failed.length) throw new Error(`Failed: ${failed.join(", ")}`);
+//     }
+    
+//     return result;
+//   };
+
+//   const saveAllSettings = async () => {
+//     const allSettings = {
+//       hasSeenMiniSettings: true,
+//       theme: darkMode ? "dark" : "light",
+//       screensaver,
+//       schoolType
+//     };
+    
+//     try {
+//       await miniSettingsService.saveAllMiniSettings(allSettings);
+//     } catch {
+//       Object.entries(allSettings).forEach(([key, val]) => {
+//         localStorage.setItem(key, val.toString());
+//       });
+//     }
+//   };
+
+//   const handleComplete = async () => {
+//     await saveAllSettings();
+//     setIsSyncing(true);
+    
+//     try {
+//       await performSync();
+//       setSyncStatus({ message: "Setup complete!", error: null, success: true });
+//       setTimeout(() => {
+//         if (onComplete) onComplete();
+//         navigate("/home");
+//       }, 1500);
+//     } catch (error) {
+//       setSyncStatus({ message: "Sync failed", error: error.message, success: false });
+//     }
+//   };
+
+//   const handleContinueAnyway = () => {
+//     saveAllSettings();
+//     if (onComplete) onComplete();
+//     navigate("/home");
+//   };
+
+//   // ========== STEP RENDERERS ==========
+//   const StepIndicator = () => (
+//     <div className="step-indicator">
+//       {[1, 2, 3].map(num => (
+//         <span key={num} className={step >= num ? "active" : ""}>{num}</span>
+//       ))}
+//     </div>
+//   );
+
+//   const StepTheme = () => (
+//     <div className="step-content">
+//       <p className="step-title">Choose Theme</p>
+//       <div className="option-buttons">
+//         <button className={`option-btn ${!darkMode ? "selected" : ""}`} onClick={() => toggleTheme("light")}>
+//           <Sun size={18} /> Light
+//         </button>
+//         <button className={`option-btn ${darkMode ? "selected" : ""}`} onClick={() => toggleTheme("dark")}>
+//           <Moon size={18} /> Dark
+//         </button>
+//       </div>
+//     </div>
+//   );
+
+//   const StepScreensaver = () => (
+//     <div className="step-content">
+//       <p className="step-title">Screensaver</p>
+//       <div className="option-buttons">
+//         <button className={`option-btn ${screensaver ? "selected" : ""}`} onClick={() => handleScreensaver(true)}>
+//           <Monitor size={18} /> Enable
+//         </button>
+//         <button className={`option-btn ${!screensaver ? "selected" : ""}`} onClick={() => handleScreensaver(false)}>
+//           <Monitor size={18} /> Disable
+//         </button>
+//       </div>
+//     </div>
+//   );
+
+//   const StepSchoolType = () => (
+//     <div className="step-content">
+//       <p className="step-title">School Type</p>
+//       <div className="option-buttons">
+//         {SCHOOL_TYPES.map(type => (
+//           <button key={type} className={`option-btn ${schoolType === type ? "selected" : ""}`} onClick={() => handleSchoolType(type)}>
+//             <School size={18} /> {type}
+//           </button>
+//         ))}
+//       </div>
+//     </div>
+//   );
+
+//   const StepNavigation = () => (
+//     <div className="step-navigation">
+//       {step > 1 && <button className="btn-back" onClick={prevStep}>Back</button>}
+//       {step < 3 && <button className="btn-next" onClick={nextStep}>Continue</button>}
+//       {step === 3 && <button className="btn-finish" onClick={handleComplete}>Finish Setup</button>}
+//     </div>
+//   );
+
+//   // ========== SYNC MODAL ==========
+//   const SyncModal = () => (
+//     <div className="sync-modal-overlay">
+//       <div className="sync-modal">
+//         {syncStatus.error ? (
+//           <>
+//             <AlertCircle size={48} className="error-icon" />
+//             <h4>Sync Failed</h4>
+//             <p className="error-message">{syncStatus.error}</p>
+//             <div className="sync-actions">
+//               <button className="btn-retry" onClick={handleComplete}>Retry</button>
+//               <button className="btn-continue" onClick={handleContinueAnyway}>Continue</button>
+//             </div>
+//           </>
+//         ) : syncStatus.success ? (
+//           <>
+//             <CheckCircle size={48} className="success-icon" />
+//             <h4>All Set!</h4>
+//             <p>Redirecting to dashboard...</p>
+//           </>
+//         ) : (
+//           <>
+//             <Cloud size={48} className="sync-icon" />
+//             <Loader2 size={32} className="spinner" />
+//             <p className="sync-message">{syncStatus.message}</p>
+//           </>
+//         )}
+//       </div>
+//     </div>
+//   );
+
+//   // ========== RENDER ==========
+//   if (showIntro) return <Intro onSkip={handleSkipIntro} />;
+
+//   return (
+//     <div className="mini-settings-wrapper">
+//       <div className="mini-settings-card">
+//         <div className="card-header">
+//           {/* <Sparkles size={24} className="header-icon" /> */}
+//           <h2>Final Setup</h2>
+//           <p>Configure your preferences</p>
+//         </div>
+
+//         <StepIndicator />
+
+//         <div className="steps-container">
+//           {step === 1 && <StepTheme />}
+//           {step === 2 && <StepScreensaver />}
+//           {step === 3 && <StepSchoolType />}
+//         </div>
+
+//         <StepNavigation />
+//       </div>
+
+//       {isSyncing && <SyncModal />}
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+
+
+// // MiniSettingsPage.jsx - Updated with new features
+// import { useState, useEffect } from "react";
+// import { 
+//   Sun, Moon, Monitor, School, Loader2, Cloud, 
+//   CheckCircle, AlertCircle, Sparkles, GraduationCap,
+//   BookOpen, Users, UserCheck, UserCog, Briefcase,
+//   UserPlus, Shield, Award
+// } from "lucide-react";
+// import Intro from "../../components/Intro.jsx";
+// import { useNavigate } from "react-router-dom";
+// import "../../styles/mini-settings.css";
+// import { syncData, checkBackendHealth } from "../../services/api.service.js";
+// import { miniSettingsService } from "../../services/miniSettingsService";
+
+// // Available options
+// const SCHOOL_TYPES = ["kindergarten", "primary", "jhs", "shs", "institute"];
+// const ASSESSMENT_TYPES = ["montessori", "international (IB/Cambridge)", "GPA"];
+// const LOGIN_ROLES = [
+//   { id: "student", label: "Student", icon: UserCheck },
+//   { id: "teachers", label: "Teacher", icon: Users },
+//   { id: "parent", label: "Parent", icon: Users },
+//   { id: "non-staff", label: "Non-Staff", icon: Briefcase },
+//   { id: "TA", label: "Teaching Assistant", icon: UserPlus },
+//   { id: "accountant", label: "Accountant", icon: Shield }
+// ];
+
+// export default function MiniSettingsPage({ onComplete }) {
+//   // State - Updated with new fields
+//   const [step, setStep] = useState(1);
+//   const [darkMode, setDarkMode] = useState(false);
+//   const [screensaver, setScreensaver] = useState(false);
+//   const [schoolTypes, setSchoolTypes] = useState(["shs"]);
+//   const [assessmentTypes, setAssessmentTypes] = useState(["GPA"]);
+//   const [loginConfigs, setLoginConfigs] = useState(["student", "teachers"]);
+//   const [showIntro, setShowIntro] = useState(true);
+//   const [isSyncing, setIsSyncing] = useState(false);
+//   const [syncStatus, setSyncStatus] = useState({ message: "", error: null, success: false });
+//   const navigate = useNavigate();
+
+//   // ========== INITIALIZATION ==========
+//   useEffect(() => {
+//     loadSettings();
+//     const timer = setTimeout(() => setShowIntro(false), 10000);
+//     return () => clearTimeout(timer);
+//   }, []);
+
+//   const loadSettings = async () => {
+//     try {
+//       const settings = await miniSettingsService.getAllMiniSettings();
+//       applySettings(settings);
+//     } catch (error) {
+//       console.error("Error loading settings:", error);
+//       // Fallback to localStorage
+//       applySettings({
+//         theme: localStorage.getItem("theme") || "light",
+//         screensaver: localStorage.getItem("screensaver") === "true",
+//         schoolTypes: JSON.parse(localStorage.getItem("schoolTypes") || '["shs"]'),
+//         assessmentTypes: JSON.parse(localStorage.getItem("assessmentTypes") || '["GPA"]'),
+//         loginConfigs: JSON.parse(localStorage.getItem("loginConfigs") || '["student", "teachers"]')
+//       });
+//     }
+//   };
+
+//   const applySettings = (settings) => {
+//     const isDark = settings.theme === "dark";
+//     setDarkMode(isDark);
+//     document.body.classList.toggle("dark-mode", isDark);
+    
+//     if (settings.screensaver !== undefined) setScreensaver(settings.screensaver);
+//     if (settings.schoolTypes) setSchoolTypes(settings.schoolTypes);
+//     if (settings.assessmentTypes) setAssessmentTypes(settings.assessmentTypes);
+//     if (settings.loginConfigs) setLoginConfigs(settings.loginConfigs);
+//   };
+
+//   // ========== SETTINGS HANDLERS ==========
+//   const updateSetting = async (key, value, saveFn) => {
+//     // Update UI immediately
+//     if (key === "theme") {
+//       setDarkMode(value === "dark");
+//       document.body.classList.toggle("dark-mode", value === "dark");
+//     } else if (key === "screensaver") {
+//       setScreensaver(value);
+//     } else if (key === "schoolTypes") {
+//       setSchoolTypes(value);
+//     } else if (key === "assessmentTypes") {
+//       setAssessmentTypes(value);
+//     } else if (key === "loginConfigs") {
+//       setLoginConfigs(value);
+//     }
+    
+//     // Save to storage
+//     try {
+//       await saveFn(value);
+//     } catch (error) {
+//       console.error(`Error saving ${key}:`, error);
+//       localStorage.setItem(key, JSON.stringify(value));
+//     }
+//   };
+
+//   const toggleTheme = (mode) => updateSetting("theme", mode, miniSettingsService.updateTheme);
+//   const handleScreensaver = (enabled) => updateSetting("screensaver", enabled, miniSettingsService.updateScreensaver);
+  
+//   const handleSchoolTypeToggle = (type) => {
+//     let newSchoolTypes;
+//     if (schoolTypes.includes(type)) {
+//       newSchoolTypes = schoolTypes.filter(t => t !== type);
+//     } else {
+//       if (schoolTypes.length >= 4) {
+//         alert("You can select up to 4 school types");
+//         return;
+//       }
+//       newSchoolTypes = [...schoolTypes, type];
+//     }
+//     updateSetting("schoolTypes", newSchoolTypes, miniSettingsService.updateSchoolTypes);
+//   };
+
+//   const handleAssessmentTypeToggle = (type) => {
+//     let newAssessmentTypes;
+//     if (assessmentTypes.includes(type)) {
+//       newAssessmentTypes = assessmentTypes.filter(t => t !== type);
+//     } else {
+//       if (assessmentTypes.length >= 2) {
+//         alert("You can select up to 2 assessment types");
+//         return;
+//       }
+//       newAssessmentTypes = [...assessmentTypes, type];
+//     }
+//     updateSetting("assessmentTypes", newAssessmentTypes, miniSettingsService.updateAssessmentTypes);
+//   };
+
+//   const handleLoginRoleToggle = (roleId) => {
+//     let newLoginConfigs;
+//     if (loginConfigs.includes(roleId)) {
+//       newLoginConfigs = loginConfigs.filter(r => r !== roleId);
+//     } else {
+//       newLoginConfigs = [...loginConfigs, roleId];
+//     }
+//     updateSetting("loginConfigs", newLoginConfigs, miniSettingsService.updateLoginConfigs);
+//   };
+
+//   // ========== NAVIGATION ==========
+//   const nextStep = () => setStep((prev) => Math.min(prev + 1, 5));
+//   const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
+//   const handleSkipIntro = () => setShowIntro(false);
+
+//   // ========== SYNC & COMPLETE ==========
+//   const performSync = async () => {
+//     setSyncStatus({ message: "Connecting to server...", error: null, success: false });
+    
+//     const health = await checkBackendHealth();
+//     if (!health?.success) throw new Error("Server not responding");
+    
+//     setSyncStatus({ message: "Syncing data...", error: null, success: false });
+//     const result = await syncData({
+//       sync_school: true,
+//       sync_activation: true,
+//       sync_devices: true,
+//       device_batch_size: 20
+//     });
+    
+//     if (!result.success) {
+//       const failed = Object.entries(result.steps || {})
+//         .filter(([, s]) => !s.success).map(([n]) => n);
+//       if (failed.length) throw new Error(`Failed: ${failed.join(", ")}`);
+//     }
+    
+//     return result;
+//   };
+
+//   const saveAllSettings = async () => {
+//     const allSettings = {
+//       hasSeenMiniSettings: true,
+//       theme: darkMode ? "dark" : "light",
+//       screensaver,
+//       schoolTypes,
+//       assessmentTypes,
+//       loginConfigs
+//     };
+    
+//     try {
+//       await miniSettingsService.saveAllMiniSettings(allSettings);
+//     } catch (error) {
+//       console.error("Error saving settings:", error);
+//       // Fallback to localStorage
+//       Object.entries(allSettings).forEach(([key, val]) => {
+//         if (typeof val === "object") {
+//           localStorage.setItem(key, JSON.stringify(val));
+//         } else {
+//           localStorage.setItem(key, val.toString());
+//         }
+//       });
+//     }
+//   };
+
+//   const handleComplete = async () => {
+//     await saveAllSettings();
+//     setIsSyncing(true);
+    
+//     try {
+//       await performSync();
+//       setSyncStatus({ message: "Setup complete!", error: null, success: true });
+//       setTimeout(() => {
+//         if (onComplete) onComplete();
+//         navigate("/home");
+//       }, 1500);
+//     } catch (error) {
+//       setSyncStatus({ message: "Sync failed", error: error.message, success: false });
+//     }
+//   };
+
+//   const handleContinueAnyway = () => {
+//     saveAllSettings();
+//     if (onComplete) onComplete();
+//     navigate("/home");
+//   };
+
+//   // ========== STEP RENDERERS ==========
+//   const StepIndicator = () => (
+//     <div className="step-indicator">
+//       {[1, 2, 3, 4, 5].map(num => (
+//         <span key={num} className={step >= num ? "active" : ""}>{num}</span>
+//       ))}
+//     </div>
+//   );
+
+//   const StepTheme = () => (
+//     <div className="step-content">
+//       <p className="step-title">Choose Theme</p>
+//       <div className="option-buttons">
+//         <button className={`option-btn ${!darkMode ? "selected" : ""}`} onClick={() => toggleTheme("light")}>
+//           <Sun size={18} /> Light
+//         </button>
+//         <button className={`option-btn ${darkMode ? "selected" : ""}`} onClick={() => toggleTheme("dark")}>
+//           <Moon size={18} /> Dark
+//         </button>
+//       </div>
+//     </div>
+//   );
+
+//   const StepScreensaver = () => (
+//     <div className="step-content">
+//       <p className="step-title">Screensaver</p>
+//       <div className="option-buttons">
+//         <button className={`option-btn ${screensaver ? "selected" : ""}`} onClick={() => handleScreensaver(true)}>
+//           <Monitor size={18} /> Enable
+//         </button>
+//         <button className={`option-btn ${!screensaver ? "selected" : ""}`} onClick={() => handleScreensaver(false)}>
+//           <Monitor size={18} /> Disable
+//         </button>
+//       </div>
+//     </div>
+//   );
+
+//   const StepSchoolTypes = () => (
+//     <div className="step-content">
+//       <p className="step-title">School Types <span className="step-subtitle">(Select up to 4)</span></p>
+//       <div className="multi-select-grid">
+//         {SCHOOL_TYPES.map(type => (
+//           <button
+//             key={type}
+//             className={`multi-select-btn ${schoolTypes.includes(type) ? "selected" : ""}`}
+//             onClick={() => handleSchoolTypeToggle(type)}
+//           >
+//             <School size={18} />
+//             <span>{type.charAt(0).toUpperCase() + type.slice(1)}</span>
+//             {schoolTypes.includes(type) && <CheckCircle size={14} className="check-icon" />}
+//           </button>
+//         ))}
+//       </div>
+//       <div className="selection-info">
+//         <span className={`selection-count ${schoolTypes.length >= 4 ? "max-reached" : ""}`}>
+//           Selected: {schoolTypes.length}/4
+//         </span>
+//       </div>
+//     </div>
+//   );
+
+//   const StepAssessmentTypes = () => (
+//     <div className="step-content">
+//       <p className="step-title">Assessment Types <span className="step-subtitle">(Select up to 2)</span></p>
+//       <div className="multi-select-grid">
+//         {ASSESSMENT_TYPES.map(type => (
+//           <button
+//             key={type}
+//             className={`multi-select-btn ${assessmentTypes.includes(type) ? "selected" : ""}`}
+//             onClick={() => handleAssessmentTypeToggle(type)}
+//           >
+//             <Award size={18} />
+//             <span>{type}</span>
+//             {assessmentTypes.includes(type) && <CheckCircle size={14} className="check-icon" />}
+//           </button>
+//         ))}
+//       </div>
+//       <div className="selection-info">
+//         <span className={`selection-count ${assessmentTypes.length >= 2 ? "max-reached" : ""}`}>
+//           Selected: {assessmentTypes.length}/2
+//         </span>
+//       </div>
+//     </div>
+//   );
+
+//   const StepLoginConfigs = () => (
+//     <div className="step-content">
+//       <p className="step-title">Login Configurations</p>
+//       <p className="step-description">Select which user roles can access the system</p>
+//       <div className="multi-select-grid login-grid">
+//         {LOGIN_ROLES.map(role => {
+//           const Icon = role.icon;
+//           return (
+//             <button
+//               key={role.id}
+//               className={`multi-select-btn ${loginConfigs.includes(role.id) ? "selected" : ""}`}
+//               onClick={() => handleLoginRoleToggle(role.id)}
+//             >
+//               <Icon size={18} />
+//               <span>{role.label}</span>
+//               {loginConfigs.includes(role.id) && <CheckCircle size={14} className="check-icon" />}
+//             </button>
+//           );
+//         })}
+//       </div>
+//       <div className="selection-info">
+//         <span>Selected: {loginConfigs.length} role(s)</span>
+//       </div>
+//     </div>
+//   );
+
+//   const StepNavigation = () => (
+//     <div className="step-navigation">
+//       {step > 1 && <button className="btn-back" onClick={prevStep}>Back</button>}
+//       {step < 5 && <button className="btn-next" onClick={nextStep}>Continue</button>}
+//       {step === 5 && <button className="btn-finish" onClick={handleComplete}>Finish Setup</button>}
+//     </div>
+//   );
+
+//   // ========== SYNC MODAL ==========
+//   const SyncModal = () => (
+//     <div className="sync-modal-overlay">
+//       <div className="sync-modal">
+//         {syncStatus.error ? (
+//           <>
+//             <AlertCircle size={48} className="error-icon" />
+//             <h4>Sync Failed</h4>
+//             <p className="error-message">{syncStatus.error}</p>
+//             <div className="sync-actions">
+//               <button className="btn-retry" onClick={handleComplete}>Retry</button>
+//               <button className="btn-continue" onClick={handleContinueAnyway}>Continue</button>
+//             </div>
+//           </>
+//         ) : syncStatus.success ? (
+//           <>
+//             <CheckCircle size={48} className="success-icon" />
+//             <h4>All Set!</h4>
+//             <p>Redirecting to dashboard...</p>
+//           </>
+//         ) : (
+//           <>
+//             <Cloud size={48} className="sync-icon" />
+//             <Loader2 size={32} className="spinner" />
+//             <p className="sync-message">{syncStatus.message}</p>
+//           </>
+//         )}
+//       </div>
+//     </div>
+//   );
+
+//   // ========== RENDER ==========
+//   if (showIntro) return <Intro onSkip={handleSkipIntro} />;
+
+//   return (
+//     <div className="mini-settings-wrapper">
+//       <div className="mini-settings-card">
+//         <div className="card-header">
+//           <Sparkles size={24} className="header-icon" />
+//           <h2>Final Setup</h2>
+//           <p>Configure your preferences</p>
+//         </div>
+
+//         <StepIndicator />
+
+//         <div className="steps-container">
+//           {step === 1 && <StepTheme />}
+//           {step === 2 && <StepScreensaver />}
+//           {step === 3 && <StepSchoolTypes />}
+//           {step === 4 && <StepAssessmentTypes />}
+//           {step === 5 && <StepLoginConfigs />}
+//         </div>
+
+//         <StepNavigation />
+//       </div>
+
+//       {isSyncing && <SyncModal />}
+//     </div>
+//   );
+// }
+
+
+
+// MiniSettingsPage.jsx - Fully Operational Version
 import { useState, useEffect } from "react";
 import { 
   Sun, Moon, Monitor, School, Loader2, Cloud, 
-  CheckCircle, AlertCircle, Sparkles
+  CheckCircle, AlertCircle, Sparkles,
+  Users, Briefcase, UserPlus, Shield, Award
 } from "lucide-react";
 import Intro from "../../components/Intro.jsx";
 import { useNavigate } from "react-router-dom";
@@ -1489,14 +2158,26 @@ import "../../styles/mini-settings.css";
 import { syncData, checkBackendHealth } from "../../services/api.service.js";
 import { miniSettingsService } from "../../services/miniSettingsService";
 
-const SCHOOL_TYPES = ["JHS", "SHS", "Basic School"];
+// Available options
+const SCHOOL_TYPES = ["kindergarten", "primary", "jhs", "shs", "institute"];
+const ASSESSMENT_TYPES = ["montessori", "international (IB/Cambridge)", "GPA"];
+const LOGIN_ROLES = [
+  { id: "student", label: "Student", icon: Users },
+  { id: "teachers", label: "Teacher", icon: Users },
+  { id: "parent", label: "Parent", icon: Users },
+  { id: "non-staff", label: "Non-Staff", icon: Briefcase },
+  { id: "TA", label: "Teaching Assistant", icon: UserPlus },
+  { id: "accountant", label: "Accountant", icon: Shield }
+];
 
 export default function MiniSettingsPage({ onComplete }) {
-  // State
+  // State - Updated with new fields
   const [step, setStep] = useState(1);
   const [darkMode, setDarkMode] = useState(false);
   const [screensaver, setScreensaver] = useState(false);
-  const [schoolType, setSchoolType] = useState("SHS");
+  const [schoolTypes, setSchoolTypes] = useState(["shs"]);
+  const [assessmentTypes, setAssessmentTypes] = useState(["GPA"]);
+  const [loginConfigs, setLoginConfigs] = useState(["student", "teachers"]);
   const [showIntro, setShowIntro] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState({ message: "", error: null, success: false });
@@ -1512,13 +2193,17 @@ export default function MiniSettingsPage({ onComplete }) {
   const loadSettings = async () => {
     try {
       const settings = await miniSettingsService.getAllMiniSettings();
+      console.log("Loaded settings:", settings); // Debug log
       applySettings(settings);
-    } catch {
+    } catch (error) {
+      console.error("Error loading settings:", error);
       // Fallback to localStorage
       applySettings({
         theme: localStorage.getItem("theme") || "light",
         screensaver: localStorage.getItem("screensaver") === "true",
-        schoolType: localStorage.getItem("schoolType") || "SHS"
+        schoolTypes: JSON.parse(localStorage.getItem("schoolTypes") || '["shs"]'),
+        assessmentTypes: JSON.parse(localStorage.getItem("assessmentTypes") || '["GPA"]'),
+        loginConfigs: JSON.parse(localStorage.getItem("loginConfigs") || '["student", "teachers"]')
       });
     }
   };
@@ -1526,37 +2211,99 @@ export default function MiniSettingsPage({ onComplete }) {
   const applySettings = (settings) => {
     const isDark = settings.theme === "dark";
     setDarkMode(isDark);
-    document.body.classList.toggle("dark-mode", isDark);
+    // Apply dark mode class to body
+    if (isDark) {
+      document.body.classList.add("dark-mode");
+    } else {
+      document.body.classList.remove("dark-mode");
+    }
+    
     if (settings.screensaver !== undefined) setScreensaver(settings.screensaver);
-    if (settings.schoolType) setSchoolType(settings.schoolType);
+    if (settings.schoolTypes && Array.isArray(settings.schoolTypes)) setSchoolTypes(settings.schoolTypes);
+    if (settings.assessmentTypes && Array.isArray(settings.assessmentTypes)) setAssessmentTypes(settings.assessmentTypes);
+    if (settings.loginConfigs && Array.isArray(settings.loginConfigs)) setLoginConfigs(settings.loginConfigs);
   };
 
   // ========== SETTINGS HANDLERS ==========
   const updateSetting = async (key, value, saveFn) => {
     // Update UI immediately
     if (key === "theme") {
-      setDarkMode(value === "dark");
-      document.body.classList.toggle("dark-mode", value === "dark");
+      const isDark = value === "dark";
+      setDarkMode(isDark);
+      if (isDark) {
+        document.body.classList.add("dark-mode");
+      } else {
+        document.body.classList.remove("dark-mode");
+      }
     } else if (key === "screensaver") {
       setScreensaver(value);
-    } else if (key === "schoolType") {
-      setSchoolType(value);
+    } else if (key === "schoolTypes") {
+      setSchoolTypes(value);
+    } else if (key === "assessmentTypes") {
+      setAssessmentTypes(value);
+    } else if (key === "loginConfigs") {
+      setLoginConfigs(value);
     }
     
     // Save to storage
     try {
-      await saveFn(value);
-    } catch {
-      localStorage.setItem(key, value.toString());
+      if (saveFn) {
+        await saveFn(value);
+      }
+    } catch (error) {
+      console.error(`Error saving ${key}:`, error);
+      // Fallback to localStorage
+      if (typeof value === "object") {
+        localStorage.setItem(key, JSON.stringify(value));
+      } else {
+        localStorage.setItem(key, value.toString());
+      }
     }
   };
 
   const toggleTheme = (mode) => updateSetting("theme", mode, miniSettingsService.updateTheme);
   const handleScreensaver = (enabled) => updateSetting("screensaver", enabled, miniSettingsService.updateScreensaver);
-  const handleSchoolType = (type) => updateSetting("schoolType", type, miniSettingsService.updateSchoolType);
+  
+  const handleSchoolTypeToggle = (type) => {
+    let newSchoolTypes;
+    if (schoolTypes.includes(type)) {
+      newSchoolTypes = schoolTypes.filter(t => t !== type);
+    } else {
+      if (schoolTypes.length >= 4) {
+        alert("You can select up to 4 school types");
+        return;
+      }
+      newSchoolTypes = [...schoolTypes, type];
+    }
+    updateSetting("schoolTypes", newSchoolTypes, miniSettingsService.updateSchoolTypes);
+  };
+
+  const handleAssessmentTypeToggle = (type) => {
+    let newAssessmentTypes;
+    if (assessmentTypes.includes(type)) {
+      newAssessmentTypes = assessmentTypes.filter(t => t !== type);
+    } else {
+      if (assessmentTypes.length >= 2) {
+        alert("You can select up to 2 assessment types");
+        return;
+      }
+      newAssessmentTypes = [...assessmentTypes, type];
+    }
+    updateSetting("assessmentTypes", newAssessmentTypes, miniSettingsService.updateAssessmentTypes);
+  };
+
+  const handleLoginRoleToggle = (roleId) => {
+    let newLoginConfigs;
+    if (loginConfigs.includes(roleId)) {
+      newLoginConfigs = loginConfigs.filter(r => r !== roleId);
+    } else {
+      newLoginConfigs = [...loginConfigs, roleId];
+    }
+    updateSetting("loginConfigs", newLoginConfigs, miniSettingsService.updateLoginConfigs);
+  };
 
   // ========== NAVIGATION ==========
-  const nextStep = () => setStep((prev) => Math.min(prev + 1, 3));
+  const nextStep = () => setStep((prev) => Math.min(prev + 1, 5));
   const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
   const handleSkipIntro = () => setShowIntro(false);
 
@@ -1564,39 +2311,51 @@ export default function MiniSettingsPage({ onComplete }) {
   const performSync = async () => {
     setSyncStatus({ message: "Connecting to server...", error: null, success: false });
     
-    const health = await checkBackendHealth();
-    if (!health?.success) throw new Error("Server not responding");
-    
-    setSyncStatus({ message: "Syncing data...", error: null, success: false });
-    const result = await syncData({
-      sync_school: true,
-      sync_activation: true,
-      sync_devices: true,
-      device_batch_size: 20
-    });
-    
-    if (!result.success) {
-      const failed = Object.entries(result.steps || {})
-        .filter(([, s]) => !s.success).map(([n]) => n);
-      if (failed.length) throw new Error(`Failed: ${failed.join(", ")}`);
+    try {
+      const health = await checkBackendHealth();
+      if (!health?.success) throw new Error("Server not responding");
+      
+      setSyncStatus({ message: "Syncing data...", error: null, success: false });
+      const result = await syncData({
+        sync_school: true,
+        sync_activation: true,
+        sync_devices: true,
+        device_batch_size: 20
+      });
+      
+      if (!result.success) {
+        const failed = Object.entries(result.steps || {})
+          .filter(([, s]) => !s.success).map(([n]) => n);
+        if (failed.length) throw new Error(`Failed: ${failed.join(", ")}`);
+      }
+      
+      return result;
+    } catch (error) {
+      throw error;
     }
-    
-    return result;
   };
 
   const saveAllSettings = async () => {
     const allSettings = {
       hasSeenMiniSettings: true,
       theme: darkMode ? "dark" : "light",
-      screensaver,
-      schoolType
+      screensaver: screensaver,
+      schoolTypes: schoolTypes,
+      assessmentTypes: assessmentTypes,
+      loginConfigs: loginConfigs
     };
     
     try {
       await miniSettingsService.saveAllMiniSettings(allSettings);
-    } catch {
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      // Fallback to localStorage
       Object.entries(allSettings).forEach(([key, val]) => {
-        localStorage.setItem(key, val.toString());
+        if (typeof val === "object") {
+          localStorage.setItem(key, JSON.stringify(val));
+        } else {
+          localStorage.setItem(key, val.toString());
+        }
       });
     }
   };
@@ -1614,11 +2373,13 @@ export default function MiniSettingsPage({ onComplete }) {
       }, 1500);
     } catch (error) {
       setSyncStatus({ message: "Sync failed", error: error.message, success: false });
+      setIsSyncing(false);
     }
   };
 
   const handleContinueAnyway = () => {
     saveAllSettings();
+    setIsSyncing(false);
     if (onComplete) onComplete();
     navigate("/home");
   };
@@ -1626,7 +2387,7 @@ export default function MiniSettingsPage({ onComplete }) {
   // ========== STEP RENDERERS ==========
   const StepIndicator = () => (
     <div className="step-indicator">
-      {[1, 2, 3].map(num => (
+      {[1, 2, 3, 4, 5].map(num => (
         <span key={num} className={step >= num ? "active" : ""}>{num}</span>
       ))}
     </div>
@@ -1660,15 +2421,76 @@ export default function MiniSettingsPage({ onComplete }) {
     </div>
   );
 
-  const StepSchoolType = () => (
+  const StepSchoolTypes = () => (
     <div className="step-content">
-      <p className="step-title">School Type</p>
-      <div className="option-buttons">
+      <p className="step-title">School Types <span className="step-subtitle">(Select up to 4)</span></p>
+      <div className="multi-select-grid">
         {SCHOOL_TYPES.map(type => (
-          <button key={type} className={`option-btn ${schoolType === type ? "selected" : ""}`} onClick={() => handleSchoolType(type)}>
-            <School size={18} /> {type}
+          <button
+            key={type}
+            className={`multi-select-btn ${schoolTypes.includes(type) ? "selected" : ""}`}
+            onClick={() => handleSchoolTypeToggle(type)}
+          >
+            <School size={18} />
+            <span>{type.charAt(0).toUpperCase() + type.slice(1)}</span>
+            {schoolTypes.includes(type) && <CheckCircle size={14} className="check-icon" />}
           </button>
         ))}
+      </div>
+      <div className="selection-info">
+        <span className={`selection-count ${schoolTypes.length >= 4 ? "max-reached" : ""}`}>
+          Selected: {schoolTypes.length}/4
+        </span>
+      </div>
+    </div>
+  );
+
+  const StepAssessmentTypes = () => (
+    <div className="step-content">
+      <p className="step-title">Assessment Types <span className="step-subtitle">(Select up to 2)</span></p>
+      <div className="multi-select-grid">
+        {ASSESSMENT_TYPES.map(type => (
+          <button
+            key={type}
+            className={`multi-select-btn ${assessmentTypes.includes(type) ? "selected" : ""}`}
+            onClick={() => handleAssessmentTypeToggle(type)}
+          >
+            <Award size={18} />
+            <span>{type}</span>
+            {assessmentTypes.includes(type) && <CheckCircle size={14} className="check-icon" />}
+          </button>
+        ))}
+      </div>
+      <div className="selection-info">
+        <span className={`selection-count ${assessmentTypes.length >= 2 ? "max-reached" : ""}`}>
+          Selected: {assessmentTypes.length}/2
+        </span>
+      </div>
+    </div>
+  );
+
+  const StepLoginConfigs = () => (
+    <div className="step-content">
+      <p className="step-title">Login Configurations</p>
+      <p className="step-description">Select which user roles can access the system</p>
+      <div className="multi-select-grid login-grid">
+        {LOGIN_ROLES.map(role => {
+          const Icon = role.icon;
+          return (
+            <button
+              key={role.id}
+              className={`multi-select-btn ${loginConfigs.includes(role.id) ? "selected" : ""}`}
+              onClick={() => handleLoginRoleToggle(role.id)}
+            >
+              <Icon size={18} />
+              <span>{role.label}</span>
+              {loginConfigs.includes(role.id) && <CheckCircle size={14} className="check-icon" />}
+            </button>
+          );
+        })}
+      </div>
+      <div className="selection-info">
+        <span>Selected: {loginConfigs.length} role(s)</span>
       </div>
     </div>
   );
@@ -1676,8 +2498,8 @@ export default function MiniSettingsPage({ onComplete }) {
   const StepNavigation = () => (
     <div className="step-navigation">
       {step > 1 && <button className="btn-back" onClick={prevStep}>Back</button>}
-      {step < 3 && <button className="btn-next" onClick={nextStep}>Continue</button>}
-      {step === 3 && <button className="btn-finish" onClick={handleComplete}>Finish Setup</button>}
+      {step < 5 && <button className="btn-next" onClick={nextStep}>Continue</button>}
+      {step === 5 && <button className="btn-finish" onClick={handleComplete}>Finish Setup</button>}
     </div>
   );
 
@@ -1692,7 +2514,7 @@ export default function MiniSettingsPage({ onComplete }) {
             <p className="error-message">{syncStatus.error}</p>
             <div className="sync-actions">
               <button className="btn-retry" onClick={handleComplete}>Retry</button>
-              <button className="btn-continue" onClick={handleContinueAnyway}>Continue</button>
+              <button className="btn-continue" onClick={handleContinueAnyway}>Continue Anyway</button>
             </div>
           </>
         ) : syncStatus.success ? (
@@ -1719,7 +2541,7 @@ export default function MiniSettingsPage({ onComplete }) {
     <div className="mini-settings-wrapper">
       <div className="mini-settings-card">
         <div className="card-header">
-          {/* <Sparkles size={24} className="header-icon" /> */}
+          <Sparkles size={24} className="header-icon" />
           <h2>Final Setup</h2>
           <p>Configure your preferences</p>
         </div>
@@ -1729,7 +2551,9 @@ export default function MiniSettingsPage({ onComplete }) {
         <div className="steps-container">
           {step === 1 && <StepTheme />}
           {step === 2 && <StepScreensaver />}
-          {step === 3 && <StepSchoolType />}
+          {step === 3 && <StepSchoolTypes />}
+          {step === 4 && <StepAssessmentTypes />}
+          {step === 5 && <StepLoginConfigs />}
         </div>
 
         <StepNavigation />

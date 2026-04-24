@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Users, Plus, Eye, Edit, UserX, Calendar, Briefcase, X } from 'lucide-react';
 import '../../../styles/non-staff.css';
+import { useNavigate } from 'react-router-dom';
 
 function NonStaff() {
   const [nonStaff, setNonStaff] = useState([
@@ -8,6 +9,10 @@ function NonStaff() {
     { id: 2, nonStaffNumber: 'NS-002', name: 'Grace Mensah', role: 'Librarian', department: 'Library', designation: 'Head Librarian', hiredDate: '2019-08-15', status: 'Active', nextOfKin: 'Mr. Mensah - 0244123457' }
   ]);
 
+  const navigate =useNavigate();
+   const handleNavigation = (path) => {
+    navigate(path);
+  };
   const [showModal, setShowModal] = useState(false);
   const [editingNonStaff, setEditingNonStaff] = useState(null);
   const [formData, setFormData] = useState({ nonStaffNumber: '', name: '', role: '', department: '', designation: '', hiredDate: '', status: 'Active', nextOfKin: '' });
@@ -53,7 +58,7 @@ function NonStaff() {
           </h1>
           <p style={{ color: 'var(--secondary)' }}>Manage non-teaching staff (accountants, librarians, administrative, etc.)</p>
         </div>
-        <button className="button" onClick={() => setShowModal(true)}>
+        <button className="button" onClick={() => handleNavigation("/registration/non-staff")}>
           <Plus size={16} /> Add Staff
         </button>
       </div>

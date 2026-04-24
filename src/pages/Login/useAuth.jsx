@@ -257,8 +257,8 @@ export function AuthProvider({ children }) {
     getLogoutTimeRemaining
   } = useInactivityTimer({
     screensaverTimeout: 30 * 1000,
-    countdownStartTimeout: 1 * 60 * 1000,
-    logoutTimeout: 2 * 60 * 1000,
+    countdownStartTimeout: 10 * 60 * 1000,
+    logoutTimeout: 11 * 60 * 1000,
     onScreensaverShow: () => setScreensaverVisible(true),
     onScreensaverHide: () => setScreensaverVisible(false),
     onLogout: logout

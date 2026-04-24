@@ -432,6 +432,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
       subItems: [
         { icon: GraduationCap, label: 'Students', path: '/people/students' },
         { icon: UserCheck, label: 'Staff (Teachers)', path: '/people/staff' },
+             { icon: Users2, label: 'Administrator', path: '/people/administrator' },
         { icon: Briefcase, label: 'Teaching Assistants', path: '/people/teaching-assistants' },
         { icon: Users2, label: 'Non-Staff', path: '/people/non-staff' },
         { icon: UserCheck, label: 'Parents/Guardians', path: '/people/parents' },
@@ -572,10 +573,10 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
       path: '/system',
       subItems: [
         { icon: ShieldIcon, label: 'User Management', path: '/system/users' },
-        { icon: Lock, label: 'Roles & Permissions', path: '/system/roles' },
+        // { icon: Lock, label: 'Roles & Permissions', path: '/system/roles' },
         { icon: Activity, label: 'System Logs', path: '/system/logs' },
-        { icon: Cloud, label: 'License Management', path: '/system/license' },
-        { icon: Settings, label: 'Global Settings', path: '/system/settings' },
+        // { icon: Cloud, label: 'License Management', path: '/system/license' },
+        // { icon: Settings, label: 'Global Settings', path: '/system/settings' },
         { icon: RefreshCw, label: 'System Health', path: '/system/health' }
       ],
       section: 'system'

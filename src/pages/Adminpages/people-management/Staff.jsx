@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Users, Plus, Eye, Edit, UserX, Key, Calendar, BookOpen, Clock, Award, Mail, Phone, MapPin, X } from 'lucide-react';
 import '../../../styles/staff.css';
+import { useNavigate } from 'react-router-dom';
 
 function Staff() {
   const [staff, setStaff] = useState([
@@ -10,6 +11,10 @@ function Staff() {
     { id: 4, staffNumber: 'TCH-003', name: 'Ms. Sarah Johnson', role: 'Teacher', department: 'Science', status: 'On Leave', qualification: "Bachelor's in Biology", specialization: 'Biology', hiredDate: '2019-08-20' }
   ]);
 
+  const navigate =useNavigate();
+   const handleNavigation = (path) => {
+    navigate(path);
+  };
   const [showModal, setShowModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState(null);
@@ -62,7 +67,7 @@ function Staff() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div><h1 style={{ fontSize: '1.875rem', fontWeight: 'bold' }}><Users size={28} style={{ display: 'inline', marginRight: '12px' }} />Staff (Teachers)</h1>
         <p style={{ color: 'var(--secondary)' }}>Manage teaching and administrative staff</p></div>
-        <button className="button" onClick={() => setShowModal(true)}><Plus size={16} /> Add Staff</button>
+        <button className="button" onClick={() => handleNavigation("/registration/teachers")}><Plus size={16} /> Add Staff</button>
       </div>
       <hr style={{ margin: '0 0 1.5rem 0', borderColor: 'var(--border)' }} />
 

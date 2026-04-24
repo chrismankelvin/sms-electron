@@ -1,8 +1,13 @@
 import { useState } from 'react';
 import { Users, Plus, Eye, Edit, UserX, Calendar, BookOpen, School, X, Trash2 } from 'lucide-react';
 import '../../../styles/teaching-assistants.css';
+import { useNavigate } from 'react-router-dom';
 
 function TeachingAssistants() {
+  const navigate = useNavigate();
+   const handleNavigation = (path) => {
+    navigate(path);
+  };
   const [tas, setTas] = useState([
     { 
       id: 1, 
@@ -126,7 +131,7 @@ function TeachingAssistants() {
           </h1>
           <p style={{ color: 'var(--secondary)' }}>Manage TAs, student teachers, and national service personnel</p>
         </div>
-        <button className="button" onClick={() => setShowModal(true)}>
+        <button className="button" onClick={() => handleNavigation("/registration/teaching-assistants")}>
           <Plus size={16} /> Add Teaching Assistant
         </button>
       </div>
