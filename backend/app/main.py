@@ -35,6 +35,13 @@ from app.activation.activation_service import (
 from app.minisettings.mini_settings_api import router as mini_settings_router
 from app.minisettings.settings_service import mini_settings_service
 from app.minisettings.settings_api import settings_router 
+from app.sync.sync_routes import router as app_sync
+from app.sync.school_sync_scheduler import SchoolSyncScheduler
+CLOUD_CONNECTION_STRING = "sqlitecloud://crp6lwxvnz.g2.sqlite.cloud:8860/hool"
+CLOUD_API_KEY = "CWwoReVnb5JGoUcHzuZgVuaLpIVt2Vyag7iHbW1ixMU"
+
+sync_scheduler = SchoolSyncScheduler(CLOUD_CONNECTION_STRING, CLOUD_API_KEY)
+sync_scheduler.start()
 
 print("=" * 60)
 print("MAIN.PY IS BEING LOADED - DEBUG MESSAGE")
@@ -60,6 +67,7 @@ app.include_router(auth_router)
 
 app.include_router(mini_settings_router)
 app.include_router(settings_router)
+app.include_router(app_sync)
 
 # Initialize SQLiteCloud client
 

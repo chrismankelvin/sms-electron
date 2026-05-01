@@ -1,0 +1,364 @@
+  .mode-settings {
+          animation: fadeIn 0.3s ease;
+        }
+
+        .auto-mode-indicator {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.75rem 1rem;
+          background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+          border-radius: 8px;
+          margin-bottom: 1rem;
+          border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .indicator-left {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.875rem;
+          color: #64748b;
+        }
+
+        .indicator-right {
+          display: flex;
+          gap: 0.5rem;
+        }
+
+        .auto-icon {
+          animation: spin 2s linear infinite;
+        }
+
+        .offline-badge, .online-badge {
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+          padding: 0.25rem 0.75rem;
+          border-radius: 20px;
+          font-size: 0.75rem;
+          font-weight: 600;
+        }
+
+        .offline-badge {
+          background: #ef4444;
+          color: white;
+        }
+
+        .online-badge {
+          background: #22c55e;
+          color: white;
+        }
+
+        .network-status-banner {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 0.75rem 1rem;
+          border-radius: 8px;
+          margin-bottom: 1rem;
+          font-size: 0.875rem;
+        }
+
+        .network-status-banner.offline {
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          color: #ef4444;
+        }
+
+        .network-status-banner.online {
+          background: rgba(34, 197, 94, 0.1);
+          border: 1px solid rgba(34, 197, 94, 0.3);
+          color: #22c55e;
+        }
+
+        .live-mode-card {
+          background: linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, rgba(34, 197, 94, 0.02) 100%);
+          border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .live-icon {
+          color: #22c55e;
+        }
+
+        .live-mode-badge {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.25rem 0.75rem;
+          background: rgba(34, 197, 94, 0.1);
+          border-radius: 20px;
+          color: #22c55e;
+          font-size: 0.75rem;
+          font-weight: 500;
+        }
+
+        .setting-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.5rem 0;
+        }
+
+        .setting-info {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+        }
+
+        .setting-info h4 {
+          margin: 0 0 4px 0;
+          font-size: 1rem;
+        }
+
+        .setting-info p {
+          margin: 0;
+          font-size: 0.875rem;
+          color: #64748b;
+        }
+
+        .card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 1rem;
+        }
+
+        .card-header h3 {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin: 0;
+        }
+
+        .sync-active-badge {
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+          padding: 0.25rem 0.5rem;
+          background: rgba(59, 130, 246, 0.1);
+          border-radius: 4px;
+          font-size: 0.75rem;
+          color: #3b82f6;
+        }
+
+        .status-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 1rem;
+          margin: 1rem 0;
+          padding: 1rem;
+          background: #f8fafc;
+          border-radius: 8px;
+        }
+
+        .status-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .status-label {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.875rem;
+          color: #64748b;
+        }
+
+        .status-value {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-weight: 500;
+        }
+
+        .pending-count {
+          font-size: 1.25rem;
+          font-weight: 600;
+        }
+
+        .pending-count.has-pending {
+          color: #eab308;
+        }
+
+        .status-connected {
+          color: #22c55e;
+        }
+
+        .status-disconnected {
+          color: #ef4444;
+        }
+
+        .syncing {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          color: #3b82f6;
+        }
+
+        .spinning {
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        .sync-actions {
+          display: flex;
+          gap: 0.75rem;
+          margin-top: 1rem;
+        }
+
+        .sync-queue {
+          margin-top: 1.5rem;
+          padding-top: 1rem;
+          border-top: 1px solid #e2e8f0;
+        }
+
+        .queue-items {
+          max-height: 300px;
+          overflow-y: auto;
+        }
+
+        .queue-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.75rem;
+          background: #f8fafc;
+          border-radius: 6px;
+          margin-bottom: 0.5rem;
+        }
+
+        .queue-item-info {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          flex-wrap: wrap;
+        }
+
+        .operation-badge {
+          padding: 0.25rem 0.5rem;
+          border-radius: 4px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          text-transform: uppercase;
+        }
+
+        .operation-badge.INSERT {
+          background: rgba(34, 197, 94, 0.1);
+          color: #22c55e;
+        }
+
+        .operation-badge.UPDATE {
+          background: rgba(59, 130, 246, 0.1);
+          color: #3b82f6;
+        }
+
+        .operation-badge.DELETE {
+          background: rgba(239, 68, 68, 0.1);
+          color: #ef4444;
+        }
+
+        .queue-table {
+          font-family: monospace;
+          font-size: 0.875rem;
+        }
+
+        .queue-record-id {
+          font-size: 0.75rem;
+          color: #64748b;
+        }
+
+        .retry-count, .created-at {
+          font-size: 0.7rem;
+          color: #64748b;
+        }
+
+        .info-banner {
+          display: flex;
+          gap: 0.75rem;
+          padding: 1rem;
+          border-radius: 8px;
+        }
+
+        .info-banner.warning {
+          background: rgba(234, 179, 8, 0.1);
+          border-left: 3px solid #eab308;
+        }
+
+        .pending-offline-warning {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin-top: 0.75rem;
+          padding: 0.5rem;
+          background: rgba(234, 179, 8, 0.1);
+          border-radius: 6px;
+          font-size: 0.75rem;
+          color: #eab308;
+        }
+
+        .btn-primary {
+          background: #3b82f6;
+          color: white;
+          border: none;
+          padding: 0.5rem 1rem;
+          border-radius: 6px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.875rem;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+          background: #2563eb;
+        }
+
+        .btn-primary:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .btn-secondary {
+          background: #64748b;
+          color: white;
+          border: none;
+          padding: 0.5rem 1rem;
+          border-radius: 6px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.875rem;
+        }
+
+        .btn-secondary:hover {
+          background: #475569;
+        }
+
+        .btn-danger {
+          background: #ef4444;
+          color: white;
+          border: none;
+          padding: 0.5rem 1rem;
+          border-radius: 6px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.875rem;
+        }
+
+        .btn-danger:hover {
+          background: #dc2626;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
