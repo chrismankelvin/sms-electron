@@ -2768,17 +2768,86 @@ def ensure_all_tables():
 
     # ----------------- 39. SYSTEM SETTINGS (ENHANCED WITH SYNC) -----------------
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS system_settings (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        key TEXT NOT NULL UNIQUE,
-        value TEXT,
-        category TEXT,
-        is_encrypted BOOLEAN DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_by INTEGER,
-        FOREIGN KEY (updated_by) REFERENCES users(id)
+   CREATE TABLE IF NOT EXISTS system_settings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    key TEXT NOT NULL UNIQUE,
+    value TEXT,
+    category TEXT,
+    is_encrypted BOOLEAN DEFAULT 0,
+    version INTEGER DEFAULT 1,
+    synced_at TIMESTAMP,
+    updated_by_sync BOOLEAN DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_by INTEGER,
+    FOREIGN KEY (updated_by) REFERENCES users(id)
+
     )
+    """)
+
+    # ----------------- 40. GLOBAL_SYSTEM_SETTINGS -----------------
+    cursor.execute("""
+CREATE TABLE IF NOT EXISTS global_system_settings (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    
+    -- General Settings
+    date_format TEXT DEFAULT 'DD/MM/YYYY',
+    timezone TEXT DEFAULT 'Africa/Accra',
+    default_language TEXT DEFAULT 'English',
+    session_timeout INTEGER DEFAULT 30,
+    password_expiry INTEGER DEFAULT 90,
+    two_factor_required BOOLEAN DEFAULT 1,
+    
+    -- Email Configuration
+    smtp_server TEXT DEFAULT 'smtp.gmail.com',
+    smtp_port INTEGER DEFAULT 587,
+    smtp_encryption TEXT DEFAULT 'TLS',
+    email_from_address TEXT DEFAULT 'noreply@school.edu',
+    email_from_name TEXT DEFAULT 'School System',
+    
+    -- SMS Configuration
+    sms_provider TEXT DEFAULT 'Twilio',
+    sms_api_key TEXT,
+    sms_sender_id TEXT DEFAULT 'SchoolSMS',
+    
+    -- Notifications
+    quiet_hours_start TIME DEFAULT '21:00:00',
+    quiet_hours_end TIME DEFAULT '07:00:00',
+    
+    -- Database Sync Configuration
+    sync_enabled BOOLEAN DEFAULT 0,
+    db_connection_string TEXT,
+    db_api_key TEXT,
+    db_name TEXT,
+    db_type TEXT DEFAULT 'sqlitecloud',
+    
+    -- Features & Integrations
+    enable_sms BOOLEAN DEFAULT 0,
+    enable_push_notifications BOOLEAN DEFAULT 1,
+    enable_fee_module BOOLEAN DEFAULT 0,
+    enable_sync_module BOOLEAN DEFAULT 0,
+    
+    -- Sync Status
+    sync_last_attempt DATETIME,
+    sync_last_success DATETIME,
+    sync_last_error TEXT,
+    sync_status TEXT DEFAULT 'disabled',
+    
+    -- Metadata
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_by INTEGER,
+    
+    FOREIGN KEY (updated_by) REFERENCES users(id)
+)
+""")
+
+# Insert default global settings if not exists
+    cursor.execute("SELECT COUNT(*) FROM global_system_settings WHERE id = 1")
+    if cursor.fetchone()[0] == 0:
+        cursor.execute("""
+        INSERT INTO global_system_settings (id, sync_enabled, enable_sync_module, created_at, updated_at)
+        VALUES (1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     """)
     
     # Insert default system settings

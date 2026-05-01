@@ -1073,14 +1073,12 @@ class SchoolSyncScheduler:
     # ========== TRIGGER METHODS ==========
     
     def on_data_change(self, table_name: str, record_id: str, operation: str, data: Dict = None):
-        """Called on every write operation"""
+        """Optional manual trigger - triggers now handle auto-capture"""
+        # Triggers already capture changes, this is just for immediate sync notification
         try:
-            # Add to sync queue
-            queue_id = self.db.add_to_sync_queue(table_name, record_id, operation, data)
-            logger.debug(f"Added to sync queue: {operation} on {table_name} (ID: {queue_id})")
-            
-            # Queue sync request (will be debounced)
+            # Just trigger immediate sync without adding to queue (triggers already did)
             self._sync_queue.put("immediate")
+            logger.debug(f"Change detected in {table_name} - triggering immediate sync")
         except Exception as e:
             logger.error(f"Error in on_data_change: {e}", exc_info=True)
     
