@@ -807,6 +807,11 @@ def main():
     # Initialize database tables
     try:
         from app.activation.state import ensure_all_tables
+        from app.sync.sync_integration import init_sync_system
+
+        init_sync_system()
+        logger.info("init_sync_system")
+        
         ensure_all_tables()
         logger.info("Database tables ready")
     except Exception as e:

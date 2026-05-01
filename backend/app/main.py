@@ -40,11 +40,16 @@ from app.sync.school_sync_scheduler import SchoolSyncScheduler
 from app.sync.global_settings_routes import router as global_settings
 
 
-CLOUD_CONNECTION_STRING = "sqlitecloud://crp6lwxvnz.g2.sqlite.cloud:8860/synctest"
-CLOUD_API_KEY = "CWwoReVnb5JGoUcHzuZgVuaLpIVt2Vyag7iHbW1ixMU"
+# CLOUD_CONNECTION_STRING = "sqlitecloud://crp6lwxvnz.g2.sqlite.cloud:8860/synctest"
+# CLOUD_API_KEY = "CWwoReVnb5JGoUcHzuZgVuaLpIVt2Vyag7iHbW1ixMU"
 
-sync_scheduler = SchoolSyncScheduler(CLOUD_CONNECTION_STRING, CLOUD_API_KEY)
-sync_scheduler.start()
+# sync_scheduler = SchoolSyncScheduler(CLOUD_CONNECTION_STRING, CLOUD_API_KEY)
+# sync_scheduler.start()
+from app.sync.sync_integration import init_sync_system
+
+# This will automatically read from global settings
+sync_scheduler = init_sync_system()
+
 
 print("=" * 60)
 print("MAIN.PY IS BEING LOADED - DEBUG MESSAGE")
@@ -55,11 +60,11 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "*",
-        # "http://localhost:5173",
-        # "http://127.0.0.1:5173",
-        # "http://localhost:3000",  # Common React port
-        # "http://localhost:5000",  # Common alternative
-        # "null"  # For Electron
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",  # Common React port
+        "http://localhost:5000",  # Common alternative
+        "null"  # For Electron
     ],
     allow_credentials=False,  # Set to True since we're using specific origins
     allow_methods=["*"],

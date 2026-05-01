@@ -120,28 +120,45 @@ export default function GlobalSettings() {
     }
   };
 
-  const enableSyncModule = async () => {
+const enableSyncModule = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/global-settings/sync/enable`, {
-        method: 'POST'
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        alert(result.message);
-        await loadSettings();
-      } else {
-        alert("Failed to enable sync: " + result.message);
-      }
+        // First, update both flags in settings
+        const updateResponse = await fetch(`${API_BASE_URL}/global-settings/`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                database: {
+                    ...settings.database,
+                    sync_enabled: true
+                },
+                features: {
+                    ...settings.features,
+                    enable_sync_module: true
+                }
+            })
+        });
+        
+        // Then enable the sync module
+        const response = await fetch(`${API_BASE_URL}/global-settings/sync/enable`, {
+            method: 'POST'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(result.message);
+            await loadSettings();
+        } else {
+            alert("Failed to enable sync: " + result.message);
+        }
     } catch (error) {
-      console.error("Error enabling sync:", error);
-      alert("Failed to enable sync module");
+        console.error("Error enabling sync:", error);
+        alert("Failed to enable sync module");
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
 
   const disableSyncModule = async () => {
     setLoading(true);
