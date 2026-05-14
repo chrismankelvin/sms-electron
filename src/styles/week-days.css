@@ -29,3 +29,174 @@
   justify-content: center;
   font-weight: bold;
 }
+
+/* Add to week-days.css */
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 1rem;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.alert-success,
+.alert-error {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  animation: slideDown 0.3s ease;
+}
+
+.alert-success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.alert-error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.close-alert {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.close-alert:hover {
+  opacity: 1;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  background: var(--card-bg);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.empty-state p {
+  margin: 1rem 0;
+  color: var(--secondary);
+}
+
+.day-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  transition: all 0.2s;
+}
+
+.day-card.inactive {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: var(--border);
+}
+
+.day-card:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.day-order {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary);
+  color: white;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+.move-buttons {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  background: transparent;
+}
+
+.action-btn.edit-btn {
+  color: var(--primary);
+}
+
+.action-btn.edit-btn:hover:not(:disabled) {
+  background: rgba(66, 153, 225, 0.1);
+}
+
+.action-btn.delete-btn {
+  color: #f56565;
+}
+
+.action-btn.delete-btn:hover:not(:disabled) {
+  background: rgba(245, 101, 101, 0.1);
+}
+
+.action-btn.set-current-btn {
+  color: #10b981;
+}
+
+.action-btn.set-current-btn:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

@@ -27,6 +27,7 @@ import StudentRegistration from "./pages/Adminpages/Registration/StudentRegistra
 import TeachingAssistantRegistration from "./pages/Adminpages/Registration/TeachingAssistantRegistration";
 import NonStaffRegistration from "./pages/Adminpages/Registration/NonStaffRegistration";
 import AdministratorRegistration from "./pages/Adminpages/Registration/AdministratorRegistration";
+import AssignStudents from "./pages/Adminpages/teacher-assignment/AssignStudents";
 
 // Import API services
 import {
@@ -558,7 +559,21 @@ function AppRoutes({ activated, setActivated }) {
           </PrivateRoute>
         }
       />
+
       <Route
+    
+        path="/teacher-assignments/assign-student"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <AssignStudents />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+      
+      <Route
+    
         path="/teacher-assignments/form-masters"
         element={
           <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>

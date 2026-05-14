@@ -916,7 +916,7 @@ export async function getStudents() {
       return { students: [] };
     }
     const response = await window.electron.students.getAll();
-    return response.students || [];
+    return response || [];
   } catch (err) {
     console.error("getStudents failed:", err);
     return [];
@@ -1014,6 +1014,17 @@ export async function registerStaff(staffData) {
   }
 }
 
+export async function getstaff() {
+  try {
+    const response = await window.electron.staff.getAll();
+    console.log('Get Staff response:', response.staff);
+    return response.staff;
+  } catch (error) {
+    console.error('Error getting staff:', error);
+    throw error;
+  }
+}
+
 // ============== TEACHING ASISTANTS=============
 // In api.service.js - Add this function
 
@@ -1071,6 +1082,17 @@ export async function registerNonStaff(nonStaffData) {
   } catch (err) {
     console.error("registerNonStaff failed:", err);
     return { success: false, message: err.message };
+  }
+}
+
+export async function getNonstaff() {
+  try {
+    const response = await window.electron.nonStaff.getAll();
+    console.log('Get Staff response:', response);
+    return response;
+  } catch (error) {
+    console.error('Error getting staff:', error);
+    throw error;
   }
 }
 

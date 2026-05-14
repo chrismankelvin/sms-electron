@@ -1,244 +1,175 @@
-// import { useState } from 'react';
-// import { Calendar, Plus, Edit, CheckCircle, AlertCircle, Filter, X } from 'lucide-react';
-// import '../../../styles/terms.css';
-
-// function Terms() {
-//   const [terms, setTerms] = useState([
-//     { id: 1, termName: 'First Term', termNumber: 1, academicYear: '2024-2025', startDate: '2024-08-12', endDate: '2024-12-15', isActive: true, resultsPublished: true },
-//     { id: 2, termName: 'Second Term', termNumber: 2, academicYear: '2024-2025', startDate: '2025-01-10', endDate: '2025-04-05', isActive: false, resultsPublished: false },
-//     { id: 3, termName: 'Third Term', termNumber: 3, academicYear: '2024-2025', startDate: '2025-04-28', endDate: '2025-07-20', isActive: false, resultsPublished: false },
-//     { id: 4, termName: 'First Term', termNumber: 1, academicYear: '2023-2024', startDate: '2023-08-14', endDate: '2023-12-10', isActive: false, resultsPublished: true }
-//   ]);
-
-//   const [showModal, setShowModal] = useState(false);
-//   const [editingTerm, setEditingTerm] = useState(null);
-//   const [selectedYear, setSelectedYear] = useState('2024-2025');
-//   const [warning, setWarning] = useState('');
-//   const [formData, setFormData] = useState({
-//     termName: '',
-//     termNumber: '',
-//     academicYear: '2024-2025',
-//     startDate: '',
-//     endDate: ''
-//   });
-
-//   const academicYears = ['2022-2023', '2023-2024', '2024-2025', '2025-2026'];
-
-//   const handleInputChange = (e) => {
-//     const { name, value } = e.target;
-//     setFormData(prev => ({ ...prev, [name]: value }));
-//   };
-
-//   const checkPreviousTermResults = (academicYear, termNumber) => {
-//     const previousTerm = terms.find(t => 
-//       t.academicYear === academicYear && 
-//       t.termNumber === termNumber - 1
-//     );
-    
-//     if (previousTerm && !previousTerm.resultsPublished) {
-//       setWarning(`Cannot activate ${termNumber}nd/rd term until Term ${termNumber - 1} results are published.`);
-//       return false;
-//     }
-//     setWarning('');
-//     return true;
-//   };
-
-//   const handleActivateTerm = (term) => {
-//     if (term.termNumber > 1) {
-//       const canActivate = checkPreviousTermResults(term.academicYear, term.termNumber);
-//       if (!canActivate) return;
-//     }
-
-//     setTerms(prev => prev.map(t => ({
-//       ...t,
-//       isActive: t.id === term.id,
-//       resultsPublished: t.id === term.id ? t.resultsPublished : t.resultsPublished
-//     })));
-//   };
-
-//   const handleAddEditTerm = () => {
-//     if (!formData.termName || !formData.termNumber || !formData.startDate || !formData.endDate) {
-//       alert('Please fill in all required fields');
-//       return;
-//     }
-
-//     if (new Date(formData.startDate) >= new Date(formData.endDate)) {
-//       alert('End date must be after start date');
-//       return;
-//     }
-
-//     if (editingTerm) {
-//       setTerms(prev => prev.map(t => 
-//         t.id === editingTerm.id 
-//           ? { ...t, ...formData, resultsPublished: t.resultsPublished }
-//           : t
-//       ));
-//     } else {
-//       const newTerm = {
-//         id: Date.now(),
-//         ...formData,
-//         isActive: false,
-//         resultsPublished: false
-//       };
-//       setTerms(prev => [...prev, newTerm]);
-//     }
-    
-//     setShowModal(false);
-//     setEditingTerm(null);
-//     setFormData({ termName: '', termNumber: '', academicYear: '2024-2025', startDate: '', endDate: '' });
-//   };
-
-//   const openEditModal = (term) => {
-//     setEditingTerm(term);
-//     setFormData({
-//       termName: term.termName,
-//       termNumber: term.termNumber,
-//       academicYear: term.academicYear,
-//       startDate: term.startDate,
-//       endDate: term.endDate
-//     });
-//     setShowModal(true);
-//   };
-
-//   const filteredTerms = terms.filter(t => t.academicYear === selectedYear);
-
-//   return (
-//     <div className="terms-container">
-//       <div className="terms-header">
-//         <div>
-//           <h1 style={{ fontSize: '1.875rem', fontWeight: 'bold' }}>
-//             <Calendar size={28} style={{ display: 'inline', marginRight: '12px' }} />
-//             Academic Terms
-//           </h1>
-//           <p style={{ color: 'var(--secondary)', marginTop: '0.25rem' }}>Define terms within each academic year with date ranges</p>
-//         </div>
-//         <button className="button" onClick={() => setShowModal(true)}>
-//           <Plus size={16} />
-//           Add Term
-//         </button>
-//       </div>
-
-//       <hr style={{ margin: '1rem 0', borderColor: 'var(--border)' }} />
-
-//       <div className="filter-bar">
-//         <label style={{ fontSize: '0.875rem', fontWeight: '500' }}>Filter by Academic Year:</label>
-//         <select className="filter-select" value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)}>
-//           {academicYears.map(year => <option key={year} value={year}>{year}</option>)}
-//         </select>
-//       </div>
-
-//       {warning && (
-//         <div className="warning-banner">
-//           <AlertCircle size={18} color="#f59e0b" />
-//           <span>{warning}</span>
-//         </div>
-//       )}
-
-//       <div style={{ display: 'grid', gap: '1rem', marginTop: '1rem' }}>
-//         {filteredTerms.sort((a, b) => a.termNumber - b.termNumber).map(term => (
-//           <div key={term.id} className={`term-card ${term.isActive ? 'active' : ''}`}>
-//             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', flexWrap: 'wrap', gap: '1rem' }}>
-//               <div style={{ flex: 1 }}>
-//                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
-//                   <h3 style={{ fontSize: '1.125rem', fontWeight: '600' }}>{term.termName}</h3>
-//                   <span style={{ fontSize: '0.75rem', color: 'var(--secondary)' }}>Term {term.termNumber}</span>
-//                   {term.isActive && <span className="status-badge status-active"><CheckCircle size={12} /> Active</span>}
-//                 </div>
-//                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--secondary)' }}>
-//                   <span>📅 {new Date(term.startDate).toLocaleDateString()} → {new Date(term.endDate).toLocaleDateString()}</span>
-//                   <span>📊 Results: {term.resultsPublished ? 'Published ✓' : 'Pending ⏳'}</span>
-//                 </div>
-//               </div>
-//               <div className="action-buttons">
-//                 <button className="action-btn edit-btn" onClick={() => openEditModal(term)}><Edit size={16} /></button>
-//                 {!term.isActive && (
-//                   <button className="action-btn set-current-btn" onClick={() => handleActivateTerm(term)}>
-//                     <CheckCircle size={16} /> Activate
-//                   </button>
-//                 )}
-//               </div>
-//             </div>
-//           </div>
-//         ))}
-//       </div>
-
-//       {/* Modal for Add/Edit */}
-//       {showModal && (
-//         <div className="modal-overlay" onClick={() => { setShowModal(false); setEditingTerm(null); }}>
-//           <div className="modal-container" onClick={e => e.stopPropagation()}>
-//             <div className="modal-header">
-//               <h2>{editingTerm ? 'Edit Term' : 'Add New Term'}</h2>
-//               <X className="modal-close" size={20} onClick={() => { setShowModal(false); setEditingTerm(null); }} />
-//             </div>
-//             <div className="modal-body">
-//               <div className="form-group"><label className="form-label">Term Name <span className="required">*</span></label>
-//                 <input type="text" name="termName" className="form-input" value={formData.termName} onChange={handleInputChange} placeholder="e.g., First Term" /></div>
-//               <div className="form-group"><label className="form-label">Term Number <span className="required">*</span></label>
-//                 <input type="number" name="termNumber" className="form-input" value={formData.termNumber} onChange={handleInputChange} min="1" max="6" /></div>
-//               <div className="form-group"><label className="form-label">Academic Year</label>
-//                 <select name="academicYear" className="form-select" value={formData.academicYear} onChange={handleInputChange}>
-//                   {academicYears.map(y => <option key={y} value={y}>{y}</option>)}
-//                 </select></div>
-//               <div className="form-group"><label className="form-label">Start Date <span className="required">*</span></label>
-//                 <input type="date" name="startDate" className="form-input" value={formData.startDate} onChange={handleInputChange} /></div>
-//               <div className="form-group"><label className="form-label">End Date <span className="required">*</span></label>
-//                 <input type="date" name="endDate" className="form-input" value={formData.endDate} onChange={handleInputChange} /></div>
-//             </div>
-//             <div className="modal-footer">
-//               <button className="button button-secondary" onClick={() => { setShowModal(false); setEditingTerm(null); }}>Cancel</button>
-//               <button className="button" onClick={handleAddEditTerm}>{editingTerm ? 'Save Changes' : 'Add Term'}</button>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
-// export default Terms;
-
-
-
-
-
-
-
-
-
-
-
 // src/components/Academics/Terms.jsx
-import { useState } from 'react';
-import { Calendar, Plus, Edit, CheckCircle, AlertCircle, Filter, X, ArrowLeft, Save } from 'lucide-react';
+
+import { useState, useEffect } from 'react';
+import { 
+  Calendar, 
+  Plus, 
+  Edit, 
+  CheckCircle, 
+  AlertCircle, 
+  Filter, 
+  X, 
+  ArrowLeft, 
+  Save,
+  Loader,
+  Trash2,
+  Check
+} from 'lucide-react';
 import '../../../styles/terms.css';
 
+// API Service
+const API_BASE_URL = 'http://localhost:8000/api';
+
+const termService = {
+  async getAll(academicYearId = null) {
+    const url = academicYearId 
+      ? `${API_BASE_URL}/terms/?academic_year_id=${academicYearId}`
+      : `${API_BASE_URL}/terms/`;
+    const response = await fetch(url);
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message);
+    return data.data;
+  },
+
+  async create(termData) {
+    const response = await fetch(`${API_BASE_URL}/terms/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(termData)
+    });
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message);
+    return data.data;
+  },
+
+  async update(id, termData) {
+    const response = await fetch(`${API_BASE_URL}/terms/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(termData)
+    });
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message);
+    return data.data;
+  },
+
+  async delete(id) {
+    const response = await fetch(`${API_BASE_URL}/terms/${id}`, {
+      method: 'DELETE'
+    });
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message);
+    return true;
+  },
+
+  async activate(id) {
+    const response = await fetch(`${API_BASE_URL}/terms/${id}/activate`, {
+      method: 'POST'
+    });
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message);
+    return true;
+  },
+
+  async deactivate(id) {
+    const response = await fetch(`${API_BASE_URL}/terms/${id}/deactivate`, {
+      method: 'POST'
+    });
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message);
+    return true;
+  },
+
+  async publishResults(id) {
+    const response = await fetch(`${API_BASE_URL}/terms/${id}/publish-results`, {
+      method: 'POST'
+    });
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message);
+    return true;
+  }
+};
+
+const academicYearService = {
+  async getAll() {
+    const response = await fetch(`${API_BASE_URL}/academic-years/`);
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message);
+    return data.data;
+  }
+};
+
 function Terms() {
-  const [terms, setTerms] = useState([
-    { id: 1, name: 'First Term', term_number: 1, academic_year_id: 3, start_date: '2024-08-12', end_date: '2024-12-15', is_active: true, results_published: true },
-    { id: 2, name: 'Second Term', term_number: 2, academic_year_id: 3, start_date: '2025-01-10', end_date: '2025-04-05', is_active: false, results_published: false },
-    { id: 3, name: 'Third Term', term_number: 3, academic_year_id: 3, start_date: '2025-04-28', end_date: '2025-07-20', is_active: false, results_published: false },
-    { id: 4, name: 'First Term', term_number: 1, academic_year_id: 2, start_date: '2023-08-14', end_date: '2023-12-10', is_active: false, results_published: true }
-  ]);
-
-  const [academicYears, setAcademicYears] = useState([
-    { id: 1, year_label: '2022-2023' },
-    { id: 2, year_label: '2023-2024' },
-    { id: 3, year_label: '2024-2025' },
-    { id: 4, year_label: '2025-2026' }
-  ]);
-
+  const [terms, setTerms] = useState([]);
+  const [academicYears, setAcademicYears] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [view, setView] = useState('list'); // 'list', 'create', 'edit'
   const [selectedTerm, setSelectedTerm] = useState(null);
-  const [selectedYearId, setSelectedYearId] = useState('3');
+  const [selectedYearId, setSelectedYearId] = useState('');
   const [warning, setWarning] = useState('');
+  const [alert, setAlert] = useState({ show: false, message: '', type: 'success' });
   const [formData, setFormData] = useState({
     name: '',
     term_number: '',
-    academic_year_id: '3',
+    academic_year_id: '',
     start_date: '',
     end_date: ''
   });
   const [errors, setErrors] = useState({});
+
+  // Load data on component mount
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Load terms when selected year changes
+  useEffect(() => {
+    if (selectedYearId) {
+      loadTerms();
+    }
+  }, [selectedYearId]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      // Load academic years
+      const years = await academicYearService.getAll();
+      setAcademicYears(years);
+      
+      // Set default selected year to current year or first year
+      const currentYear = years.find(y => y.is_current);
+      if (currentYear) {
+        setSelectedYearId(currentYear.id.toString());
+      } else if (years.length > 0) {
+        setSelectedYearId(years[0].id.toString());
+      }
+    } catch (error) {
+      showAlert('Failed to load data: ' + error.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadTerms = async () => {
+    try {
+      setLoading(true);
+      const data = await termService.getAll(parseInt(selectedYearId));
+      setTerms(data);
+    } catch (error) {
+      showAlert('Failed to load terms: ' + error.message, 'error');
+      setTerms([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const showAlert = (message, type = 'success') => {
+    setAlert({ show: true, message, type });
+    setTimeout(() => {
+      setAlert({ show: false, message: '', type: 'success' });
+    }, 3000);
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -266,92 +197,41 @@ function Terms() {
       newErrors.end_date = 'End date must be after start date';
     }
     
-    // Check for duplicate term number in same academic year
-    const existingTerm = terms.find(t => 
-      t.academic_year_id === parseInt(formData.academic_year_id) && 
-      t.term_number === termNum &&
-      (!selectedTerm || t.id !== selectedTerm.id)
-    );
-    if (existingTerm) {
-      newErrors.term_number = `Term ${termNum} already exists for this academic year`;
-    }
-    
-    // Check for duplicate term name in same academic year
-    const existingName = terms.find(t => 
-      t.academic_year_id === parseInt(formData.academic_year_id) && 
-      t.name.toLowerCase() === formData.name.toLowerCase() &&
-      (!selectedTerm || t.id !== selectedTerm.id)
-    );
-    if (existingName) {
-      newErrors.name = `"${formData.name}" already exists for this academic year`;
-    }
-    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const checkPreviousTermResults = (academicYearId, termNumber) => {
-    const previousTerm = terms.find(t => 
-      t.academic_year_id === parseInt(academicYearId) && 
-      t.term_number === termNumber - 1
-    );
-    
-    if (previousTerm && !previousTerm.results_published) {
-      setWarning(`Cannot activate Term ${termNumber} until Term ${termNumber - 1} results are published.`);
-      return false;
-    }
-    setWarning('');
-    return true;
-  };
-
-  const handleActivateTerm = (term) => {
-    if (term.term_number > 1) {
-      const canActivate = checkPreviousTermResults(term.academic_year_id, term.term_number);
-      if (!canActivate) return;
-    }
-
-    setTerms(prev => prev.map(t => ({
-      ...t,
-      is_active: t.id === term.id
-    })));
-  };
-
-  const handleSaveTerm = () => {
+  const handleSaveTerm = async () => {
     if (!validateForm()) return;
 
-    if (view === 'edit' && selectedTerm) {
-      // Update existing term
-      setTerms(prev => prev.map(t => 
-        t.id === selectedTerm.id 
-          ? { 
-              ...t, 
-              name: formData.name,
-              term_number: parseInt(formData.term_number),
-              academic_year_id: parseInt(formData.academic_year_id),
-              start_date: formData.start_date,
-              end_date: formData.end_date,
-              updated_at: new Date().toISOString()
-            }
-          : t
-      ));
-    } else {
-      // Add new term
-      const newTerm = {
-        id: Date.now(),
+    try {
+      setSaving(true);
+      
+      const termData = {
         name: formData.name,
         term_number: parseInt(formData.term_number),
         academic_year_id: parseInt(formData.academic_year_id),
         start_date: formData.start_date,
-        end_date: formData.end_date,
-        is_active: false,
-        results_published: false,
-        created_at: new Date().toISOString()
+        end_date: formData.end_date
       };
-      setTerms(prev => [...prev, newTerm]);
+
+      if (view === 'edit' && selectedTerm) {
+        await termService.update(selectedTerm.id, termData);
+        showAlert('Term updated successfully!', 'success');
+      } else {
+        await termService.create(termData);
+        showAlert('Term created successfully!', 'success');
+      }
+      
+      await loadTerms(); // Refresh the list
+      resetForm();
+      setView('list');
+      
+    } catch (error) {
+      showAlert('Failed to save: ' + error.message, 'error');
+    } finally {
+      setSaving(false);
     }
-    
-    resetForm();
-    setView('list');
   };
 
   const handleEditTerm = (term) => {
@@ -366,11 +246,65 @@ function Terms() {
     setView('edit');
   };
 
+  const handleActivateTerm = async (term) => {
+    try {
+      setSaving(true);
+      await termService.activate(term.id);
+      showAlert(`${term.name} has been activated`, 'success');
+      await loadTerms(); // Refresh the list
+    } catch (error) {
+      showAlert('Failed to activate: ' + error.message, 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeactivateTerm = async (term) => {
+    try {
+      setSaving(true);
+      await termService.deactivate(term.id);
+      showAlert(`${term.name} has been deactivated`, 'success');
+      await loadTerms(); // Refresh the list
+    } catch (error) {
+      showAlert('Failed to deactivate: ' + error.message, 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteTerm = async (term) => {
+    if (window.confirm(`Are you sure you want to delete ${term.name}? This action cannot be undone.`)) {
+      try {
+        setSaving(true);
+        await termService.delete(term.id);
+        showAlert(`${term.name} has been deleted`, 'success');
+        await loadTerms(); // Refresh the list
+      } catch (error) {
+        showAlert('Failed to delete: ' + error.message, 'error');
+      } finally {
+        setSaving(false);
+      }
+    }
+  };
+
+  const handlePublishResults = async (term) => {
+    try {
+      setSaving(true);
+      await termService.publishResults(term.id);
+      showAlert(`Results for ${term.name} have been published`, 'success');
+      await loadTerms(); // Refresh the list
+    } catch (error) {
+      showAlert('Failed to publish results: ' + error.message, 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       name: '',
       term_number: '',
-      academic_year_id: '3',
+      academic_year_id: selectedYearId || '',
       start_date: '',
       end_date: ''
     });
@@ -386,10 +320,34 @@ function Terms() {
 
   const filteredTerms = terms.filter(t => t.academic_year_id === parseInt(selectedYearId));
 
+  if (loading && academicYears.length === 0) {
+    return (
+      <div className="terms-container">
+        <div className="loading-container">
+          <Loader size={48} className="spinner" />
+          <p>Loading academic terms...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Render List View
   if (view === 'list') {
     return (
       <div className="terms-container">
+        {/* Alert Messages */}
+        {alert.show && (
+          <div className={`alert-${alert.type}`}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              {alert.type === 'success' ? <Check size={18} /> : <AlertCircle size={18} />}
+              {alert.message}
+            </span>
+            <span className="close-alert" onClick={() => setAlert({ show: false, message: '', type: 'success' })}>
+              <X size={18} />
+            </span>
+          </div>
+        )}
+
         <div className="terms-header">
           <div>
             <h1 style={{ fontSize: '1.875rem', fontWeight: 'bold' }}>
@@ -398,7 +356,11 @@ function Terms() {
             </h1>
             <p style={{ color: 'var(--secondary)', marginTop: '0.25rem' }}>Define terms within each academic year with date ranges</p>
           </div>
-          <button className="button" onClick={() => { resetForm(); setView('create'); }}>
+          <button 
+            className="button" 
+            onClick={() => { resetForm(); setView('create'); }}
+            disabled={saving}
+          >
             <Plus size={16} />
             Add Term
           </button>
@@ -408,9 +370,16 @@ function Terms() {
 
         <div className="filter-bar">
           <label style={{ fontSize: '0.875rem', fontWeight: '500' }}>Filter by Academic Year:</label>
-          <select className="filter-select" value={selectedYearId} onChange={(e) => setSelectedYearId(e.target.value)}>
+          <select 
+            className="filter-select" 
+            value={selectedYearId} 
+            onChange={(e) => setSelectedYearId(e.target.value)}
+            disabled={saving}
+          >
             {academicYears.map(year => (
-              <option key={year.id} value={year.id}>{year.year_label}</option>
+              <option key={year.id} value={year.id}>
+                {year.year_label} {year.is_current ? '(Current)' : ''}
+              </option>
             ))}
           </select>
         </div>
@@ -422,46 +391,96 @@ function Terms() {
           </div>
         )}
 
-        <div style={{ display: 'grid', gap: '1rem', marginTop: '1rem' }}>
-          {filteredTerms.length > 0 ? (
-            filteredTerms.sort((a, b) => a.term_number - b.term_number).map(term => (
-              <div key={term.id} className={`term-card ${term.is_active ? 'active' : ''}`}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', flexWrap: 'wrap', gap: '1rem' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
-                      <h3 style={{ fontSize: '1.125rem', fontWeight: '600' }}>{term.name}</h3>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--secondary)' }}>Term {term.term_number}</span>
-                      {term.is_active && <span className="status-badge status-active"><CheckCircle size={12} /> Active</span>}
+        {loading ? (
+          <div className="loading-container">
+            <Loader size={32} className="spinner" />
+            <p>Loading terms...</p>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gap: '1rem', marginTop: '1rem' }}>
+            {filteredTerms.length > 0 ? (
+              filteredTerms.sort((a, b) => a.term_number - b.term_number).map(term => (
+                <div key={term.id} className={`term-card ${term.is_active ? 'active' : ''}`}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', flexWrap: 'wrap', gap: '1rem' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                        <h3 style={{ fontSize: '1.125rem', fontWeight: '600' }}>{term.name}</h3>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--secondary)' }}>Term {term.term_number}</span>
+                        {term.is_active && <span className="status-badge status-active"><CheckCircle size={12} /> Active</span>}
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--secondary)' }}>
+                        <span>📅 {new Date(term.start_date).toLocaleDateString()} → {new Date(term.end_date).toLocaleDateString()}</span>
+                        <span>📊 Results: {term.results_published ? 'Published ✓' : 'Pending ⏳'}</span>
+                      </div>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--secondary)' }}>
-                      <span>📅 {new Date(term.start_date).toLocaleDateString()} → {new Date(term.end_date).toLocaleDateString()}</span>
-                      <span>📊 Results: {term.results_published ? 'Published ✓' : 'Pending ⏳'}</span>
-                    </div>
-                  </div>
-                  <div className="action-buttons">
-                    <button className="action-btn edit-btn" onClick={() => handleEditTerm(term)}>
-                      <Edit size={16} />
-                    </button>
-                    {!term.is_active && (
-                      <button className="action-btn set-current-btn" onClick={() => handleActivateTerm(term)}>
-                        <CheckCircle size={16} /> Activate
+                    <div className="action-buttons">
+                      <button 
+                        className="action-btn edit-btn" 
+                        onClick={() => handleEditTerm(term)}
+                        title="Edit"
+                        disabled={saving}
+                      >
+                        <Edit size={16} />
                       </button>
-                    )}
+                      {!term.results_published && (
+                        <button 
+                          className="action-btn success-btn" 
+                          onClick={() => handlePublishResults(term)}
+                          title="Publish Results"
+                          disabled={saving}
+                        >
+                          <CheckCircle size={16} />
+                        </button>
+                      )}
+                      {term.is_active ? (
+                        <button 
+                          className="action-btn deactivate-btn" 
+                          onClick={() => handleDeactivateTerm(term)}
+                          title="Deactivate"
+                          disabled={saving}
+                        >
+                          <X size={16} />
+                        </button>
+                      ) : (
+                        <button 
+                          className="action-btn set-current-btn" 
+                          onClick={() => handleActivateTerm(term)}
+                          title="Activate"
+                          disabled={saving}
+                        >
+                          <CheckCircle size={16} />
+                        </button>
+                      )}
+                      {!term.is_active && (
+                        <button 
+                          className="action-btn delete-btn" 
+                          onClick={() => handleDeleteTerm(term)}
+                          title="Delete"
+                          disabled={saving}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
+              ))
+            ) : (
+              <div className="empty-state">
+                <Calendar size={48} />
+                <p>No terms defined for this academic year</p>
+                <button 
+                  className="button" 
+                  onClick={() => { resetForm(); setView('create'); }}
+                  disabled={saving}
+                >
+                  <Plus size={16} />
+                  Add First Term
+                </button>
               </div>
-            ))
-          ) : (
-            <div className="empty-state">
-              <Calendar size={48} />
-              <p>No terms defined for this academic year</p>
-              <button className="button" onClick={() => { resetForm(); setView('create'); }}>
-                <Plus size={16} />
-                Add First Term
-              </button>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     );
   }
@@ -469,6 +488,19 @@ function Terms() {
   // Render Create/Edit Form View
   return (
     <div className="terms-container">
+      {/* Alert Messages */}
+      {alert.show && (
+        <div className={`alert-${alert.type}`}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {alert.type === 'success' ? <Check size={18} /> : <AlertCircle size={18} />}
+            {alert.message}
+          </span>
+          <span className="close-alert" onClick={() => setAlert({ show: false, message: '', type: 'success' })}>
+            <X size={18} />
+          </span>
+        </div>
+      )}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div>
           <button 
@@ -484,6 +516,7 @@ function Terms() {
               fontSize: '0.875rem',
               marginBottom: '0.5rem'
             }}
+            disabled={saving}
           >
             <ArrowLeft size={16} /> Back to Terms
           </button>
@@ -511,6 +544,7 @@ function Terms() {
                   value={formData.name}
                   onChange={handleInputChange}
                   placeholder="e.g., First Term, Second Term, etc."
+                  disabled={saving}
                 />
                 {errors.name && <span className="error-message">{errors.name}</span>}
               </div>
@@ -526,6 +560,7 @@ function Terms() {
                   placeholder="1, 2, 3, etc."
                   min="1"
                   max="6"
+                  disabled={saving}
                 />
                 <small style={{ fontSize: '0.7rem', color: 'var(--secondary)' }}>
                   Unique number for this term within the academic year (1-6)
@@ -540,9 +575,13 @@ function Terms() {
                   className={`form-select ${errors.academic_year_id ? 'error' : ''}`}
                   value={formData.academic_year_id}
                   onChange={handleInputChange}
+                  disabled={saving || view === 'edit'}
                 >
+                  <option value="">Select Academic Year</option>
                   {academicYears.map(year => (
-                    <option key={year.id} value={year.id}>{year.year_label}</option>
+                    <option key={year.id} value={year.id}>
+                      {year.year_label} {year.is_current ? '(Current)' : ''}
+                    </option>
                   ))}
                 </select>
                 {errors.academic_year_id && <span className="error-message">{errors.academic_year_id}</span>}
@@ -556,6 +595,7 @@ function Terms() {
                   className={`form-input ${errors.start_date ? 'error' : ''}`}
                   value={formData.start_date}
                   onChange={handleInputChange}
+                  disabled={saving}
                 />
                 {errors.start_date && <span className="error-message">{errors.start_date}</span>}
               </div>
@@ -568,6 +608,7 @@ function Terms() {
                   className={`form-input ${errors.end_date ? 'error' : ''}`}
                   value={formData.end_date}
                   onChange={handleInputChange}
+                  disabled={saving}
                 />
                 {errors.end_date && <span className="error-message">{errors.end_date}</span>}
               </div>
@@ -575,12 +616,17 @@ function Terms() {
           </div>
 
           <div className="form-actions" style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
-            <button type="button" className="button button-secondary" onClick={() => { resetForm(); setView('list'); }}>
+            <button 
+              type="button" 
+              className="button button-secondary" 
+              onClick={() => { resetForm(); setView('list'); }}
+              disabled={saving}
+            >
               Cancel
             </button>
-            <button type="submit" className="button">
-              <Save size={16} />
-              {view === 'create' ? 'Create Term' : 'Save Changes'}
+            <button type="submit" className="button" disabled={saving}>
+              {saving ? <Loader size={16} className="spinner" /> : <Save size={16} />}
+              {saving ? 'Saving...' : (view === 'create' ? 'Create Term' : 'Save Changes')}
             </button>
           </div>
         </form>

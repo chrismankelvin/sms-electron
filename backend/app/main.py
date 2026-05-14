@@ -46,7 +46,36 @@ from app.sync.global_settings_routes import router as global_settings
 # sync_scheduler = SchoolSyncScheduler(CLOUD_CONNECTION_STRING, CLOUD_API_KEY)
 # sync_scheduler.start()
 from app.sync.sync_integration import init_sync_system
-
+from app.school.school_profile import router as school_profile
+from app.school.academic_years import router as academic_years
+from app.school.terms import router as terms
+from app.school.levels import router as levels
+from app.school.programmes import router as programmes
+from app.school.grade_boundaries import router as grade_boundaries
+from app.school.assessments import router as assessments
+from app.school.classes import router as classes
+from app.school.sections import router as sections
+from app.school.subjects import router as subjects
+from app.school.level_core_subjects import router as level_core_subjects
+from app.school.programmesubject import router as programmesubject
+from app.school.teacher_qualifications import router as teacher_qualifications
+from app.school.time_slots import router as time_slots
+from app.school.week_days import router as week_days
+from app.school.rooms import router as rooms
+from app.school.teacher_subject_assignments import router as teacher_subject_assignments
+from app.school.workload import router as workload
+from app.school.import_export import router as import_export
+from app.school.export_data import router as export_data
+from app.school.user_management import router as user_management
+from app.school.system_health import router as system_health
+from app.school.student_assignment import router as student_assignment
+from app.school.scores import router as scores
+from app.school.subject_results import router as subject_results
+from app.school.process_results import router as process_results
+from app.school.term_results import router as term_results
+from app.school.report_cards import router as report_cards
+from app.school.transcripts import router as transcripts
+from app.school.batch_promotion import router as batch_promotion
 # This will automatically read from global settings
 sync_scheduler = init_sync_system()
 
@@ -77,8 +106,37 @@ app.include_router(mini_settings_router)
 app.include_router(settings_router)
 app.include_router(app_sync)
 app.include_router(global_settings)
-
-# Initialize SQLiteCloud client
+app.include_router(school_profile)
+app.include_router(academic_years)
+app.include_router(terms)
+app.include_router(levels)
+app.include_router(programmes)
+app.include_router(grade_boundaries)
+app.include_router(assessments)
+app.include_router(classes)
+app.include_router(sections)
+app.include_router(subjects)
+app.include_router(level_core_subjects)
+app.include_router(programmesubject)
+app.include_router(teacher_qualifications)
+app.include_router(time_slots)
+app.include_router(week_days)
+app.include_router(rooms)
+app.include_router(workload)
+app.include_router(import_export)
+app.include_router(export_data)
+app.include_router(user_management)# Initialize SQLiteCloud client
+app.include_router(system_health)
+app.include_router(teacher_subject_assignments)
+app.include_router(student_assignment)
+app.include_router(scores)
+app.include_router(subject_results)
+app.include_router(process_results)
+app.include_router(term_results)
+app.include_router(report_cards)
+app.include_router(transcripts)
+app.include_router(batch_promotion)
+# app.include_router(export_data)
 
 cloud_client = SQLiteCloudClient()
 

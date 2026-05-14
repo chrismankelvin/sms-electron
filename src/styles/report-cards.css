@@ -36,3 +36,241 @@
   display: flex;
   justify-content: space-between;
 }
+
+/* src/styles/report-cards.css */
+
+.report-cards-container {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Generator Card */
+.generator-card {
+  margin-bottom: 2rem;
+}
+
+.generator-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.generator-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+/* Report Card Preview */
+.report-card-preview {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 2rem;
+  margin-top: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.report-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--primary);
+}
+
+.report-header h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+  color: var(--primary);
+}
+
+.report-header h3 {
+  font-size: 1.125rem;
+  margin-top: 0.5rem;
+  color: var(--secondary);
+}
+
+.report-student-info {
+  background: var(--bg);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.info-row:last-child {
+  margin-bottom: 0;
+}
+
+/* Report Table */
+.report-subject-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.5rem;
+}
+
+.report-subject-table th,
+.report-subject-table td {
+  border: 1px solid var(--border);
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.report-subject-table th {
+  background: var(--bg);
+  font-weight: 600;
+}
+
+/* Summary Stats */
+.report-summary {
+  background: var(--bg);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.summary-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.summary-stats div {
+  padding: 0.25rem 0;
+}
+
+/* Signature Line */
+.signature-line {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--border);
+}
+
+.report-footer {
+  margin-top: 1rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--secondary);
+}
+
+/* Grade Badges */
+.grade-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-weight: 600;
+  min-width: 50px;
+  text-align: center;
+}
+
+.grade-a {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.grade-b-plus, .grade-b {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.grade-c-plus, .grade-c {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.grade-d-plus, .grade-d, .grade-e {
+  background: #fed7aa;
+  color: #9a3412;
+}
+
+.grade-f {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Loading Container */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  gap: 1rem;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .report-cards-container {
+    padding: 1rem;
+  }
+  
+  .report-card-preview {
+    padding: 1rem;
+  }
+  
+  .info-row {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .summary-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .generator-actions {
+    flex-direction: column;
+  }
+  
+  .generator-actions button {
+    width: 100%;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .generator-card,
+  .alert-success,
+  .alert-error,
+  .button,
+  .close-alert {
+    display: none !important;
+  }
+  
+  .report-cards-container {
+    padding: 0;
+  }
+  
+  .report-card-preview {
+    box-shadow: none;
+    border: none;
+    padding: 0;
+  }
+  
+  .report-header {
+    break-inside: avoid;
+  }
+  
+  .report-subject-table {
+    break-inside: avoid;
+  }
+}

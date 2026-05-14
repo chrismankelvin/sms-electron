@@ -634,22 +634,29 @@ def route_request(req_type, action, data):
 
 # In run.py - Add to your request handler
     elif req_type == 'students':
-        from app.routes.students import register_student
+        from app.routes.students import register_student,get_all_students
         
         if action == 'register':
             # data contains the student registration form data
             return register_student(data)
+        
+        if action == 'get-all':
+            return get_all_students()
     
 
 
 
     # ===== STAFF ROUTES =====
     elif req_type == 'staff':
-        from app.routes.staff import register_staff
+        from app.routes.staff import register_staff, get_all_staff
         
         if action == 'register':
             # data contains the student registration form data
             return register_staff(data)
+        
+        if action == 'get-all':
+            return get_all_staff()
+
 
 
     elif req_type == 'teaching_assistants':
@@ -660,10 +667,13 @@ def route_request(req_type, action, data):
         
 
     elif req_type == 'non_staff':
-        from app.routes.non_staff import register_non_staff
+        from app.routes.non_staff import register_non_staff,get_all_non_staff
 
         if action == 'register':
             return register_non_staff(data)
+        
+        if action == 'get-all':
+            get_all_non_staff()
         
     elif req_type == 'sync':
          if action == 'health':

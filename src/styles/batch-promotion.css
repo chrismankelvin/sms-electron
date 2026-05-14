@@ -13,3 +13,255 @@
 .preview-student-row.promoted {
   background-color: rgba(16, 185, 129, 0.05);
 }
+
+/* src/styles/batch-promotion.css */
+
+.batch-promotion-container {
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Promotion Form */
+.promotion-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  align-items: flex-end;
+}
+
+.arrow-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  margin-bottom: 0.25rem;
+}
+
+/* Summary Cards */
+.promotion-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.summary-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+
+.summary-card.promoted {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border-color: #10b981;
+}
+
+.summary-card.repeat {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border-color: #ef4444;
+}
+
+.summary-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border-radius: 50%;
+}
+
+.summary-card.promoted .summary-icon {
+  color: #10b981;
+}
+
+.summary-card.repeat .summary-icon {
+  color: #ef4444;
+}
+
+.summary-info {
+  flex: 1;
+}
+
+.summary-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.summary-card.promoted .summary-value {
+  color: #065f46;
+}
+
+.summary-card.repeat .summary-value {
+  color: #991b1b;
+}
+
+.summary-label {
+  font-size: 0.75rem;
+  color: var(--secondary);
+}
+
+/* Action Buttons Bar */
+.action-buttons-bar {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--bg);
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+}
+
+/* Preview Rows */
+.preview-student-row.promoted {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0) 100%);
+}
+
+.preview-student-row.repeat {
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.05) 0%, rgba(239, 68, 68, 0) 100%);
+}
+
+/* Text Colors */
+.text-success {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.text-danger {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+/* Info Note */
+.info-note {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: #fef3c7;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: #92400e;
+}
+
+/* Completion Card */
+.completion-card {
+  text-align: center;
+  padding: 2rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+
+.completion-icon {
+  margin-bottom: 1rem;
+}
+
+.completion-card h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.completion-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.completion-stat {
+  text-align: center;
+}
+
+.completion-stat .stat-label {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--secondary);
+}
+
+.completion-stat .stat-value {
+  display: inline-block;
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 0 0.5rem;
+}
+
+.completion-stat .stat-value.promoted {
+  color: #10b981;
+}
+
+.completion-stat .stat-value.repeat {
+  color: #ef4444;
+}
+
+.completion-stat .stat-detail {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--secondary);
+}
+
+.completion-message {
+  margin-bottom: 1.5rem;
+  color: var(--secondary);
+}
+
+/* Loading */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  gap: 1rem;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .batch-promotion-container {
+    padding: 1rem;
+  }
+  
+  .promotion-form {
+    grid-template-columns: 1fr;
+  }
+  
+  .arrow-icon {
+    transform: rotate(90deg);
+    margin: 0.5rem 0;
+  }
+  
+  .promotion-summary {
+    grid-template-columns: 1fr;
+  }
+  
+  .action-buttons-bar {
+    flex-direction: column;
+  }
+  
+  .action-buttons-bar button {
+    width: 100%;
+  }
+  
+  .completion-stats {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}

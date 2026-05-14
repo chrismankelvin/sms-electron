@@ -19,3 +19,162 @@
   font-size: 0.7rem;
   font-weight: bold;
 }
+
+/* Additional styles for SubjectResults */
+
+.summary-cards {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.summary-card {
+  flex: 1;
+  min-width: 150px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+
+.summary-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-light);
+  border-radius: 50%;
+  color: var(--primary);
+}
+
+.summary-info {
+  flex: 1;
+}
+
+.summary-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.summary-label {
+  font-size: 0.75rem;
+  color: var(--secondary);
+}
+
+.score-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background: var(--bg);
+  border-radius: 0.25rem;
+  font-weight: 600;
+}
+
+.grade-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-weight: 600;
+  min-width: 50px;
+  text-align: center;
+}
+
+.grade-a {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.grade-b-plus, .grade-b {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.grade-c-plus, .grade-c {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.grade-d-plus, .grade-d, .grade-e {
+  background: #fed7aa;
+  color: #9a3412;
+}
+
+.grade-f {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.position-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-weight: 600;
+  background: var(--bg);
+}
+
+.position-badge.gold {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.position-badge.silver {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.position-badge.bronze {
+  background: #fed7aa;
+  color: #9a3412;
+}
+
+.top-performer {
+  background: linear-gradient(90deg, rgba(255,215,0,0.05) 0%, rgba(255,215,0,0) 100%);
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.filter-group label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--secondary);
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  gap: 1rem;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  gap: 1rem;
+  text-align: center;
+  color: var(--secondary);
+}

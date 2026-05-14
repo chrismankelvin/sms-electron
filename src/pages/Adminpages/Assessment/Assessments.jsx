@@ -1,226 +1,713 @@
-import { useState } from 'react';
-import { FileText, Plus, Edit, Eye, Calendar, AlertCircle, CheckCircle, X, BookOpen, Clock, Trash2 } from 'lucide-react';
+// src/components/Academics/Assessments.jsx
+
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  FileText, Plus, Edit, Eye, Calendar, AlertCircle, CheckCircle, 
+  X, BookOpen, Clock, Trash2, Loader, RefreshCw, ArrowLeft, Save
+} from 'lucide-react';
 import '../../../styles/assessments.css';
 
+const API_BASE_URL = 'http://localhost:8000/api';
+
+// API Services
+const assessmentService = {
+  async getAll(filters = {}) {
+    let url = `${API_BASE_URL}/assessments/`;
+    const params = [];
+    if (filters.term_id) params.push(`term_id=${filters.term_id}`);
+    if (filters.academic_year_id) params.push(`academic_year_id=${filters.academic_year_id}`);
+    if (filters.subject_id) params.push(`subject_id=${filters.subject_id}`);
+    if (filters.type) params.push(`assessment_type=${filters.type}`);
+    if (params.length) url += `?${params.join('&')}`;
+    
+    const response = await fetch(url);
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message);
+    return data.data;
+  },
+
+  async getById(id) {
+    const response = await fetch(`${API_BASE_URL}/assessments/${id}`);
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message);
+    return data.data;
+  },
+
+  async create(assessmentData) {
+    const response = await fetch(`${API_BASE_URL}/assessments/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(assessmentData)
+    });
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message);
+    return data.data;
+  },
+
+  async update(id, assessmentData) {
+    const response = await fetch(`${API_BASE_URL}/assessments/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(assessmentData)
+    });
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message);
+    return data.data;
+  },
+
+  async delete(id) {
+    const response = await fetch(`${API_BASE_URL}/assessments/${id}`, {
+      method: 'DELETE'
+    });
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message);
+    return true;
+  },
+
+  async getWeightSummary(academicYearId, termId) {
+    const response = await fetch(`${API_BASE_URL}/assessments/weight-summary/${academicYearId}/${termId}`);
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message);
+    return data.data;
+  }
+};
+
+const academicYearService = {
+  async getAll() {
+    const response = await fetch(`${API_BASE_URL}/academic-years/`);
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message);
+    return data.data;
+  }
+};
+
+const termService = {
+  async getAll() {
+    const response = await fetch(`${API_BASE_URL}/terms/`);
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message);
+    return data.data;
+  }
+};
+
+const subjectService = {
+  async getAll() {
+    const response = await fetch(`${API_BASE_URL}/subjects/`);
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message);
+    return data.data;
+  }
+};
+
 function Assessments() {
-  const [assessments, setAssessments] = useState([
-    { id: 1, name: 'Term 1 Examination', type: 'Exam', term: 'Term 1', academicYear: '2024-2025', subject: 'All', weight: 70, maxScore: 100, date: '2024-03-15', description: 'End of term examinations' },
-    { id: 2, name: 'Week 3 Quiz', type: 'Quiz', term: 'Term 1', academicYear: '2024-2025', subject: 'Mathematics', weight: 10, maxScore: 20, date: '2024-02-10', description: 'Algebra and Geometry' },
-    { id: 3, name: 'Mid-Term Test', type: 'Test', term: 'Term 1', academicYear: '2024-2025', subject: 'Science', weight: 20, maxScore: 50, date: '2024-02-25', description: 'Mid-term assessment' }
-  ]);
-
-  const [showModal, setShowModal] = useState(false);
-  const [editingAssessment, setEditingAssessment] = useState(null);
+  const navigate = useNavigate();
+  const [assessments, setAssessments] = useState([]);
+  const [academicYears, setAcademicYears] = useState([]);
+  const [terms, setTerms] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [view, setView] = useState('list'); // 'list', 'create', 'edit'
+  const [selectedAssessment, setSelectedAssessment] = useState(null);
+  const [weightSummary, setWeightSummary] = useState({ total_weight: 0, is_valid: false });
+  const [filters, setFilters] = useState({ term_id: '', academic_year_id: '', type: '' });
+  const [alert, setAlert] = useState({ show: false, message: '', type: 'success' });
   const [formData, setFormData] = useState({
-    name: '', type: 'Quiz', term: 'Term 1', academicYear: '2024-2025',
-    subject: '', weight: '', maxScore: '', date: '', description: ''
+    name: '',
+    type: 'quiz',
+    term_id: '',
+    academic_year_id: '',
+    subject_id: '',
+    weight: '',
+    max_score: 100,
+    assessment_date: '',
+    description: ''
   });
+  const [errors, setErrors] = useState({});
 
-  const assessmentTypes = ['Quiz', 'Test', 'Exam', 'Project', 'Homework', 'Classwork'];
-  const terms = ['Term 1', 'Term 2', 'Term 3'];
-  const academicYears = ['2023-2024', '2024-2025', '2025-2026'];
-  const subjects = ['Mathematics', 'English', 'Science', 'Social Studies', 'All'];
+  const assessmentTypes = [
+    { value: 'quiz', label: 'Quiz' },
+    { value: 'test', label: 'Test' },
+    { value: 'exam', label: 'Exam' },
+    { value: 'project', label: 'Project' },
+    { value: 'homework', label: 'Homework' },
+    { value: 'classwork', label: 'Classwork' }
+  ];
 
-  const totalWeight = assessments.reduce((sum, a) => sum + a.weight, 0);
-  const isWeightValid = totalWeight === 100;
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  useEffect(() => {
+    if (view === 'list') {
+      loadAssessments();
+    }
+  }, [filters, view]);
+
+  const loadInitialData = async () => {
+    try {
+      setLoading(true);
+      const [yearsData, termsData, subjectsData] = await Promise.all([
+        academicYearService.getAll(),
+        termService.getAll(),
+        subjectService.getAll()
+      ]);
+      
+      setAcademicYears(yearsData);
+      setTerms(termsData);
+      setSubjects(subjectsData);
+      
+      // Set default filter to current academic year
+      const currentYear = yearsData.find(y => y.is_current);
+      if (currentYear) {
+        setFilters(prev => ({ ...prev, academic_year_id: currentYear.id.toString() }));
+      }
+    } catch (error) {
+      showAlert('Failed to load data: ' + error.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadAssessments = async () => {
+    try {
+      const data = await assessmentService.getAll({
+        term_id: filters.term_id ? parseInt(filters.term_id) : undefined,
+        academic_year_id: filters.academic_year_id ? parseInt(filters.academic_year_id) : undefined,
+        type: filters.type || undefined
+      });
+      setAssessments(data);
+      
+      // Update weight summary based on current filter
+      if (filters.academic_year_id && filters.term_id) {
+        const summary = await assessmentService.getWeightSummary(
+          parseInt(filters.academic_year_id), 
+          parseInt(filters.term_id)
+        );
+        setWeightSummary(summary);
+      } else {
+        // Calculate total weight from all assessments in current filter
+        const total = data.reduce((sum, a) => sum + (a.weight || 0), 0);
+        setWeightSummary({ total_weight: total, is_valid: total === 100 });
+      }
+    } catch (error) {
+      showAlert('Failed to load assessments: ' + error.message, 'error');
+    }
+  };
+
+  const showAlert = (message, type = 'success') => {
+    setAlert({ show: true, message, type });
+    setTimeout(() => {
+      setAlert({ show: false, message: '', type: 'success' });
+    }, 3000);
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
-  const handleAddEditAssessment = () => {
-    if (!formData.name || !formData.type || !formData.weight || !formData.maxScore) {
-      alert('Please fill in all required fields');
-      return;
-    }
-
-    const newTotal = editingAssessment
-      ? totalWeight - editingAssessment.weight + parseInt(formData.weight)
-      : totalWeight + parseInt(formData.weight);
-
-    if (newTotal > 100) {
-      alert(`Total weight would exceed 100%. Current: ${totalWeight}%, Adding: ${formData.weight}%`);
-      return;
-    }
-
-    if (editingAssessment) {
-      setAssessments(prev => prev.map(a => a.id === editingAssessment.id ? { ...a, ...formData, weight: parseInt(formData.weight), maxScore: parseInt(formData.maxScore) } : a));
-    } else {
-      const newAssessment = { id: Date.now(), ...formData, weight: parseInt(formData.weight), maxScore: parseInt(formData.maxScore) };
-      setAssessments(prev => [...prev, newAssessment]);
-    }
-    setShowModal(false);
-    setEditingAssessment(null);
-    setFormData({ name: '', type: 'Quiz', term: 'Term 1', academicYear: '2024-2025', subject: '', weight: '', maxScore: '', date: '', description: '' });
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.name.trim()) newErrors.name = 'Assessment name is required';
+    if (!formData.type) newErrors.type = 'Assessment type is required';
+    if (!formData.term_id) newErrors.term_id = 'Term is required';
+    if (!formData.academic_year_id) newErrors.academic_year_id = 'Academic year is required';
+    if (!formData.weight) newErrors.weight = 'Weight is required';
+    if (parseFloat(formData.weight) <= 0) newErrors.weight = 'Weight must be greater than 0';
+    if (parseFloat(formData.weight) > 100) newErrors.weight = 'Weight cannot exceed 100%';
+    if (!formData.max_score) newErrors.max_score = 'Max score is required';
+    if (parseFloat(formData.max_score) <= 0) newErrors.max_score = 'Max score must be greater than 0';
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleDeleteAssessment = (assessment) => {
-    if (window.confirm(`Delete ${assessment.name}?`)) {
-      setAssessments(prev => prev.filter(a => a.id !== assessment.id));
+  const handleSaveAssessment = async () => {
+    if (!validateForm()) return;
+
+    try {
+      setSaving(true);
+      
+      const assessmentData = {
+        name: formData.name.trim(),
+        type: formData.type,
+        term_id: parseInt(formData.term_id),
+        academic_year_id: parseInt(formData.academic_year_id),
+        subject_id: formData.subject_id ? parseInt(formData.subject_id) : null,
+        weight: parseFloat(formData.weight),
+        max_score: parseFloat(formData.max_score),
+        assessment_date: formData.assessment_date || null,
+        description: formData.description || null
+      };
+
+      if (view === 'edit' && selectedAssessment) {
+        await assessmentService.update(selectedAssessment.id, assessmentData);
+        showAlert('Assessment updated successfully!', 'success');
+      } else {
+        await assessmentService.create(assessmentData);
+        showAlert('Assessment created successfully!', 'success');
+      }
+      
+      resetForm();
+      setView('list');
+      await loadAssessments();
+      
+    } catch (error) {
+      showAlert('Failed to save: ' + error.message, 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditAssessment = (assessment) => {
+    setSelectedAssessment(assessment);
+    setFormData({
+      name: assessment.name,
+      type: assessment.type,
+      term_id: assessment.term_id.toString(),
+      academic_year_id: assessment.academic_year_id.toString(),
+      subject_id: assessment.subject_id?.toString() || '',
+      weight: assessment.weight.toString(),
+      max_score: assessment.max_score.toString(),
+      assessment_date: assessment.assessment_date || '',
+      description: assessment.description || ''
+    });
+    setView('edit');
+  };
+
+  const handleDeleteAssessment = async (assessment) => {
+    if (window.confirm(`Delete "${assessment.name}"? This action cannot be undone.`)) {
+      try {
+        setSaving(true);
+        await assessmentService.delete(assessment.id);
+        showAlert(`Assessment "${assessment.name}" deleted successfully`, 'success');
+        await loadAssessments();
+      } catch (error) {
+        showAlert('Failed to delete: ' + error.message, 'error');
+      } finally {
+        setSaving(false);
+      }
     }
   };
 
   const handleEnterScores = (assessment) => {
-    alert(`Enter scores for ${assessment.name}`);
+    navigate(`/academics/assessments/${assessment.id}/scores`);
   };
 
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      type: 'quiz',
+      term_id: '',
+      academic_year_id: '',
+      subject_id: '',
+      weight: '',
+      max_score: 100,
+      assessment_date: '',
+      description: ''
+    });
+    setErrors({});
+    setSelectedAssessment(null);
+  };
+
+  const clearFilters = () => {
+    const currentYear = academicYears.find(y => y.is_current);
+    setFilters({ 
+      term_id: '', 
+      academic_year_id: currentYear ? currentYear.id.toString() : '', 
+      type: '' 
+    });
+  };
+
+  const totalWeight = assessments.reduce((sum, a) => sum + (a.weight || 0), 0);
+  const isWeightValid = weightSummary.is_valid || totalWeight === 100;
+
+  // Render List View
+  if (view === 'list') {
+    return (
+      <div className="assessments-container">
+        {/* Alert Messages */}
+        {alert.show && (
+          <div className={`alert-${alert.type}`}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              {alert.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
+              {alert.message}
+            </span>
+            <span className="close-alert" onClick={() => setAlert({ show: false, message: '', type: 'success' })}>
+              <X size={18} />
+            </span>
+          </div>
+        )}
+
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h1 style={{ fontSize: '1.875rem', fontWeight: 'bold' }}>
+              <FileText size={28} style={{ display: 'inline', marginRight: '12px' }} />
+              Manage Assessments
+            </h1>
+            <p style={{ color: 'var(--secondary)' }}>Create and manage exams, tests, and quizzes</p>
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button className="button button-secondary" onClick={loadAssessments} disabled={saving}>
+              <RefreshCw size={16} className={saving ? 'spinner' : ''} />
+              Refresh
+            </button>
+            <button className="button" onClick={() => { resetForm(); setView('create'); }} disabled={saving}>
+              <Plus size={16} /> Create Assessment
+            </button>
+          </div>
+        </div>
+        <hr style={{ margin: '0 0 1.5rem 0', borderColor: 'var(--border)' }} />
+
+        {/* Filters */}
+        <div className="filters-section">
+          <div className="filters-bar">
+            <div className="filter-group">
+              <label>Academic Year</label>
+              <select 
+                className="form-select"
+                value={filters.academic_year_id}
+                onChange={(e) => setFilters(prev => ({ ...prev, academic_year_id: e.target.value }))}
+              >
+                <option value="">All Years</option>
+                {academicYears.map(year => (
+                  <option key={year.id} value={year.id}>{year.year_label}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="filter-group">
+              <label>Term</label>
+              <select 
+                className="form-select"
+                value={filters.term_id}
+                onChange={(e) => setFilters(prev => ({ ...prev, term_id: e.target.value }))}
+              >
+                <option value="">All Terms</option>
+                {terms.map(term => (
+                  <option key={term.id} value={term.id}>{term.name}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="filter-group">
+              <label>Assessment Type</label>
+              <select 
+                className="form-select"
+                value={filters.type}
+                onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
+              >
+                <option value="">All Types</option>
+                {assessmentTypes.map(type => (
+                  <option key={type.value} value={type.value}>{type.label}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="filter-actions">
+              <button className="btn-secondary" onClick={clearFilters}>
+                Clear Filters
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Weight Summary */}
+        <div className={`weight-summary ${isWeightValid ? 'weight-success' : 'weight-warning'}`}>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              {isWeightValid ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
+              <strong>Total Assessment Weight: {weightSummary.total_weight || totalWeight}%</strong>
+            </div>
+            <div className="weight-bar">
+              <div className="weight-bar-fill" style={{ width: `${Math.min(weightSummary.total_weight || totalWeight, 100)}%` }}></div>
+            </div>
+            {!isWeightValid && (weightSummary.total_weight || totalWeight) < 100 && (
+              <div style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                ⚠ Need {100 - (weightSummary.total_weight || totalWeight)}% more to reach 100%
+              </div>
+            )}
+            {!isWeightValid && (weightSummary.total_weight || totalWeight) > 100 && (
+              <div style={{ fontSize: '0.875rem', marginTop: '0.5rem', color: 'var(--danger)' }}>
+                ⚠ Total weight exceeds 100% by {(weightSummary.total_weight || totalWeight) - 100}%
+              </div>
+            )}
+            {isWeightValid && (
+              <div style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                ✓ Perfect! Ready for score entry
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Assessments Table */}
+        <div className="table-container">
+          <table className="academic-years-table">
+            <thead>
+              <tr>
+                <th>Assessment Name</th>
+                <th>Type</th>
+                <th>Term</th>
+                <th>Academic Year</th>
+                <th>Subject</th>
+                <th>Weight</th>
+                <th>Max Score</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {assessments.length === 0 ? (
+                <tr>
+                  <td colSpan="9" style={{ textAlign: 'center', padding: '2rem' }}>
+                    <FileText size={48} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+                    <p>No assessments found</p>
+                    {(filters.academic_year_id || filters.term_id || filters.type) && (
+                      <button className="btn-secondary" onClick={clearFilters}>
+                        Clear Filters
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ) : (
+                assessments.map(a => (
+                  <tr key={a.id}>
+                    <td><strong>{a.name}</strong></td>
+                    <td><span className="status-badge status-active">{a.type}</span></td>
+                    <td>{a.term_name}</td>
+                    <td>{a.academic_year_label}</td>
+                    <td>{a.subject_name || 'All Subjects'}</td>
+                    <td><span className="status-badge status-active">{a.weight}%</span></td>
+                    <td>{a.max_score}</td>
+                    <td>{a.assessment_date ? new Date(a.assessment_date).toLocaleDateString() : '-'}</td>
+                    <td className="action-buttons">
+                      <button 
+                        className="action-btn edit-btn" 
+                        onClick={() => handleEditAssessment(a)}
+                        disabled={saving}
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button 
+                        className="action-btn set-current-btn" 
+                        onClick={() => handleEnterScores(a)}
+                        disabled={!isWeightValid}
+                        title={!isWeightValid ? "Total weight must be 100% before entering scores" : "Enter scores"}
+                      >
+                        <Eye size={16} /> Scores
+                      </button>
+                      <button 
+                        className="action-btn delete-btn" 
+                        onClick={() => handleDeleteAssessment(a)}
+                        disabled={saving}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  // Render Create/Edit Form View
   return (
     <div className="assessments-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h1 style={{ fontSize: '1.875rem', fontWeight: 'bold' }}>
-            <FileText size={28} style={{ display: 'inline', marginRight: '12px' }} />
-            Manage Assessments
-          </h1>
-          <p style={{ color: 'var(--secondary)' }}>Create and manage exams, tests, and quizzes</p>
-        </div>
-        <button className="button" onClick={() => setShowModal(true)}>
-          <Plus size={16} /> Create Assessment
-        </button>
-      </div>
-      <hr style={{ margin: '0 0 1.5rem 0', borderColor: 'var(--border)' }} />
-
-      <div className={isWeightValid ? 'weight-success weight-warning' : 'weight-warning'}>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {isWeightValid ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
-            <strong>Total Assessment Weight: {totalWeight}%</strong>
-          </div>
-          <div className="weight-bar">
-            <div className="weight-bar-fill" style={{ width: `${Math.min(totalWeight, 100)}%` }}></div>
-          </div>
-          {!isWeightValid && (
-            <div style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>
-              ⚠ Total must equal 100% before scores can be entered
-            </div>
-          )}
-          {isWeightValid && (
-            <div style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>
-              ✓ Perfect! Ready for score entry
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="table-container">
-        <table className="academic-years-table">
-          <thead>
-            <tr>
-              <th>Assessment Name</th>
-              <th>Type</th>
-              <th>Term</th>
-              <th>Subject</th>
-              <th>Weight</th>
-              <th>Max Score</th>
-              <th>Date</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {assessments.map(a => (
-              <tr key={a.id}>
-                <td><strong>{a.name}</strong></td>
-                <td><span className="status-badge status-active">{a.type}</span></td>
-                <td>{a.term} - {a.academicYear}</td>
-                <td>{a.subject}</td>
-                <td><span className="status-badge status-active">{a.weight}%</span></td>
-                <td>{a.maxScore}</td>
-                <td>{a.date ? new Date(a.date).toLocaleDateString() : '-'}</td>
-                <td className="action-buttons">
-                  <button 
-                    className="action-btn edit-btn" 
-                    onClick={() => { 
-                      setEditingAssessment(a); 
-                      setFormData(a); 
-                      setShowModal(true); 
-                    }}
-                  >
-                    <Edit size={16} />
-                  </button>
-                  <button 
-                    className="action-btn set-current-btn" 
-                    onClick={() => handleEnterScores(a)}
-                  >
-                    <Eye size={16} /> Scores
-                  </button>
-                  <button 
-                    className="action-btn delete-btn" 
-                    onClick={() => handleDeleteAssessment(a)}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {showModal && (
-        <div className="modal-overlay" onClick={() => { setShowModal(false); setEditingAssessment(null); }}>
-          <div className="modal-container" style={{ maxWidth: '600px' }} onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{editingAssessment ? 'Edit Assessment' : 'Create Assessment'}</h2>
-              <X className="modal-close" size={20} onClick={() => { setShowModal(false); setEditingAssessment(null); }} />
-            </div>
-            <div className="modal-body">
-              <div className="form-group">
-                <label>Assessment Name *</label>
-                <input type="text" name="name" className="form-input" value={formData.name} onChange={handleInputChange} />
-              </div>
-              <div className="form-group">
-                <label>Type *</label>
-                <select name="type" className="form-select" value={formData.type} onChange={handleInputChange}>
-                  {assessmentTypes.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Term *</label>
-                <select name="term" className="form-select" value={formData.term} onChange={handleInputChange}>
-                  {terms.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Academic Year *</label>
-                <select name="academicYear" className="form-select" value={formData.academicYear} onChange={handleInputChange}>
-                  {academicYears.map(y => <option key={y} value={y}>{y}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Subject</label>
-                <select name="subject" className="form-select" value={formData.subject} onChange={handleInputChange}>
-                  {subjects.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Weight (%) *</label>
-                <input type="number" name="weight" className="form-input" value={formData.weight} onChange={handleInputChange} />
-              </div>
-              <div className="form-group">
-                <label>Max Score *</label>
-                <input type="number" name="maxScore" className="form-input" value={formData.maxScore} onChange={handleInputChange} />
-              </div>
-              <div className="form-group">
-                <label>Assessment Date</label>
-                <input type="date" name="date" className="form-input" value={formData.date} onChange={handleInputChange} />
-              </div>
-              <div className="form-group">
-                <label>Description</label>
-                <textarea name="description" className="form-textarea" value={formData.description} onChange={handleInputChange} rows="3"></textarea>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="button button-secondary" onClick={() => { setShowModal(false); setEditingAssessment(null); }}>
-                Cancel
-              </button>
-              <button className="button" onClick={handleAddEditAssessment}>
-                {editingAssessment ? 'Save' : 'Create'}
-              </button>
-            </div>
-          </div>
+      {/* Alert Messages */}
+      {alert.show && (
+        <div className={`alert-${alert.type}`}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {alert.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
+            {alert.message}
+          </span>
+          <span className="close-alert" onClick={() => setAlert({ show: false, message: '', type: 'success' })}>
+            <X size={18} />
+          </span>
         </div>
       )}
+
+      {/* Header */}
+      <div className="form-header">
+        <div>
+          <button 
+            onClick={() => { resetForm(); setView('list'); }}
+            className="back-button"
+            disabled={saving}
+          >
+            <ArrowLeft size={16} /> Back to Assessments
+          </button>
+          <h1>{view === 'create' ? 'Create Assessment' : `Edit: ${selectedAssessment?.name}`}</h1>
+          <p>{view === 'create' ? 'Create a new assessment for students' : 'Update assessment information'}</p>
+        </div>
+      </div>
+      <hr className="divider" />
+
+      <div className="form-container">
+        <form onSubmit={(e) => { e.preventDefault(); handleSaveAssessment(); }}>
+          <div className="form-section">
+            <h2>Assessment Details</h2>
+            <div className="form-grid">
+              <div className="form-group">
+                <label>Assessment Name <span className="required">*</span></label>
+                <input
+                  type="text"
+                  name="name"
+                  className={`form-input ${errors.name ? 'error' : ''}`}
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  placeholder="e.g., End of Term Examination, Week 3 Quiz"
+                  disabled={saving}
+                />
+                {errors.name && <span className="error-message">{errors.name}</span>}
+              </div>
+
+              <div className="form-group">
+                <label>Assessment Type <span className="required">*</span></label>
+                <select
+                  name="type"
+                  className={`form-select ${errors.type ? 'error' : ''}`}
+                  value={formData.type}
+                  onChange={handleInputChange}
+                  disabled={saving}
+                >
+                  {assessmentTypes.map(type => (
+                    <option key={type.value} value={type.value}>{type.label}</option>
+                  ))}
+                </select>
+                {errors.type && <span className="error-message">{errors.type}</span>}
+              </div>
+
+              <div className="form-group">
+                <label>Academic Year <span className="required">*</span></label>
+                <select
+                  name="academic_year_id"
+                  className={`form-select ${errors.academic_year_id ? 'error' : ''}`}
+                  value={formData.academic_year_id}
+                  onChange={handleInputChange}
+                  disabled={saving}
+                >
+                  <option value="">Select Academic Year</option>
+                  {academicYears.map(year => (
+                    <option key={year.id} value={year.id}>{year.year_label}</option>
+                  ))}
+                </select>
+                {errors.academic_year_id && <span className="error-message">{errors.academic_year_id}</span>}
+              </div>
+
+              <div className="form-group">
+                <label>Term <span className="required">*</span></label>
+                <select
+                  name="term_id"
+                  className={`form-select ${errors.term_id ? 'error' : ''}`}
+                  value={formData.term_id}
+                  onChange={handleInputChange}
+                  disabled={saving}
+                >
+                  <option value="">Select Term</option>
+                  {terms.map(term => (
+                    <option key={term.id} value={term.id}>{term.name}</option>
+                  ))}
+                </select>
+                {errors.term_id && <span className="error-message">{errors.term_id}</span>}
+              </div>
+
+              <div className="form-group">
+                <label>Subject (Optional)</label>
+                <select
+                  name="subject_id"
+                  className="form-select"
+                  value={formData.subject_id}
+                  onChange={handleInputChange}
+                  disabled={saving}
+                >
+                  <option value="">All Subjects</option>
+                  {subjects.map(subject => (
+                    <option key={subject.id} value={subject.id}>{subject.name}</option>
+                  ))}
+                </select>
+                <small className="field-hint">Leave empty for general assessments covering all subjects</small>
+              </div>
+
+              <div className="form-group">
+                <label>Weight (%) <span className="required">*</span></label>
+                <input
+                  type="number"
+                  name="weight"
+                  className={`form-input ${errors.weight ? 'error' : ''}`}
+                  value={formData.weight}
+                  onChange={handleInputChange}
+                  placeholder="e.g., 10, 20, 70"
+                  step="0.1"
+                  disabled={saving}
+                />
+                <small className="field-hint">Percentage contribution to final grade (must sum to 100% per term)</small>
+                {errors.weight && <span className="error-message">{errors.weight}</span>}
+              </div>
+
+              <div className="form-group">
+                <label>Max Score <span className="required">*</span></label>
+                <input
+                  type="number"
+                  name="max_score"
+                  className={`form-input ${errors.max_score ? 'error' : ''}`}
+                  value={formData.max_score}
+                  onChange={handleInputChange}
+                  placeholder="e.g., 100, 50, 20"
+                  step="0.5"
+                  disabled={saving}
+                />
+                <small className="field-hint">Maximum possible score for this assessment</small>
+                {errors.max_score && <span className="error-message">{errors.max_score}</span>}
+              </div>
+
+              <div className="form-group">
+                <label>Assessment Date</label>
+                <input
+                  type="date"
+                  name="assessment_date"
+                  className="form-input"
+                  value={formData.assessment_date}
+                  onChange={handleInputChange}
+                  disabled={saving}
+                />
+              </div>
+
+              <div className="form-group full-width">
+                <label>Description</label>
+                <textarea
+                  name="description"
+                  className="form-textarea"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  rows="3"
+                  placeholder="Optional description or notes about this assessment"
+                  disabled={saving}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="form-actions">
+            <button type="button" className="btn-secondary" onClick={() => { resetForm(); setView('list'); }} disabled={saving}>
+              Cancel
+            </button>
+            <button type="submit" className="btn-primary" disabled={saving}>
+              {saving ? <Loader size={16} className="spinner" /> : <Save size={16} />}
+              {saving ? 'Saving...' : (view === 'create' ? 'Create Assessment' : 'Save Changes')}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
