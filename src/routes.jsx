@@ -106,6 +106,7 @@ import RolesPermissions from "./pages/Adminpages/SystemAdmin/RolesPermissions";
 import SystemHealth from "./pages/Adminpages/SystemAdmin/SystemHealth";
 import SystemLogs from "./pages/Adminpages/SystemAdmin/SystemLogs";
 import UserManagement from "./pages/Adminpages/SystemAdmin/UserManagement";
+import AssignClassSubjects from "./pages/Adminpages/teacher-assignment/AssignClassSubjects";
 // import from "./pages/Adminpages";
 
 
@@ -567,6 +568,19 @@ function AppRoutes({ activated, setActivated }) {
           <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
             <RoleBasedLayout>
               <AssignStudents />
+            </RoleBasedLayout>
+          </PrivateRoute>
+        }
+      />
+
+      
+      <Route
+    
+        path="/teacher-assignments/assign-class-subjects"
+        element={
+          <PrivateRoute allowedRoles={["administrator", "staff", "teacher", "student", "teaching_assistant", "non_teaching_staff"]}>
+            <RoleBasedLayout>
+              <AssignClassSubjects  />
             </RoleBasedLayout>
           </PrivateRoute>
         }

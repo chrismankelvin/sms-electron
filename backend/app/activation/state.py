@@ -105,7 +105,7 @@ def ensure_all_tables():
         username TEXT NOT NULL UNIQUE,
         email TEXT UNIQUE,
         password_hash TEXT NOT NULL,
-        role TEXT NOT NULL CHECK (role IN ('admin', 'teacher', 'ta', 'accountant', 'student', 'non_staff')),
+        role TEXT NOT NULL CHECK (role IN ('admin', 'teacher', 'ta', 'accountant', 'student', 'non_staff', 'parent')),
         status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'suspended','on_leave', 'disabled')),
         last_login DATETIME,
         version INTEGER DEFAULT 1,
@@ -346,7 +346,7 @@ def ensure_all_tables():
     CREATE TABLE IF NOT EXISTS levels (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        category TEXT NOT NULL CHECK (category IN ('JHS','SHS')),
+        category TEXT NOT NULL CHECK (category IN ('JHS','SHS','PRIMARY')),
         order_index INTEGER NOT NULL,
         description TEXT,
         version integer DEFAULT 1,
@@ -364,7 +364,7 @@ def ensure_all_tables():
         name TEXT NOT NULL UNIQUE,
         code TEXT UNIQUE,
         description TEXT,
-        category TEXT CHECK (category IN ('JHS','SHS')),
+        category TEXT CHECK (category IN ('JHS','SHS','PRIMARY')),
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
@@ -500,7 +500,7 @@ def ensure_all_tables():
         name TEXT NOT NULL,
         code TEXT UNIQUE,
         type TEXT NOT NULL CHECK (type IN ('core','elective')),
-        category TEXT CHECK (category IN ('JHS','SHS','BOTH')) DEFAULT 'BOTH',
+        category TEXT CHECK (category IN ('JHS','SHS','ALL','PRIMARY')) DEFAULT 'ALL',
         description TEXT,
         version INTEGER DEFAULT 1,
         synced_at TIMESTAMP,
@@ -1209,6 +1209,31 @@ CREATE TABLE IF NOT EXISTS rooms (
 
     )
     """)
+
+
+    cursor.execute("""
+                CREATE TABLE IF NOT EXISTS class_subjects (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    class_id INTEGER NOT NULL,
+                    subject_id INTEGER NOT NULL,
+                    is_required BOOLEAN DEFAULT 1,
+                    academic_year_id INTEGER NOT NULL,
+                    version INTEGER DEFAULT 1,
+                    synced_at TIMESTAMP,
+                    updated_by_sync BOOLEAN DEFAULT 0,
+                    sync_error TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    created_by INTEGER,
+                    updated_by INTEGER,
+                    FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
+                    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
+                    FOREIGN KEY (academic_year_id) REFERENCES academic_years(id) ON DELETE CASCADE,
+                    FOREIGN KEY (created_by) REFERENCES users(id),
+                    FOREIGN KEY (updated_by) REFERENCES users(id),
+                    UNIQUE(class_id, subject_id, academic_year_id)
+                )
+            """)
 
     # ----------------- 40. GLOBAL_SYSTEM_SETTINGS -----------------
     cursor.execute("""

@@ -64,21 +64,34 @@
         
 #         # Get term details
 #         cursor.execute("SELECT id, name FROM terms WHERE id = ?", (term_id,))
-#         term = cursor.fetchone()
-#         if not term:
+#         term_row = cursor.fetchone()
+#         if not term_row:
 #             raise HTTPException(status_code=404, detail="Term not found")
+#         term = {"id": term_row['id'], "name": term_row['name']}
         
 #         # Get class details
 #         cursor.execute("SELECT id, class_name FROM classes WHERE id = ?", (class_id,))
-#         class_item = cursor.fetchone()
-#         if not class_item:
+#         class_row = cursor.fetchone()
+#         if not class_row:
 #             raise HTTPException(status_code=404, detail="Class not found")
+#         class_info = {"id": class_row['id'], "name": class_row['class_name']}
         
 #         # Get term results for all students in the class
 #         cursor.execute("""
-#             SELECT str.*, 
-#                    p.first_name, p.last_name, p.other_names,
-#                    s.section_id, sec.section_name
+#             SELECT 
+#                 str.student_id,
+#                 str.total_marks,
+#                 str.average_score,
+#                 str.overall_grade,
+#                 str.overall_grade_point,
+#                 str.total_subjects_passed,
+#                 str.total_subjects_failed,
+#                 str.published_at,
+#                 p.first_name,
+#                 p.last_name,
+#                 p.other_names,
+#                 s.section_id,
+#                 sec.section_name
 #             FROM student_term_results str
 #             JOIN students s ON str.student_id = s.id
 #             JOIN person_details p ON s.person_id = p.id
@@ -87,62 +100,55 @@
 #             ORDER BY str.average_score DESC
 #         """, (term_id, class_id))
         
-#         results = cursor.fetchall()
+#         rows = cursor.fetchall()
+#         results = []
         
-#         if not results:
-#             return {
-#                 "success": True,
-#                 "data": {
-#                     "term": {"id": term_id, "name": term['name']},
-#                     "class": {"id": class_id, "name": class_item['class_name']},
-#                     "summary": {
-#                         "total_students": 0,
-#                         "class_average": 0,
-#                         "pass_rate": 0,
-#                         "highest_average": 0,
-#                         "lowest_average": 0
-#                     },
-#                     "results": []
-#                 },
-#                 "timestamp": datetime.now().isoformat()
-#             }
-        
-#         # Calculate summary statistics
-#         total_students = len(results)
-#         total_average = sum(r['average_score'] for r in results)
-#         class_average = total_average / total_students if total_students > 0 else 0
-#         pass_count = sum(1 for r in results if r['average_score'] >= 50)
-#         pass_rate = (pass_count / total_students) * 100 if total_students > 0 else 0
-#         highest_average = max(r['average_score'] for r in results)
-#         lowest_average = min(r['average_score'] for r in results)
-        
-#         # Format results
-#         formatted_results = []
-#         for idx, row in enumerate(results, 1):
+#         for row in rows:
+#             # Build student name
 #             student_name = f"{row['first_name']} {row['last_name']}"
 #             if row['other_names']:
 #                 student_name += f" ({row['other_names']})"
             
-#             formatted_results.append({
+#             results.append({
 #                 "student_id": row['student_id'],
 #                 "student_name": student_name,
-#                 "average_score": round(row['average_score'], 2),
-#                 "overall_grade": row['overall_grade'],
-#                 "overall_grade_point": row['overall_grade_point'],
-#                 "position_in_class": idx,
-#                 "position_in_section": row.get('position_in_section'),
-#                 "section_name": row.get('section_name'),
-#                 "total_marks": row['total_marks'],
-#                 "total_subjects_passed": row['total_subjects_passed'],
-#                 "total_subjects_failed": row['total_subjects_failed'],
+#                 "average_score": round(row['average_score'], 2) if row['average_score'] else 0,
+#                 "overall_grade": row['overall_grade'] if row['overall_grade'] else 'N/A',
+#                 "overall_grade_point": row['overall_grade_point'] if row['overall_grade_point'] else 0,
+#                 "total_marks": row['total_marks'] if row['total_marks'] else 0,
+#                 "total_subjects_passed": row['total_subjects_passed'] if row['total_subjects_passed'] else 0,
+#                 "total_subjects_failed": row['total_subjects_failed'] if row['total_subjects_failed'] else 0,
+#                 "section_id": row['section_id'],
+#                 "section_name": row['section_name'],
 #                 "published_at": row['published_at']
 #             })
+        
+#         # Calculate summary statistics
+#         total_students = len(results)
+        
+#         if total_students > 0:
+#             total_average = sum(r['average_score'] for r in results)
+#             class_average = total_average / total_students
+#             pass_count = sum(1 for r in results if r['average_score'] >= 50)
+#             pass_rate = (pass_count / total_students) * 100
+#             highest_average = max(r['average_score'] for r in results)
+#             lowest_average = min(r['average_score'] for r in results)
+#         else:
+#             class_average = 0
+#             pass_rate = 0
+#             highest_average = 0
+#             lowest_average = 0
+#             pass_count = 0
+        
+#         # Add positions
+#         for idx, result in enumerate(results, 1):
+#             result['position_in_class'] = idx
         
 #         return {
 #             "success": True,
 #             "data": {
-#                 "term": {"id": term_id, "name": term['name']},
-#                 "class": {"id": class_id, "name": class_item['class_name']},
+#                 "term": term,
+#                 "class": class_info,
 #                 "summary": {
 #                     "total_students": total_students,
 #                     "class_average": round(class_average, 2),
@@ -152,7 +158,7 @@
 #                     "pass_count": pass_count,
 #                     "fail_count": total_students - pass_count
 #                 },
-#                 "results": formatted_results
+#                 "results": results
 #             },
 #             "timestamp": datetime.now().isoformat()
 #         }
@@ -215,9 +221,17 @@
         
 #         # Get results
 #         cursor.execute("""
-#             SELECT str.*, 
-#                    p.first_name, p.last_name, p.other_names,
-#                    s.student_number
+#             SELECT 
+#                 str.average_score,
+#                 str.overall_grade,
+#                 str.overall_grade_point,
+#                 str.total_marks,
+#                 str.total_subjects_passed,
+#                 str.total_subjects_failed,
+#                 p.first_name,
+#                 p.last_name,
+#                 p.other_names,
+#                 s.student_number
 #             FROM student_term_results str
 #             JOIN students s ON str.student_id = s.id
 #             JOIN person_details p ON s.person_id = p.id
@@ -225,10 +239,10 @@
 #             ORDER BY str.average_score DESC
 #         """, (term_id, class_id))
         
-#         results = cursor.fetchall()
+#         rows = cursor.fetchall()
         
 #         export_data = []
-#         for idx, row in enumerate(results, 1):
+#         for idx, row in enumerate(rows, 1):
 #             student_name = f"{row['first_name']} {row['last_name']}"
 #             if row['other_names']:
 #                 student_name += f" ({row['other_names']})"
@@ -237,12 +251,12 @@
 #                 "Position": idx,
 #                 "Student Name": student_name,
 #                 "Student Number": row['student_number'],
-#                 "Average Score": round(row['average_score'], 2),
-#                 "Grade": row['overall_grade'],
-#                 "Grade Point": row['overall_grade_point'],
-#                 "Total Marks": row['total_marks'],
-#                 "Subjects Passed": row['total_subjects_passed'],
-#                 "Subjects Failed": row['total_subjects_failed']
+#                 "Average Score": round(row['average_score'], 2) if row['average_score'] else 0,
+#                 "Grade": row['overall_grade'] if row['overall_grade'] else 'N/A',
+#                 "Grade Point": row['overall_grade_point'] if row['overall_grade_point'] else 0,
+#                 "Total Marks": row['total_marks'] if row['total_marks'] else 0,
+#                 "Subjects Passed": row['total_subjects_passed'] if row['total_subjects_passed'] else 0,
+#                 "Subjects Failed": row['total_subjects_failed'] if row['total_subjects_failed'] else 0
 #             })
         
 #         return {
@@ -257,10 +271,6 @@
 #     finally:
 #         if conn:
 #             conn.close()
-
-
-
-
 
 
 
@@ -316,6 +326,43 @@ def get_grade_from_score(cursor, score: float) -> Dict[str, Any]:
         "grade_point": 0.0
     }
 
+def get_class_subjects(cursor, class_id: int, academic_year_id: int) -> List[int]:
+    """Get all subject IDs assigned to a class for the academic year"""
+    subject_ids = []
+    
+    # First, try to get subjects for the specific academic year
+    cursor.execute("""
+        SELECT subject_id FROM class_subjects
+        WHERE class_id = ? AND academic_year_id = ?
+    """, (class_id, academic_year_id))
+    rows = cursor.fetchall()
+    subject_ids = [row['subject_id'] for row in rows]
+    
+    if subject_ids:
+        logger.info(f"Found {len(subject_ids)} subjects for class {class_id} in academic year {academic_year_id}")
+        return subject_ids
+    
+    # If no subjects found, try to get subjects from ANY academic year
+    logger.warning(f"No subjects found for class {class_id} in academic year {academic_year_id}, checking all years")
+    cursor.execute("""
+        SELECT subject_id FROM class_subjects
+        WHERE class_id = ?
+    """, (class_id,))
+    rows = cursor.fetchall()
+    subject_ids = [row['subject_id'] for row in rows]
+    
+    if subject_ids:
+        logger.info(f"Found {len(subject_ids)} subjects for class {class_id} from other academic years")
+        return subject_ids
+    
+    # If still no subjects, return all subjects as fallback
+    logger.warning(f"No subjects found for class {class_id} at all, returning all subjects")
+    cursor.execute("SELECT id FROM subjects")
+    all_subjects = cursor.fetchall()
+    subject_ids = [row['id'] for row in all_subjects]
+    
+    return subject_ids
+
 # ==================== API Endpoints ====================
 
 @router.get("/")
@@ -339,11 +386,19 @@ async def get_term_results(
         term = {"id": term_row['id'], "name": term_row['name']}
         
         # Get class details
-        cursor.execute("SELECT id, class_name FROM classes WHERE id = ?", (class_id,))
+        cursor.execute("SELECT id, class_name, academic_year_id FROM classes WHERE id = ?", (class_id,))
         class_row = cursor.fetchone()
         if not class_row:
             raise HTTPException(status_code=404, detail="Class not found")
-        class_info = {"id": class_row['id'], "name": class_row['class_name']}
+        class_info = {
+            "id": class_row['id'], 
+            "name": class_row['class_name'],
+            "academic_year_id": class_row['academic_year_id']
+        }
+        
+        # Get subjects assigned to this class
+        class_subject_ids = get_class_subjects(cursor, class_id, class_info['academic_year_id'])
+        logger.info(f"Class {class_id} has {len(class_subject_ids)} assigned subjects")
         
         # Get term results for all students in the class
         cursor.execute("""
@@ -418,6 +473,7 @@ async def get_term_results(
             "data": {
                 "term": term,
                 "class": class_info,
+                "class_subjects_count": len(class_subject_ids),
                 "summary": {
                     "total_students": total_students,
                     "class_average": round(class_average, 2),
@@ -443,9 +499,11 @@ async def get_term_results(
             conn.close()
 
 @router.get("/options")
-async def get_term_options():
+async def get_term_options(
+    class_id: Optional[int] = Query(None, description="Class ID to filter subjects")
+):
     """Get available options for term results"""
-    logger.info("GET /api/term-results/options")
+    logger.info(f"GET /api/term-results/options - class_id={class_id}")
     conn = None
     
     try:
@@ -460,11 +518,21 @@ async def get_term_options():
         cursor.execute("SELECT id, class_name FROM classes ORDER BY class_name")
         classes = [{"id": row['id'], "name": row['class_name']} for row in cursor.fetchall()]
         
+        # If class_id is provided, also return the subject count for that class
+        class_subjects_count = 0
+        if class_id:
+            cursor.execute("SELECT academic_year_id FROM classes WHERE id = ?", (class_id,))
+            class_info = cursor.fetchone()
+            if class_info:
+                subject_ids = get_class_subjects(cursor, class_id, class_info['academic_year_id'])
+                class_subjects_count = len(subject_ids)
+        
         return {
             "success": True,
             "data": {
                 "terms": terms,
-                "classes": classes
+                "classes": classes,
+                "class_subjects_count": class_subjects_count
             },
             "timestamp": datetime.now().isoformat()
         }

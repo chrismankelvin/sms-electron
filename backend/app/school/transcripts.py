@@ -1,3 +1,4 @@
+
 # from fastapi import APIRouter, HTTPException, Query
 # from pydantic import BaseModel
 # from typing import Optional, List, Dict, Any
@@ -56,10 +57,11 @@
 # def get_all_terms_for_student(cursor, student_id: int) -> List[Dict]:
 #     """Get all terms that a student has results for"""
 #     cursor.execute("""
-#         SELECT DISTINCT t.id, t.name, str.academic_year_id, ay.year_label
+#         SELECT DISTINCT t.id, t.name, str.class_id, c.academic_year_id, ay.year_label
 #         FROM student_term_results str
 #         JOIN terms t ON str.term_id = t.id
-#         JOIN academic_years ay ON str.academic_year_id = ay.id
+#         JOIN classes c ON str.class_id = c.id
+#         JOIN academic_years ay ON c.academic_year_id = ay.id
 #         WHERE str.student_id = ?
 #         ORDER BY ay.year_label, t.id
 #     """, (student_id,))
@@ -70,21 +72,22 @@
 #         terms.append({
 #             "id": row['id'],
 #             "name": row['name'],
+#             "class_id": row['class_id'],
 #             "academic_year_id": row['academic_year_id'],
 #             "academic_year_label": row['year_label']
 #         })
 #     return terms
 
-# def get_term_subject_results(cursor, student_id: int, term_id: int, academic_year_id: int) -> List[Dict]:
+# def get_term_subject_results(cursor, student_id: int, term_id: int) -> List[Dict]:
 #     """Get subject results for a specific term"""
 #     cursor.execute("""
 #         SELECT ssr.subject_id, s.name as subject_name,
 #                ssr.total_score, ssr.grade, ssr.grade_point
 #         FROM student_subject_results ssr
 #         JOIN subjects s ON ssr.subject_id = s.id
-#         WHERE ssr.student_id = ? AND ssr.term_id = ? AND ssr.academic_year_id = ?
+#         WHERE ssr.student_id = ? AND ssr.term_id = ?
 #         ORDER BY s.name
-#     """, (student_id, term_id, academic_year_id))
+#     """, (student_id, term_id))
     
 #     rows = cursor.fetchall()
 #     results = []
@@ -98,14 +101,14 @@
 #         })
 #     return results
 
-# def get_term_summary(cursor, student_id: int, term_id: int, academic_year_id: int) -> Dict:
+# def get_term_summary(cursor, student_id: int, term_id: int) -> Dict:
 #     """Get term summary for a student"""
 #     cursor.execute("""
 #         SELECT average_score, overall_grade, overall_grade_point,
 #                total_marks, total_subjects_passed, total_subjects_failed
 #         FROM student_term_results
-#         WHERE student_id = ? AND term_id = ? AND academic_year_id = ?
-#     """, (student_id, term_id, academic_year_id))
+#         WHERE student_id = ? AND term_id = ?
+#     """, (student_id, term_id))
     
 #     row = cursor.fetchone()
 #     if row:
@@ -123,7 +126,7 @@
 #     """Calculate cumulative GPA from term results"""
 #     if not term_results:
 #         return 0
-#     total_gpa = sum(t['grade_point'] for t in term_results)
+#     total_gpa = sum(t.get('grade_point', 0) for t in term_results)
 #     return total_gpa / len(term_results)
 
 # def calculate_total_credits(subject_results: List[List[Dict]]) -> int:
@@ -221,10 +224,10 @@
         
 #         for term in terms:
 #             subject_results = get_term_subject_results(
-#                 cursor, student_id, term['id'], term['academic_year_id']
+#                 cursor, student_id, term['id']
 #             )
 #             term_summary = get_term_summary(
-#                 cursor, student_id, term['id'], term['academic_year_id']
+#                 cursor, student_id, term['id']
 #             )
             
 #             if subject_results and term_summary:
@@ -277,6 +280,13 @@
 #             conn.close()
 
 
+
+
+
+
+
+
+
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
@@ -307,7 +317,7 @@ router = APIRouter(prefix="/api/transcripts", tags=["transcripts"])
 def get_student_info(cursor, student_id: int) -> Dict:
     """Get student information"""
     cursor.execute("""
-        SELECT s.id, s.student_number, s.enrolled_at,
+        SELECT s.id, s.student_number, s.enrolled_at, s.class_id, s.academic_year_id,
                p.first_name, p.last_name, p.other_names, p.date_of_birth,
                c.class_name, pr.name as programme_name
         FROM students s
@@ -328,14 +338,44 @@ def get_student_info(cursor, student_id: int) -> Dict:
             "date_of_birth": row['date_of_birth'],
             "enrolled_at": row['enrolled_at'],
             "current_class": row['class_name'],
+            "current_class_id": row['class_id'],
+            "current_academic_year_id": row['academic_year_id'],
             "programme": row['programme_name'] or "General"
         }
     return None
 
+def get_class_subjects(cursor, class_id: int, academic_year_id: int) -> List[int]:
+    """Get all subject IDs assigned to a class for the academic year"""
+    subject_ids = []
+    
+    logger.info(f"Looking for subjects for class_id={class_id}, academic_year_id={academic_year_id}")
+    
+    # First, try to get subjects for the specific academic year
+    cursor.execute("""
+        SELECT cs.subject_id, s.name as subject_name
+        FROM class_subjects cs
+        JOIN subjects s ON cs.subject_id = s.id
+        WHERE cs.class_id = ? AND cs.academic_year_id = ?
+    """, (class_id, academic_year_id))
+    rows = cursor.fetchall()
+    
+    for row in rows:
+        subject_ids.append(row['subject_id'])
+        logger.info(f"Found subject: {row['subject_name']} (ID: {row['subject_id']}) for academic year {academic_year_id}")
+    
+    if subject_ids:
+        logger.info(f"Found {len(subject_ids)} subjects for class {class_id} in academic year {academic_year_id}")
+        return subject_ids
+    
+    # If no subjects found for specific academic year, DON'T fall back to all subjects
+    # Instead, log a warning and return empty list (transcript will show no subjects)
+    logger.warning(f"No subjects found for class {class_id} in academic year {academic_year_id}. Please assign subjects to this class.")
+    return []
+
 def get_all_terms_for_student(cursor, student_id: int) -> List[Dict]:
     """Get all terms that a student has results for"""
     cursor.execute("""
-        SELECT DISTINCT t.id, t.name, str.class_id, c.academic_year_id, ay.year_label
+        SELECT DISTINCT t.id, t.name, str.class_id, c.academic_year_id, ay.year_label, c.class_name
         FROM student_term_results str
         JOIN terms t ON str.term_id = t.id
         JOIN classes c ON str.class_id = c.id
@@ -351,23 +391,38 @@ def get_all_terms_for_student(cursor, student_id: int) -> List[Dict]:
             "id": row['id'],
             "name": row['name'],
             "class_id": row['class_id'],
+            "class_name": row['class_name'],
             "academic_year_id": row['academic_year_id'],
             "academic_year_label": row['year_label']
         })
+        logger.info(f"Found term: {row['name']} - Class: {row['class_name']} (ID: {row['class_id']}), Academic Year: {row['year_label']} (ID: {row['academic_year_id']})")
+    
     return terms
 
-def get_term_subject_results(cursor, student_id: int, term_id: int) -> List[Dict]:
-    """Get subject results for a specific term"""
-    cursor.execute("""
+def get_term_subject_results(cursor, student_id: int, term_id: int, class_id: int, academic_year_id: int) -> List[Dict]:
+    """Get subject results for a specific term, filtered by class subjects"""
+    # Get subjects assigned to this class
+    class_subject_ids = get_class_subjects(cursor, class_id, academic_year_id)
+    
+    if not class_subject_ids:
+        logger.warning(f"No subjects found for class {class_id} (Academic Year {academic_year_id}), returning empty results")
+        return []
+    
+    placeholders = ','.join(['?'] * len(class_subject_ids))
+    query = f"""
         SELECT ssr.subject_id, s.name as subject_name,
                ssr.total_score, ssr.grade, ssr.grade_point
         FROM student_subject_results ssr
         JOIN subjects s ON ssr.subject_id = s.id
         WHERE ssr.student_id = ? AND ssr.term_id = ?
+        AND ssr.subject_id IN ({placeholders})
         ORDER BY s.name
-    """, (student_id, term_id))
+    """
+    params = [student_id, term_id] + class_subject_ids
     
+    cursor.execute(query, params)
     rows = cursor.fetchall()
+    
     results = []
     for row in rows:
         results.append({
@@ -377,6 +432,9 @@ def get_term_subject_results(cursor, student_id: int, term_id: int) -> List[Dict
             "grade": row['grade'] if row['grade'] else 'N/A',
             "grade_point": row['grade_point'] if row['grade_point'] else 0
         })
+        logger.info(f"Found subject result: {row['subject_name']} - Score: {row['total_score']}%")
+    
+    logger.info(f"Found {len(results)} subject results for term {term_id} (filtered by class subjects)")
     return results
 
 def get_term_summary(cursor, student_id: int, term_id: int) -> Dict:
@@ -400,12 +458,12 @@ def get_term_summary(cursor, student_id: int, term_id: int) -> Dict:
         }
     return None
 
-def calculate_cumulative_gpa(term_results: List[Dict]) -> float:
+def calculate_cumulative_gpa(term_summaries: List[Dict]) -> float:
     """Calculate cumulative GPA from term results"""
-    if not term_results:
+    if not term_summaries:
         return 0
-    total_gpa = sum(t.get('grade_point', 0) for t in term_results)
-    return total_gpa / len(term_results)
+    total_gpa = sum(t.get('grade_point', 0) for t in term_summaries)
+    return total_gpa / len(term_summaries)
 
 def calculate_total_credits(subject_results: List[List[Dict]]) -> int:
     """Calculate total credits (simplified - each subject = 3 credits)"""
@@ -477,6 +535,8 @@ async def generate_transcript(
         if not student_info:
             raise HTTPException(status_code=404, detail="Student not found")
         
+        logger.info(f"Student: {student_info['name']}, Current Class ID: {student_info['current_class_id']}, Academic Year: {student_info['current_academic_year_id']}")
+        
         # Get all terms for this student
         terms = get_all_terms_for_student(cursor, student_id)
         
@@ -501,17 +561,19 @@ async def generate_transcript(
         all_subject_results = []
         
         for term in terms:
+            logger.info(f"Processing term: {term['name']} - Class: {term['class_name']} (ID: {term['class_id']}), Academic Year: {term['academic_year_label']} (ID: {term['academic_year_id']})")
+            
+            # Get subject results filtered by class subjects
             subject_results = get_term_subject_results(
-                cursor, student_id, term['id']
+                cursor, student_id, term['id'], term['class_id'], term['academic_year_id']
             )
-            term_summary = get_term_summary(
-                cursor, student_id, term['id']
-            )
+            term_summary = get_term_summary(cursor, student_id, term['id'])
             
             if subject_results and term_summary:
                 transcript_terms.append({
                     "academic_year": term['academic_year_label'],
                     "term_name": term['name'],
+                    "class_name": term['class_name'],
                     "subjects": subject_results,
                     "gpa": term_summary['grade_point'],
                     "average_score": term_summary['average_score'],
@@ -519,6 +581,9 @@ async def generate_transcript(
                 })
                 term_summaries.append(term_summary)
                 all_subject_results.append(subject_results)
+                logger.info(f"Added term {term['name']} with {len(subject_results)} subjects")
+            else:
+                logger.warning(f"No subject results or summary found for term {term['name']}")
         
         # Calculate cumulative statistics
         cumulative_gpa = calculate_cumulative_gpa(term_summaries)

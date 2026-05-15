@@ -76,6 +76,9 @@ from app.school.term_results import router as term_results
 from app.school.report_cards import router as report_cards
 from app.school.transcripts import router as transcripts
 from app.school.batch_promotion import router as batch_promotion
+from app.school.class_subject_assignments import router as class_subject_assignments
+# from app.school.transcripts import router as transcripts
+# from app.school.batch_promotion import router as batch_promotion
 # This will automatically read from global settings
 sync_scheduler = init_sync_system()
 
@@ -136,7 +139,7 @@ app.include_router(term_results)
 app.include_router(report_cards)
 app.include_router(transcripts)
 app.include_router(batch_promotion)
-# app.include_router(export_data)
+app.include_router(class_subject_assignments)
 
 cloud_client = SQLiteCloudClient()
 

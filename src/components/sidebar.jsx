@@ -466,7 +466,9 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         { icon: BookOpen, label: 'Assign Subjects', path: '/teacher-assignments/subjects' },
         { icon: BarChart3, label: 'Assign Student', path: '/teacher-assignments/assign-student' },
         { icon: Layout, label: 'Assign Form Masters', path: '/teacher-assignments/form-masters' },
+         { icon: BarChart3, label: 'Assign Class Subjects ', path: '/teacher-assignments/assign-class-subjects' },
         { icon: BarChart3, label: 'Workload Analysis', path: '/teacher-assignments/workload' }
+       
       ],
       section: 'teaching' 
     },
